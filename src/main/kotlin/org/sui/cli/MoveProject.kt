@@ -145,7 +145,7 @@ data class MoveProject(
     val aptosConfigYaml: AptosConfigYaml? get() = this.currentPackage.aptosConfigYaml
     val suiConfigYaml: SuiConfigYaml? get() = this.currentPackage.suiConfigYaml
 
-    val profiles: Set<String> = this.suiConfigYaml?.profiles.orEmpty()
+    val profiles: Set<String> = this.suiConfigYaml?.profiles.orEmpty() + this.aptosConfigYaml?.profiles.orEmpty()
 
     fun processMoveFiles(processFile: (MoveFile) -> Boolean) {
         val folders = allAccessibleMoveFolders()

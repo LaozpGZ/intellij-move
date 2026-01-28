@@ -91,6 +91,12 @@
         <!--                implementation="org.sui.cli.runConfigurations.producers.sui.RunCommandConfigurationProducer"/>-->
         <!--        <runConfigurationProducer-->
         <!--                implementation="org.sui.cli.runConfigurations.producers.sui.ViewCommandConfigurationProducer"/>-->
+        <configurationType
+                implementation="org.sui.cli.runConfigurations.aptos.AptosTransactionConfigurationType"/>
+        <runConfigurationProducer
+                implementation="org.sui.cli.runConfigurations.producers.aptos.RunCommandConfigurationProducer"/>
+        <runConfigurationProducer
+                implementation="org.sui.cli.runConfigurations.producers.aptos.ViewCommandConfigurationProducer"/>
         <runLineMarkerContributor language="Sui Move"
                                   implementationClass="org.sui.ide.lineMarkers.CommandLineMarkerContributor"/>
 

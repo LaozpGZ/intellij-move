@@ -5,6 +5,7 @@ import org.sui.cli.MoveProject
 import org.sui.cli.runConfigurations.SuiCommandLine
 import org.sui.cli.runConfigurations.producers.CommandConfigurationProducerBase
 import org.sui.cli.runConfigurations.producers.SuiCommandLineFromContext
+import org.sui.cli.settings.moveSettings
 import org.sui.lang.core.psi.MvFunction
 import org.sui.lang.core.psi.MvFunctionParameter
 import org.sui.lang.core.psi.ext.functionId
@@ -12,6 +13,7 @@ import org.sui.lang.core.psi.typeParameters
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.moveProject
 import org.sui.stdext.RsResult
+import com.intellij.execution.configuration.EnvironmentVariablesData
 
 abstract class CommandConfigurationHandler {
 
@@ -29,16 +31,21 @@ abstract class CommandConfigurationHandler {
         val moveProject = function.moveProject ?: return null
 
         val functionId = function.functionId(moveProject) ?: return null
-//        val profileName = moveProject.profiles.firstOrNull()
+        val profileName = moveProject.profiles.firstOrNull()
         val workingDirectory = moveProject.contentRootPath
 
         val arguments = mutableListOf<String>()
-//        if (profileName != null) {
-//            arguments.addAll(listOf("--profile", profileName))
-//        }
+        if (profileName != null) {
+            arguments.addAll(listOf("--profile", profileName))
+        }
         arguments.addAll(listOf("--function-id", functionId))
 
-        val commandLine = SuiCommandLine(subCommand, arguments, workingDirectory)
+        val environmentVariables = if (moveProject.project.moveSettings.disableTelemetry) {
+            EnvironmentVariablesData.create(mapOf("APTOS_DISABLE_TELEMETRY" to "true"), true)
+        } else {
+            EnvironmentVariablesData.DEFAULT
+        }
+        val commandLine = SuiCommandLine(subCommand, arguments, workingDirectory, environmentVariables)
         return SuiCommandLineFromContext(
             function,
             configurationName(functionId),

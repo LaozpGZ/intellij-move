@@ -65,7 +65,7 @@ class SuiTestCommandConfigurationProducer : CommandConfigurationProducerBase() {
         val confName = "Test $modName::$functionName"
 
         val arguments = buildList {
-            addAll(arrayOf("$modName::$functionName"))
+            addAll(arrayOf("--filter", "$modName::$functionName"))
             addAll(cliFlagsFromProjectSettings(psi.project))
         }
 
@@ -91,7 +91,7 @@ class SuiTestCommandConfigurationProducer : CommandConfigurationProducerBase() {
         val confName = "Test $modName"
 
         val arguments = buildList {
-            addAll(arrayOf(modName))
+            addAll(arrayOf("--filter", modName))
             addAll(cliFlagsFromProjectSettings(psi.project))
         }
 
@@ -144,12 +144,12 @@ class SuiTestCommandConfigurationProducer : CommandConfigurationProducerBase() {
             if (project.moveSettings.skipFetchLatestGitDeps) {
                 add("--skip-fetch-latest-git-deps")
             }
-//            if (project.moveSettings.dumpStateOnTestFailure) {
-//                add("--dump")
-//            }
-//            if (project.moveSettings.addCompilerV2CLIFlags) {
-//                addAll(arrayOf("--compiler-version", "v2"))
-//                addAll(arrayOf("--language-version", "2.0"))
-//            }
+            if (project.moveSettings.dumpStateOnTestFailure) {
+                add("--dump")
+            }
+            if (project.moveSettings.addCompilerV2CLIFlags) {
+                addAll(arrayOf("--compiler-version", "v2"))
+                addAll(arrayOf("--language-version", "2.0"))
+            }
         }
 }
