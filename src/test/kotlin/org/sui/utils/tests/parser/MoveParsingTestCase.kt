@@ -9,7 +9,7 @@ import org.sui.utils.tests.handleCompilerV2Annotations
 
 
 abstract class MvParsingTestCase(@NonNls dataPath: String) : ParsingTestCase(
-    "org/move/lang/parser/$dataPath",
+    "org/sui/lang/parser/$dataPath",
     "move",
     true,
     MoveParserDefinition()

@@ -6,7 +6,7 @@ import org.sui.utils.tests.base.TestCase
 
 abstract class MvFormatterTestBase : FormatterTestCase() {
     override fun getTestDataPath() = "src/test/resources"
-    override fun getBasePath(): String = "org/move/ide/formatter.fixtures"
+    override fun getBasePath(): String = "org/sui/ide/formatter.fixtures"
     override fun getFileExtension() = "move"
 
     override fun getTestName(lowercaseFirstLetter: Boolean): String {

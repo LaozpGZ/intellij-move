@@ -1,10 +1,7 @@
 <configurations>
-    <configuration name="Test Main::test_main" type="AptosCommandConfiguration" factoryName="AnyCommand">
+    <configuration name="Test Main::test_main" type="SuiCommandConfiguration" factoryName="SuiCommand">
         <option name="command" value="move test --filter Main::test_main --skip-fetch-latest-git-deps"/>
         <option name="workingDirectory" value="file://"/>
-        <envs>
-            <env name="APTOS_DISABLE_TELEMETRY" value="true"/>
-        </envs>
         <method v="2"/>
     </configuration>
 </configurations>
