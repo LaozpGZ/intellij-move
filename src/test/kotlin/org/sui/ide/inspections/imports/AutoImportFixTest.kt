@@ -519,13 +519,13 @@ module 0x1::Main {
     fun `testnoimportavailableifmultiplereferences`() = checkFixIsUnavailable(
         "Import",
         """
-module0x1::m{
-structS{}
+module 0x1::m {
+    struct S {}
 }
-module0x1::main{
-use0x1::m::S;
-structS{}
-funmain(s:<errordescr="Unresolvedtype:`S`">/*caret*/S</error>){}
+module 0x1::main {
+    use 0x1::m::S;
+    struct S {}
+    fun main(s:<error descr="Unresolved type: `S`. Multiple items are found, resolution is ambiguous">/*caret*/S</error>) {}
 }
 """
     )
@@ -533,11 +533,11 @@ funmain(s:<errordescr="Unresolvedtype:`S`">/*caret*/S</error>){}
     fun `testnoimportavailableifnameisimportedbutunresolved`() = checkFixIsUnavailable(
         "Import",
         """
-module0x1::m{
+module 0x1::m {
 }
-module0x1::main{
-use0x1::m::<errordescr="Unresolvedreference:`S`">S</error>;
-funmain(s:<errordescr="Unresolvedtype:`S`">/*caret*/S</error>){}
+module 0x1::main {
+    use 0x1::m::<error descr="Unresolved reference: `S`">S</error>;
+    fun main(s:<error descr="Unresolved type: `S`">/*caret*/S</error>) {}
 }
 """
     )

@@ -3,8 +3,12 @@ package org.sui.cli.toolwindow
 import com.intellij.diagnostic.PluginException
 import com.intellij.execution.Location
 import com.intellij.execution.PsiLocation
-import com.intellij.execution.actions.RunContextAction
+import com.intellij.execution.RunManager
+import com.intellij.execution.RunnerAndConfigurationSettings
+import com.intellij.execution.actions.ConfigurationContext
+import com.intellij.execution.actions.ConfigurationFromContext
 import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.execution.runners.ExecutionUtil
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
@@ -37,10 +41,14 @@ class MoveEntrypointMouseAdapter : MouseAdapter() {
             }
         val dataContext =
             SimpleDataContext.getSimpleContext(Location.DATA_KEY, functionLocation)
-        val actionEvent =
-            AnActionEvent.createFromDataContext(ActionPlaces.TOOLWINDOW_CONTENT, null, dataContext)
+        val context = ConfigurationContext.getFromContext(dataContext, ActionPlaces.TOOLWINDOW_CONTENT)
 
         val executor = DefaultRunExecutor.getRunExecutorInstance()
-        RunContextAction(executor).actionPerformed(actionEvent)
+
+        // Get or create run configuration
+        val configuration = context.findExisting() ?: context.getConfiguration()
+        if (configuration != null) {
+            ExecutionUtil.runConfiguration(configuration, executor)
+        }
     }
 }

@@ -131,8 +131,8 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
         // match Color::Red {x,y,z}
         if (referenceElement.hasAncestor<MvMatchArm>() && referenceElement.parent is MvFieldPat) return
 
-        if (referenceElement.hasAncestor<MvDotExpr>() && referenceElement is MvMethodCall) return
-        if (referenceElement.hasAncestor<MvCallExpr>() && referenceElement is MvPathImpl) return
+        // if (referenceElement.hasAncestor<MvDotExpr>() && referenceElement is MvMethodCall) return
+        // if (referenceElement.hasAncestor<MvCallExpr>() && referenceElement is MvPathImpl) return
 
         val reference = referenceElement.reference ?: return
 
@@ -156,6 +156,10 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
             val fix = (referenceElement as? MvPath)?.let {
                 val candidates = AutoImportFix.findApplicableContext(referenceElement)?.candidates.orEmpty()
                 if (candidates.isNotEmpty()) AutoImportFix(referenceElement) else null
+            }
+            // 检查是否应该忽略没有快速修复的未解析引用
+            if (ignoreWithoutQuickFix && fix == null) {
+                return
             }
             holder.registerProblem(
                 highlightedElement,
