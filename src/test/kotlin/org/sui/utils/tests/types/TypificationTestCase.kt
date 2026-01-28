@@ -5,7 +5,7 @@ import com.intellij.psi.util.descendantsOfType
 import org.intellij.lang.annotations.Language
 import org.sui.ide.presentation.expectedTyText
 import org.sui.ide.presentation.text
-import org.sui.lang.core.psi.MvBindingPat
+import org.sui.lang.core.psi.MvPatBinding
 import org.sui.lang.core.psi.MvElement
 import org.sui.lang.core.psi.MvExpr
 import org.sui.lang.core.psi.MvType
@@ -59,7 +59,7 @@ abstract class TypificationTestCase : MvTestBase() {
 //        allowErrors: Boolean = false
     ) {
         InlineFile(myFixture, code, "main.move")
-        val (bindingPat, data) = myFixture.findElementAndDataInEditor<MvBindingPat>()
+        val (bindingPat, data) = myFixture.findElementAndDataInEditor<MvPatBinding>()
         val expectedType = data.trim()
 
         val msl = bindingPat.isMsl()
