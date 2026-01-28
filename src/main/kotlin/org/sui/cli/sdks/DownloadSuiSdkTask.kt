@@ -2,9 +2,9 @@ package org.sui.cli.sdks
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.diagnostic.ControlFlowException
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
-import com.intellij.openapi.projectRoots.impl.jdkDownloader.JdkDownloaderLogger
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.component1
 import com.intellij.openapi.util.component2
@@ -14,6 +14,8 @@ import com.intellij.util.io.Decompressor
 import org.sui.ide.notifications.MvNotifications
 import java.io.*
 import java.util.zip.GZIPInputStream
+
+private val LOG = Logger.getInstance(DownloadSuiSdkTask::class.java)
 
 class DownloadSuiSdkTask(
     private val suiSdk: SuiSdk,
@@ -94,7 +96,7 @@ class DownloadSuiSdkTask(
 
         } catch (t: Throwable) {
             //if we were cancelled in the middle or failed, let's clean up
-            JdkDownloaderLogger.logDownload(false)
+            LOG.warn("Sui SDK download failed", t)
 
             // Create and display a notification
             MvNotifications.pluginNotifications().createNotification(

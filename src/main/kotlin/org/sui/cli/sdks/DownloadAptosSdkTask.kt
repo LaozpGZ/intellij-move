@@ -1,9 +1,9 @@
 package org.sui.cli.sdks
 
 import com.intellij.openapi.diagnostic.ControlFlowException
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
-import com.intellij.openapi.projectRoots.impl.jdkDownloader.JdkDownloaderLogger
 import com.intellij.openapi.util.component1
 import com.intellij.openapi.util.component2
 import com.intellij.openapi.util.io.FileUtil
@@ -11,6 +11,8 @@ import com.intellij.util.download.DownloadableFileService
 import com.intellij.util.io.Decompressor
 import java.io.File
 import java.io.IOException
+
+private val LOG = Logger.getInstance(DownloadAptosSdkTask::class.java)
 
 class DownloadAptosSdkTask(
     private val aptosSdk: AptosSdk,
@@ -82,7 +84,7 @@ class DownloadAptosSdkTask(
 
         } catch (t: Throwable) {
             //if we were cancelled in the middle or failed, let's clean up
-            JdkDownloaderLogger.logDownload(false)
+            LOG.warn("Aptos SDK download failed", t)
             throw t
         } finally {
             runCatching { FileUtil.delete(tmpExtractionDir) }
