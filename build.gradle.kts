@@ -102,8 +102,7 @@ allprojects {
 
         intellijPlatform {
 //            plugins(listOf(psiViewerPlugin))
-            pycharmCommunity("2024.2.4", useInstaller = true)
-//            create(prop("platformType"), prop("platformVersion"), useInstaller = useInstaller)
+            create(prop("platformType"), prop("platformVersion"), useInstaller = useInstaller)
             testFramework(TestFrameworkType.Platform)
             pluginVerifier(Constraints.LATEST_VERSION)
             bundledPlugin("org.toml.lang")
