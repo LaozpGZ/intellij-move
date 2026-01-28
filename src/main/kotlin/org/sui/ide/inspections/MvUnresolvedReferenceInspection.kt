@@ -15,7 +15,7 @@ import org.sui.lang.core.types.ty.TyUnknown
 
 class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
 
-//    var ignoreWithoutQuickFix: Boolean = false
+    var ignoreWithoutQuickFix: Boolean = false
 
     override val isSyntaxOnly get() = false
 
