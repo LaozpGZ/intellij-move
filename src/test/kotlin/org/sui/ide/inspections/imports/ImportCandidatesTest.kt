@@ -1,6 +1,8 @@
 package org.sui.ide.inspections.imports
 
+import org.sui.ide.inspections.imports.ImportContext
 import org.sui.ide.utils.imports.ImportCandidateCollector
+import org.sui.lang.core.psi.MvPath
 import org.sui.lang.core.resolve.ref.MvReferenceElement
 import org.sui.utils.tests.FileTreeBuilder
 import org.sui.utils.tests.MvProjectTestBase
@@ -224,9 +226,10 @@ module 0x1::main {
         val path = refElement as? MvPath ?: error("no path at caret")
         val targetName = path.referenceName ?: error("No name for reference element")
 
+        val importContext = ImportContext.from(path, false) ?: error("No import context for path")
         val candidates =
             ImportCandidateCollector
-                .getImportCandidates(ImportContext.Companion.from(path), targetName)
+                .getImportCandidates(importContext, targetName)
                 .map { it.qualName.editorText() }
         if (data == "[]") {
             check(candidates.isEmpty()) { "Non-empty candidates: $candidates" }
