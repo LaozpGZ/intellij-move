@@ -15,3 +15,5 @@ plugin/*
 /gradle/wrapper/chain.crt
 /gradle/wrapper/private.pem
 .aider*
+debug_parse.kt
+test_output.txt

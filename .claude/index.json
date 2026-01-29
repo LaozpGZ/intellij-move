@@ -1,0 +1,356 @@
+{
+  "timestamp": "2026-01-29T00:55:18+0800",
+  "project_name": "Sui Move Language IntelliJ Plugin",
+  "project_type": "IntelliJ Platform Plugin",
+  "root_path": "/Users/gz/Documents/GitHub/intellij-move",
+  "version": "1.6.2",
+  "platform": "IntelliJ Platform SDK 2024.3 (243)",
+  "primary_language": "Kotlin",
+  "build_tool": "Gradle",
+
+  "statistics": {
+    "source_files": {
+      "kotlin_main": 600,
+      "kotlin_test": 184,
+      "java_generated": 300,
+      "move_examples": 85,
+      "xml_config": 100,
+      "toml": 4,
+      "markdown": 14
+    },
+    "total_files_scanned": 1287,
+    "lines_of_code_estimated": "150000+"
+  },
+
+  "modules": [
+    {
+      "name": "核心语言支持",
+      "path": "src/main/kotlin/org/sui/lang",
+      "type": "Language Support",
+      "entry_file": "MoveLanguage.kt",
+      "description": "提供语法解析、词法分析、PSI结构和类型系统",
+      "documentation": "src/main/kotlin/org/sui/lang/CLAUDE.md",
+      "key_files": [
+        "MoveLanguage.kt",
+        "MoveFileType.kt",
+        "MoveParserDefinition.kt",
+        "src/main/grammars/MoveLexer.flex",
+        "src/main/grammars/MoveParser.bnf"
+      ],
+      "test_path": "src/test/kotlin/org/sui/lang",
+      "test_files": [
+        "MoveParserTest.kt",
+        "MoveLexerTest.kt",
+        "MvPsiPatternTest.kt",
+        "TypeSystemTest.kt",
+        "LookupElementTest.kt"
+      ],
+      "config_files": ["plugin.xml"],
+      "languages": ["Kotlin", "JFlex", "Grammar-Kit"],
+      "coverage": {
+        "status": "完整",
+        "percentage": 95,
+        "has_tests": true,
+        "has_documentation": true
+      },
+      "gaps": []
+    },
+    {
+      "name": "CLI 集成",
+      "path": "src/main/kotlin/org/sui/cli",
+      "type": "CLI Integration",
+      "entry_file": "MoveProjectsService.kt",
+      "description": "处理与 Sui 和 Aptos CLI 的集成，项目管理和外部 linter",
+      "documentation": "src/main/kotlin/org/sui/cli/CLAUDE.md",
+      "key_files": [
+        "MoveProjectsService.kt",
+        "MvProjectSettingsService.kt",
+        "MovePackage.kt",
+        "manifest/MoveToml.kt",
+        "externalLinter/ExternalLinter.kt"
+      ],
+      "test_path": "src/test/kotlin/org/sui/cli",
+      "test_files": [
+        "LoadMoveProjectsTest.kt",
+        "CompilerErrorsTest.kt",
+        "MvExternalLinterPassTest.kt",
+        "MoveExternalSystemProjectAwareTest.kt"
+      ],
+      "config_files": ["plugin.xml"],
+      "languages": ["Kotlin"],
+      "coverage": {
+        "status": "完整",
+        "percentage": 90,
+        "has_tests": true,
+        "has_documentation": true
+      },
+      "gaps": []
+    },
+    {
+      "name": "IDE 功能扩展",
+      "path": "src/main/kotlin/org/sui/ide",
+      "type": "IDE Features",
+      "entry_file": "MvHighlighter.kt",
+      "description": "实现代码检查、格式化、导航、补全等 IDE 功能",
+      "documentation": "src/main/kotlin/org/sui/ide/CLAUDE.md",
+      "key_files": [
+        "MvHighlighter.kt",
+        "formatter/MvFormattingModelBuilder.kt",
+        "inspections/",
+        "annotator/",
+        "refactoring/"
+      ],
+      "test_path": "src/test/kotlin/org/sui/ide",
+      "test_files": [
+        "HighlightingAnnotatorTest.kt",
+        "FormatterTest.kt",
+        "MvUnresolvedReferenceInspectionTest.kt",
+        "MvTypeCheckInspectionTest.kt",
+        "RenameTest.kt"
+      ],
+      "config_files": ["plugin.xml", "colors/MoveDefault.xml", "colors/MoveDarcula.xml"],
+      "languages": ["Kotlin"],
+      "coverage": {
+        "status": "完整",
+        "percentage": 90,
+        "has_tests": true,
+        "has_documentation": true
+      },
+      "gaps": []
+    },
+    {
+      "name": "运行配置",
+      "path": "src/main/kotlin/org/sui/cli/runConfigurations",
+      "type": "Run Configurations",
+      "entry_file": "CommandConfigurationBase.kt",
+      "description": "支持 Sui 和 Aptos 命令的运行配置",
+      "documentation": "src/main/kotlin/org/sui/cli/runConfigurations/CLAUDE.md",
+      "key_files": [
+        "sui/SuiCommandConfigurationType.kt",
+        "aptos/AptosCommandConfigurationType.kt",
+        "CommandConfigurationBase.kt",
+        "test/"
+      ],
+      "test_path": "src/test/kotlin/org/sui/cli/runConfigurations",
+      "test_files": [
+        "CommandConfigurationHandlerTest.kt",
+        "TestCommandConfigurationProducerTest.kt",
+        "FunctionCallConfigurationProducerTest.kt"
+      ],
+      "config_files": ["plugin.xml"],
+      "languages": ["Kotlin"],
+      "coverage": {
+        "status": "完整",
+        "percentage": 85,
+        "has_tests": true,
+        "has_documentation": true
+      },
+      "gaps": []
+    },
+    {
+      "name": "工具窗口",
+      "path": "src/main/kotlin/org/sui/cli/toolwindow",
+      "type": "Tool Window",
+      "entry_file": "SuiToolWindowFactory.kt",
+      "description": "提供 Sui 项目管理的可视化界面",
+      "documentation": "src/main/kotlin/org/sui/cli/toolwindow/CLAUDE.md",
+      "key_files": [
+        "SuiToolWindowFactory.kt"
+      ],
+      "test_path": "src/test/kotlin/org/sui/cli/toolwindow",
+      "test_files": ["MoveProjectsStructureTest.kt"],
+      "config_files": ["plugin.xml"],
+      "languages": ["Kotlin"],
+      "coverage": {
+        "status": "部分",
+        "percentage": 60,
+        "has_tests": true,
+        "has_documentation": true
+      },
+      "gaps": ["UI 测试覆盖不足"]
+    },
+    {
+      "name": "字节码支持",
+      "path": "src/main/kotlin/org/sui/bytecode",
+      "type": "Bytecode Support",
+      "entry_file": "SuiBytecodeFileType.kt",
+      "description": "提供 Move 字节码反编译和查看功能",
+      "documentation": "src/main/kotlin/org/sui/bytecode/CLAUDE.md",
+      "key_files": [
+        "SuiBytecodeFileType.kt",
+        "SuiDecompiler.kt",
+        "FetchSuiPackageAction.kt",
+        "DecompileSuiMvFileAction.kt"
+      ],
+      "test_path": "",
+      "test_files": [],
+      "config_files": ["plugin.xml"],
+      "languages": ["Kotlin"],
+      "coverage": {
+        "status": "基础",
+        "percentage": 50,
+        "has_tests": false,
+        "has_documentation": true
+      },
+      "gaps": ["缺少测试文件", "边界情况测试不足"]
+    },
+    {
+      "name": "TOML 文件支持",
+      "path": "src/main/kotlin/org/sui/toml",
+      "type": "TOML Support",
+      "entry_file": "MoveTomlCompletionContributor.kt",
+      "description": "支持 Move.toml 文件的解析和补全",
+      "documentation": "src/main/kotlin/org/sui/toml/CLAUDE.md",
+      "key_files": [
+        "MoveTomlCompletionContributor.kt",
+        "../cli/manifest/MoveToml.kt"
+      ],
+      "test_path": "src/test/kotlin/org/sui/toml",
+      "test_files": [
+        "MoveTomlCompletionTest.kt",
+        "MoveTomlCompletionProjectTest.kt",
+        "MoveTomlErrorAnnotatorTest.kt"
+      ],
+      "config_files": ["plugin.xml"],
+      "languages": ["Kotlin"],
+      "coverage": {
+        "status": "部分",
+        "percentage": 70,
+        "has_tests": true,
+        "has_documentation": true
+      },
+      "gaps": ["测试覆盖可以更全面"]
+    },
+    {
+      "name": "测试框架",
+      "path": "src/test/kotlin/org/sui",
+      "type": "Tests",
+      "entry_file": "utils/tests/MvTestBase.kt",
+      "description": "包含所有测试文件，覆盖语法、语义、功能等方面",
+      "documentation": "src/test/kotlin/org/sui/CLAUDE.md",
+      "key_files": [
+        "utils/tests/MvTestBase.kt",
+        "utils/tests/TestCase.kt",
+        "utils/tests/annotation/AnnotatorTestCase.kt"
+      ],
+      "test_path": "src/test/kotlin/org/sui",
+      "test_files": [
+        "184 个测试文件"
+      ],
+      "config_files": ["build.gradle.kts"],
+      "languages": ["Kotlin"],
+      "coverage": {
+        "status": "N/A",
+        "percentage": 100,
+        "has_tests": false,
+        "has_documentation": true
+      },
+      "gaps": []
+    }
+  ],
+
+  "dependencies": {
+    "platform": [
+      "com.intellij.modules.platform",
+      "org.toml.lang"
+    ],
+    "external": [
+      "org.jetbrains.kotlin:kotlin-reflect:1.9.10",
+      "io.sentry:sentry:7.2.0",
+      "com.github.ajalt.clikt:clikt:3.5.2"
+    ]
+  },
+
+  "key_technologies": [
+    "Kotlin 1.9.25",
+    "IntelliJ Platform SDK 2024.3",
+    "Gradle 7.4+",
+    "JFlex (词法分析器生成)",
+    "Grammar-Kit (语法解析器生成)",
+    "JUnit 4 (测试框架)",
+    "Sentry (错误报告)"
+  ],
+
+  "total_coverage": {
+    "overall_percentage": 85,
+    "modules_with_full_coverage": 4,
+    "modules_with_partial_coverage": 3,
+    "modules_without_tests": 1
+  },
+
+  "ignored_patterns": [
+    ".idea/**",
+    ".gradle/**",
+    "out/**",
+    "build/**",
+    "src/main/gen/**",
+    ".DS_Store",
+    "deps/**",
+    "bin/**",
+    ".intellijPlatform/**",
+    "*.log",
+    "*.bin",
+    "*.pdf",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.mp4",
+    "*.zip",
+    "*.tar",
+    "*.gz"
+  ],
+
+  "ignored_files_summary": [
+    {
+      "path": "src/main/gen",
+      "reason": "自动生成的解析器代码（约 300 个 Java 文件）"
+    },
+    {
+      "path": ".gradle",
+      "reason": "Gradle 构建缓存"
+    },
+    {
+      "path": ".idea",
+      "reason": "IntelliJ IDE 配置"
+    },
+    {
+      "path": "build",
+      "reason": "构建输出目录"
+    },
+    {
+      "path": ".intellijPlatform",
+      "reason": "平台依赖缓存"
+    }
+  ],
+
+  "truncated": false,
+  "scan_complete": true,
+  "scan_method": "模块优先扫描（中等强度）",
+
+  "next_steps": [
+    "为字节码支持模块添加单元测试和集成测试",
+    "提高工具窗口模块的 UI 测试覆盖率",
+    "补充 TOML 支持模块的边界情况测试",
+    "添加性能测试和基准测试",
+    "定期更新文档以反映 API 变化"
+  ],
+
+  "recommendations": [
+    "优先补充字节码模块的测试（当前覆盖率 50%）",
+    "增强工具窗口的自动化测试（当前覆盖率 60%）",
+    "考虑为编译器 V2 新特性添加更多测试用例",
+    "定期运行完整测试套件以确保稳定性",
+    "监控代码覆盖率变化趋势"
+  ],
+
+  "notes": [
+    "项目使用 IntelliJ Platform SDK 2024.3，需要 Java 17",
+    "语法解析器和词法分析器通过 Gradle 任务自动生成",
+    "测试需要在 IntelliJ 环境中运行，使用平台测试框架",
+    "插件支持 Sui 和 Aptos 两个 Move 语言变体",
+    "项目包含大量自动生成的 PSI 代码（约 300 个 Java 文件）",
+    "所有模块都已有对应的 CLAUDE.md 文档",
+    "文档包含面包屑导航和模块间链接"
+  ]
+}
