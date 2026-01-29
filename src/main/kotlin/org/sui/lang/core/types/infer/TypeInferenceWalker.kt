@@ -223,6 +223,7 @@ class TypeInferenceWalker(
             is MvBorrowExpr -> inferBorrowExprTy(expr, expected)
             is MvCallExpr -> inferCallExprTy(expr, expected)
             is MvAssertMacroExpr -> inferMacroCallExprTy(expr)
+            is MvMacroCallExpr -> inferMacroCallExprTy(expr)
             is MvStructLitExpr -> inferStructLitExprTy(expr, expected)
             is MvVectorLitExpr -> inferVectorLitExpr(expr, expected)
             is MvIndexExpr -> inferIndexExprTy(expr)
@@ -563,15 +564,91 @@ class TypeInferenceWalker(
 
     fun inferMacroCallExprTy(macroExpr: MvAssertMacroExpr): Ty {
         val ident = macroExpr.identifier
-        if (ident.text == "assert") {
-            val formalInputTys = listOf(TyBool, TyInteger.default())
-            inferArgumentTypes(
-                formalInputTys,
-                emptyList(),
-                macroExpr.valueArguments.map { it.expr }.map { InferArg.ArgExpr(it) }
-            )
+        when (ident.text) {
+            "assert" -> {
+                val formalInputTys = listOf(TyBool, TyInteger.default())
+                inferArgumentTypes(
+                    formalInputTys,
+                    emptyList(),
+                    macroExpr.valueArguments.map { it.expr }.map { InferArg.ArgExpr(it) }
+                )
+            }
+            "debug" -> {
+                // debug! accepts any number and type of arguments
+                macroExpr.valueArguments.forEach { it.expr?.inferType() }
+            }
+            "transfer" -> {
+                // transfer! typically accepts two arguments: object and address
+                val formalInputTys = listOf(TyUnknown, TyAddress)
+                inferArgumentTypes(
+                    formalInputTys,
+                    emptyList(),
+                    macroExpr.valueArguments.map { it.expr }.map { InferArg.ArgExpr(it) }
+                )
+            }
+            "event" -> {
+                // event! accepts event type and arguments
+                macroExpr.valueArguments.forEach { it.expr?.inferType() }
+            }
         }
         return TyUnit
+    }
+
+    fun inferMacroCallExprTy(macroExpr: MvMacroCallExpr): Ty {
+        val pathText = macroExpr.path.text.removeSuffix("!")
+        when (pathText) {
+            "vector" -> {
+                // vector! already has a dedicated handling method inferVectorLitExpr
+                if (macroExpr.vectorLitItems != null) {
+                    return TyUnknown // will be handled by dedicated method
+                }
+            }
+            "option" -> {
+                // option! accepts one argument
+                if (macroExpr.valueArguments.size == 1) {
+                    macroExpr.valueArguments.first().expr?.inferType()
+                }
+                return TyUnknown // specific type needs to be inferred from argument
+            }
+            "result" -> {
+                // result! accepts two arguments
+                macroExpr.valueArguments.forEach { it.expr?.inferType() }
+                return TyUnknown // specific type needs to be inferred from arguments
+            }
+            "bcs" -> {
+                // bcs! accepts one argument and returns byte vector
+                if (macroExpr.valueArguments.size == 1) {
+                    macroExpr.valueArguments.first().expr?.inferType()
+                }
+                return TyByteString(ctx.msl)
+            }
+            "object" -> {
+                // object! is used for creating objects
+                macroExpr.valueArguments.forEach { it.expr?.inferType() }
+                return TyUnknown
+            }
+            "table" -> {
+                // table! is used for creating tables
+                macroExpr.valueArguments.forEach { it.expr?.inferType() }
+                return TyUnknown
+            }
+            "system" -> {
+                // system! system operations
+                macroExpr.valueArguments.forEach { it.expr?.inferType() }
+                return TyUnit
+            }
+            "vote" -> {
+                // vote! voting operations
+                macroExpr.valueArguments.forEach { it.expr?.inferType() }
+                return TyUnit
+            }
+            "debug" -> {
+                // debug! accepts any number and type of arguments
+                macroExpr.valueArguments.forEach { it.expr?.inferType() }
+                return TyUnit
+            }
+        }
+        return TyUnknown
     }
 
     /**
