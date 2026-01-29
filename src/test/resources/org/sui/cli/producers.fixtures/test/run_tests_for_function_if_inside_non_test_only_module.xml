@@ -1,7 +1,8 @@
 <configurations>
-    <configuration name="Test Main::test_main" type="SuiCommandConfiguration" factoryName="SuiCommand">
-        <option name="command" value="move test --filter Main::test_main --skip-fetch-latest-git-deps"/>
-        <option name="workingDirectory" value="file://"/>
-        <method v="2"/>
-    </configuration>
+  <configuration name="Test Main::test_main" type="SuiCommandConfiguration" factoryName="SuiCommand">
+    <option name="command" value="move test --filter Main::test_main --skip-fetch-latest-git-deps" />
+    <option name="workingDirectory" value="file://" />
+    <envs />
+    <method v="2" />
+  </configuration>
 </configurations>

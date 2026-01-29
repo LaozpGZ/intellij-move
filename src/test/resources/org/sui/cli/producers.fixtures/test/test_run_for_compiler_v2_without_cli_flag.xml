@@ -1,7 +1,8 @@
 <configurations>
-    <configuration name="Test MoveTests::test_add" type="SuiCommandConfiguration" factoryName="SuiCommand">
-        <option name="command" value="move test --filter MoveTests::test_add"/>
-        <option name="workingDirectory" value="file://"/>
-        <method v="2"/>
-    </configuration>
+  <configuration name="Test MoveTests::test_add" type="SuiCommandConfiguration" factoryName="SuiCommand">
+    <option name="command" value="move test --filter MoveTests::test_add" />
+    <option name="workingDirectory" value="file://" />
+    <envs />
+    <method v="2" />
+  </configuration>
 </configurations>

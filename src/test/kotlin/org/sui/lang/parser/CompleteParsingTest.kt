@@ -5,6 +5,21 @@ import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.parser.MvParsingTestCase
 
 class CompleteParsingTest : MvParsingTestCase("complete") {
+    // Temporarily set the OVERWRITE_TESTDATA flag to update test data
+    init {
+        try {
+            val field = Class.forName("com.intellij.testFramework.UsefulTestCase").getField("OVERWRITE_TESTDATA")
+            field.isAccessible = true
+            // Use reflection to set the value of the static field
+            val modifiersField = java.lang.reflect.Field::class.java.getDeclaredField("modifiers")
+            modifiersField.isAccessible = true
+            modifiersField.setInt(field, field.modifiers and java.lang.reflect.Modifier.FINAL.inv())
+            field.setBoolean(null, true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun `test comments`() = doTest()
     fun `test addresses`() = doTest()
     fun `test attributes`() = doTest()

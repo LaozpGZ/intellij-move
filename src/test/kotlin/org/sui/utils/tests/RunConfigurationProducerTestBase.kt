@@ -117,6 +117,26 @@ abstract class RunConfigurationProducerTestBase(val testDir: String) : MvProject
             outputFile.appendText(diff)
         }
 
+        if (actual != expected) {
+            println("=== Actual XML ===\n$actual")
+            println("\n=== Expected XML ===\n$expected")
+            println("\n=== Differences ===\n${buildString {
+                val actualLines = actual.lines()
+                val expectedLines = expected.lines()
+                val maxLines = maxOf(actualLines.size, expectedLines.size)
+
+                for (i in 0 until maxLines) {
+                    val actualLine = actualLines.getOrElse(i) { "" }
+                    val expectedLine = expectedLines.getOrElse(i) { "" }
+
+                    if (actualLine != expectedLine) {
+                        append("Line ${i + 1}:\n")
+                        append("  Actual:   '$actualLine'\n")
+                        append("  Expected: '$expectedLine'\n")
+                    }
+                }
+            }}")
+        }
         check(actual == expected) { "XML content does not match" }
     }
 

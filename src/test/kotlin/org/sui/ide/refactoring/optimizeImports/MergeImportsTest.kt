@@ -1,27 +1,96 @@
 package org.sui.ide.refactoring.optimizeImports
 
+import com.intellij.openapi.editor.Editor
+import com.intellij.psi.PsiFile
+import org.sui.lang.core.psi.MvModule
+import org.sui.lang.core.psi.ext.firstItem
+import org.sui.lang.core.psi.ext.descendantsOfType
+
 class MergeImportsTest : OptimizeImportsTestBase() {
 
-    fun `test self import unchanged if no items`() = doTest(
-        """
-module 0x1::Coin { public fun call() {} }        
+    fun `test self import unchanged if no items`() {
+        val before = """
+module 0x1::Coin { public fun call() {} }
 module 0x1::Main {
     use 0x1::Coin::Self;
     fun main() {
         Coin::call();
     }
-}        
-    """, """
-module 0x1::Coin { public fun call() {} }        
+}
+    """.trimIndent()
+
+        val expected = """
+module 0x1::Coin { public fun call() {} }
 module 0x1::Main {
     use 0x1::Coin::Self;
 
     fun main() {
         Coin::call();
     }
-}        
-    """
-    )
+}
+    """.trimIndent()
+
+        // Test directly without using checkEditorAction to capture output
+        InlineFile(before)
+        println("=== Before optimization ===")
+        println(myFixture.file.text)
+
+        // Print module structure information
+        val modules = myFixture.file.descendantsOfType<MvModule>()
+        modules.forEachIndexed { index, module ->
+            println("\nModule $index (${module.name}):")
+            println("  First child: ${module.firstChild.text}")
+            println("  First item: ${module.firstItem?.text}")
+            if (module.firstItem != null) {
+                println("  First item prev sibling: ${module.firstItem!!.prevSibling?.text}")
+                println("  First item prev sibling type: ${module.firstItem!!.prevSibling?.javaClass}")
+            }
+            println("  Children: ${module.children.map { "${it.text} (${it.javaClass.simpleName})" }}")
+        }
+
+        myFixture.performEditorAction("OptimizeImports")
+
+        println("\n=== After optimization ===")
+        println(myFixture.file.text)
+
+        // Print module structure information
+        val modulesAfter = myFixture.file.descendantsOfType<MvModule>()
+        modulesAfter.forEachIndexed { index, module ->
+            println("\nModule $index (${module.name}):")
+            println("  First child: ${module.firstChild.text}")
+            println("  First item: ${module.firstItem?.text}")
+            if (module.firstItem != null) {
+                println("  First item prev sibling: ${module.firstItem!!.prevSibling?.text}")
+                println("  First item prev sibling type: ${module.firstItem!!.prevSibling?.javaClass}")
+            }
+            println("  Children: ${module.children.map { "${it.text} (${it.javaClass.simpleName})" }}")
+        }
+
+        // Compare actual result with expected result
+        val actualText = myFixture.file.text
+        if (actualText != expected) {
+            println("\n=== Differences found ===")
+            val actualLines = actualText.lines()
+            val expectedLines = expected.lines()
+            val maxLines = maxOf(actualLines.size, expectedLines.size)
+
+            for (i in 0 until maxLines) {
+                val actualLine = actualLines.getOrElse(i) { ">> END OF ACTUAL <<" }
+                val expectedLine = expectedLines.getOrElse(i) { ">> END OF EXPECTED <<" }
+
+                if (actualLine != expectedLine) {
+                    println("\nLine ${i + 1}:")
+                    println("  Actual:   '${actualLine}'")
+                    println("  Expected: '${expectedLine}'")
+                }
+            }
+        } else {
+            println("\n=== No differences found ===")
+        }
+
+        myFixture.checkResult(expected)
+    }
+}
 
 //    fun `test merge item into existing group`() = doTest(
 //        """
@@ -137,5 +206,3 @@ module 0x1::Main {
 //    fun call(s1: S1, s2: S2) {}
 //}
 //    """)
-
-}

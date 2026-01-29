@@ -7,8 +7,10 @@ package org.sui.utils.tests
 
 import com.intellij.codeInspection.InspectionProfileEntry
 import com.intellij.openapi.components.service
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.enableInspectionTool
 import org.intellij.lang.annotations.Language
@@ -171,11 +173,42 @@ abstract class MvTestBase : MvLightTestBase(),
         @Language("Move") after: String,
         actionId: String,
         trimIndent: Boolean = true,
+        callback: ((Editor, PsiFile) -> Unit)? = null,
     ) {
         fun String.trimIndentIfNeeded(): String = if (trimIndent) trimIndent() else this
 
-        checkByText(before.trimIndentIfNeeded(), after.trimIndentIfNeeded()) {
+        val beforeTrimmed = before.trimIndentIfNeeded()
+        val afterTrimmed = after.trimIndentIfNeeded()
+
+        checkByText(beforeTrimmed, afterTrimmed) {
             myFixture.performEditorAction(actionId)
+            callback?.invoke(myFixture.editor, myFixture.file)
+
+            // Print debug information
+            val actualText = myFixture.file.text
+            println("=== Actual text after optimization ===")
+            println(actualText)
+            println("\n=== Expected text ===")
+            println(afterTrimmed)
+
+            // Compare differences
+            if (actualText != afterTrimmed) {
+                println("\n=== Differences ===")
+                val actualLines = actualText.lines()
+                val expectedLines = afterTrimmed.lines()
+                val maxLength = maxOf(actualLines.size, expectedLines.size)
+
+                for (i in 0 until maxLength) {
+                    val actualLine = actualLines.getOrElse(i) { "" }
+                    val expectedLine = expectedLines.getOrElse(i) { "" }
+
+                    if (actualLine != expectedLine) {
+                        println("Line $i:")
+                        println("  Actual:   '$actualLine'")
+                        println("  Expected: '$expectedLine'")
+                    }
+                }
+            }
         }
     }
 
