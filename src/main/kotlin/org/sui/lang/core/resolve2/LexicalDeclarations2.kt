@@ -58,7 +58,16 @@ fun processItemsInScope(
                     is MvMatchArm -> {
                         if (cameFrom !is MvPat) {
                             // coming from rhs, use pat bindings from lhs
-                            if (processor.processAll(elementNs, scope.pat.bindings)) return true
+                            val pat = scope.matchPat.pat
+                            if (pat != null) {
+                                if (processor.processAll(elementNs, pat.bindings)) return true
+                            }
+                            // For PathPat, we might need to process its bindings
+                            val pathPat = scope.matchPat.pathPat
+                            if (pathPat != null) {
+                                // Currently PathPat might not have bindings, but we need to handle this case
+                                // We might need to add code to process PathPat's bindings
+                            }
                             continue
                         }
 

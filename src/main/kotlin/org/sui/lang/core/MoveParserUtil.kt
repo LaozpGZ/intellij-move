@@ -360,7 +360,20 @@ object MoveParserUtil : GeneratedParserUtilBase() {
     fun enumKeyword(b: PsiBuilder, level: Int): Boolean = contextualKeyword(b, "enum", ENUM_KW)
 
     @JvmStatic
-    fun matchKeyword(b: PsiBuilder, level: Int): Boolean = contextualKeyword(b, "match", MATCH_KW)
+    fun isNotMatchKeyword(b: PsiBuilder, level: Int): Boolean {
+        return b.tokenType == IDENTIFIER && b.tokenText != "match"
+    }
+
+    @JvmStatic
+    fun matchKeyword(b: PsiBuilder, level: Int): Boolean {
+        return if (b.tokenType == IDENTIFIER && b.tokenText == "match") {
+            b.remapCurrentToken(MATCH_KW)
+            b.advanceLexer()  // Advance to the next token
+            true
+        } else {
+            false
+        }
+    }
 
     @JvmStatic
     fun packageKeyword(b: PsiBuilder, level: Int): Boolean = contextualKeyword(b, "package", PACKAGE)
@@ -492,6 +505,13 @@ object MoveParserUtil : GeneratedParserUtilBase() {
         elementType: IElementType,
         nextElementPredicate: (IElementType?) -> Boolean = { it !in tokenSetOf() }
     ): Boolean {
+        // Special handling for 'match': directly match, ignoring nextElementPredicate
+        if (keyword == "match" && b.tokenType == IDENTIFIER && b.tokenText == "match") {
+            b.remapCurrentToken(elementType)
+            b.advanceLexer()
+            return true
+        }
+        
         if (b.tokenType == elementType ||
             b.tokenType == IDENTIFIER && b.tokenText == keyword && nextElementPredicate(b.lookAhead(1))
         ) {

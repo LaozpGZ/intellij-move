@@ -428,7 +428,7 @@ EnumBody ::= '{' (EnumVariant ','?)* '}'
    pin = 1
  }
 
-EnumVariant ::= Attr* IDENTIFIER BlockFields?
+EnumVariant ::= Attr* IDENTIFIER (BlockFields | TupleFields)?
 {
   pin = 2
     implements = [
@@ -846,7 +846,7 @@ private ExprStmt_expr ::= ItemSpecBlockExpr | Expr
 }
 private ExprStmt_recover ::= !(';' | '}' | <<mslOnly SpecExpr_first>> | Expr_first)
 private Expr_first ::= let | if | while | loop | continue | break | return | spec
-                        | copy | move | abort
+                        | copy | move | abort | match
 //                        | (<<VECTOR_IDENTIFIER>> ('<' | '['))
                         | IDENTIFIER
                         | '*' | '&' | '!' | '|' | '{' | '('
@@ -886,7 +886,8 @@ private CodeBlock_items_recover ::= !('}' | <<eof>>)
 // Expressions
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // from lowest to highest
-Expr ::= AssignmentExpr
+Expr ::= MatchExpr
+        | AssignmentExpr
         | RangeExpr
         | (ForallQuantExpr | ExistsQuantExpr | ChooseQuantExpr)
         | CastExpr
@@ -904,6 +905,10 @@ Expr ::= AssignmentExpr
         | UnaryExpr
         | BorrowExpr
         | AtomExpr
+MatchExpr ::= Attr* <<remapContextualKwOnRollback (match Expr MatchBody)>>
+{
+    implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
+}
 
 fake BinaryExpr ::= Expr BinaryOp Expr {
     methods = [
@@ -926,7 +931,8 @@ private MulExpr_items ::= DivBinExpr | MulBinExpr | ModBinExpr
 private AddExpr_items ::= PlusBinExpr | MinusBinExpr
 private LogicalEqExpr_items ::= EqualsBinExpr | NotEqualsBinExpr | LessEqualsBinExpr | LessBinExpr | GreaterEqualsBinExpr | GreaterBinExpr
 
-private ControlFlowExpr_items ::= IfExpr | LoopExpr | MatchExpr | WhileExpr | ForExpr
+private ControlFlowExpr_items ::= IfExpr | LoopExpr | WhileExpr | ForExpr
+private MatchExpr_item ::= MatchExpr
 private UnaryExpr ::= CopyExpr | MoveExpr | DerefExpr | BangExpr
                       | ReturnExpr | ContinueExpr | BreakExpr | AbortExpr
 private AtomExpr ::=
@@ -937,8 +943,9 @@ private AtomExpr ::=
                     | DotExpr
                     | IndexExpr
                     | PathExpr
-                    | CallExpr
                     | AssertMacroExpr
+                    | MacroCallExpr
+                    | CallExpr
 //                    | (CallExpr | AssertExpr)
 //                    | RefExpr
                     | LambdaExpr
@@ -1110,14 +1117,11 @@ ValueArgument ::= !')' Expr &(',' | ')') {
 }
 private ValueArgument_recover ::= !(<<mslOnly SpecExpr_first>> | Expr_first | ')' | '}' | ';' | ',')
 
-MatchExpr ::= Attr* <<remapContextualKwOnRollback (match MatchArgument MatchBody)>>
-{
-    implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
-}
-MatchArgument ::= '(' Expr ')'
+
+
 
 MatchBody ::= '{' MatchArm_with_recover* '}' { pin = 1 }
-MatchArm ::= Attr* (Pat) MatchArmGuard? '=>' Expr ','?
+MatchArm ::= Attr* (MatchPat) MatchArmGuard? '=>' Expr ','?
 {
     pin = 2
     implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
@@ -1129,7 +1133,7 @@ private MatchArm_with_recover ::= !'}' MatchArm
     pin = 1
     recoverWhile = MatchArm_recover
 }
-private MatchArm_recover ::= !(Pat_first | Attr_first | '}')
+private MatchArm_recover ::= !(Pat_first | Path_first | Attr_first | '}')
 
 IfExpr ::= if Condition AnyBlock ElseBlock? { pin = 1 }
 
@@ -1206,7 +1210,7 @@ private IndexArg ::= '[' Expr ']'
 //    mixin = "org.move.lang.core.psi.ext.MvPathMixin"
 //}
 
-PathExpr ::= PathImpl !('(' | '!')
+PathExpr ::= <<isNotMatchKeyword>> PathImpl !('(' | '!')
 {
     implements = [ "org.sui.lang.core.resolve2.ref.InferenceCachedPathElement" ]
 }
@@ -1267,6 +1271,13 @@ NamedAddress ::= IDENTIFIER
 }
 
 /// Macros
+// General macro call expression: supports vector!, debug!, etc.
+MacroCallExpr ::= PathImpl '!' (ValueArgumentList | VectorLitItems | StructLitFieldsBlock) {
+    pin = 2
+    extends = Expr
+    implements = [ "org.sui.lang.core.psi.ext.MvCallable" ]
+}
+
 AssertMacroExpr ::= <<assertIdent>> '!' ValueArgumentList {
 //    pin = 2
     implements = [ "org.sui.lang.core.psi.ext.MvCallable" ]

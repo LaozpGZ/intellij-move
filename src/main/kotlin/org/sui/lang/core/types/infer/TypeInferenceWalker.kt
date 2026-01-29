@@ -1099,10 +1099,15 @@ class TypeInferenceWalker(
     }
 
     private fun inferMatchExprTy(matchExpr: MvMatchExpr): Ty {
-        val matchingTy = ctx.resolveTypeVarsIfPossible(matchExpr.matchArgument.expr.inferType())
+        val matchingTy = ctx.resolveTypeVarsIfPossible(matchExpr.matchArgument.inferType())
         val arms = matchExpr.arms
         for (arm in arms) {
-            arm.pat.extractBindings(matchingTy)
+            arm.matchPat.pat?.extractBindings(matchingTy)
+            // For PathPat, we might need to process its bindings
+            if (arm.matchPat.pathPat != null) {
+                // Currently PathPat might not have bindings, but we need to handle this case
+                // We might need to add code to process PathPat's bindings
+            }
             arm.expr?.inferType()
             arm.matchArmGuard?.expr?.inferType(TyBool)
         }

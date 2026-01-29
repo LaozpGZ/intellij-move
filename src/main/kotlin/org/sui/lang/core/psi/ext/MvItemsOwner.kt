@@ -39,4 +39,26 @@ val MvModule.innerSpecItems: List<MvItemElement>
     }
 
 val MvItemsOwner.firstItem: MvElement?
-    get() = items().firstOrNull { it !is MvAttr }
+    get() {
+        return when (this) {
+            is MvModule -> {
+                // For modules, find the first valid item (excluding use statements and attributes)
+                // This ensures import optimizer inserts use statements before actual module items
+                items().firstOrNull {
+                    when (it) {
+                        // Skip attributes and use statements
+                        is MvAttr -> false
+                        is MvUseStmt -> false
+                        // Valid items: module items (functions, structs, consts, enums)
+                        is MvFunction, is MvStruct, is MvConst, is MvEnum -> true
+                        // Skip other elements
+                        else -> false
+                    }
+                }
+            }
+            else -> {
+                // For other types of itemsOwner, keep the original behavior
+                items().firstOrNull { it !is MvAttr }
+            }
+        }
+    }

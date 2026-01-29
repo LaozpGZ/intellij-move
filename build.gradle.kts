@@ -67,7 +67,7 @@ version = pluginVersion
 plugins {
     id("java")
     kotlin("jvm") version "1.9.25"
-    id("org.jetbrains.intellij.platform") version "2.0.1"
+    id("org.jetbrains.intellij.platform") version "2.1.0"
     id("org.jetbrains.grammarkit") version "2022.3.2.2"
     id("net.saliman.properties") version "1.5.2"
     id("org.gradle.idea")
@@ -98,6 +98,7 @@ allprojects {
             exclude("org.slf4j")
         }
         implementation("com.github.ajalt.clikt:clikt:3.5.2")
+        implementation("org.apache.commons:commons-text:1.10.0")
         testImplementation("junit:junit:4.13.2")
 
         intellijPlatform {
