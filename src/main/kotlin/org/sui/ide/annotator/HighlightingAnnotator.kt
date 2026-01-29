@@ -60,7 +60,7 @@ class HighlightingAnnotator : MvAnnotatorBase() {
         return when {
             leafType == IDENTIFIER -> highlightIdentifier(parent)
             leafType == HEX_INTEGER_LITERAL -> MvColor.NUMBER
-            parent is MvAssertMacroExpr -> MvColor.MACRO
+            parent is MvAssertMacroExpr || parent is MvMacroCallExpr -> MvColor.MACRO
             parent is MvCopyExpr
                     && element.text == "copy" -> MvColor.KEYWORD
             else -> null
@@ -68,7 +68,7 @@ class HighlightingAnnotator : MvAnnotatorBase() {
     }
 
     private fun highlightIdentifier(element: MvElement): MvColor? {
-        if (element is MvAssertMacroExpr) return MvColor.MACRO
+        if (element is MvAssertMacroExpr || element is MvMacroCallExpr) return MvColor.MACRO
         if (element is MvAbility) return MvColor.ABILITY
         if (element is MvTypeParameter) return MvColor.TYPE_PARAMETER
         if (element is MvItemSpecTypeParameter) return MvColor.TYPE_PARAMETER
