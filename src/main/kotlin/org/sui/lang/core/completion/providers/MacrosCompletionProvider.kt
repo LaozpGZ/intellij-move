@@ -24,6 +24,27 @@ object MacrosCompletionProvider : MvCompletionProvider() {
                     .afterLeaf(PlatformPatterns.psiElement(MvElementTypes.COLON_COLON))
             )
 
+    data class MacroInfo(
+        val name: String,
+        val tailText: String,
+        val typeText: String,
+        val insertText: String = "()"
+    )
+
+    private val macros = listOf(
+        MacroInfo("assert!", "(_: bool, err: u64)", "()"),
+        MacroInfo("vector!", "([_])", "vector<T>"),
+        MacroInfo("debug!", "(_: ...)", "()"),
+        MacroInfo("option!", "(_)", "option<T>"),
+        MacroInfo("result!", "(_, _)", "result<T, E>"),
+        MacroInfo("bcs!", "(_)", "vector<u8>"),
+        MacroInfo("object!", "(_)", "object"),
+        MacroInfo("transfer!", "(_, _)", "()"),
+        MacroInfo("event!", "(_)", "()"),
+        MacroInfo("table!", "(_)", "table<K, V>"),
+        MacroInfo("system!", "(_)", "()"),
+        MacroInfo("vote!", "(_)", "()")
+    )
 
     override fun addCompletions(
         parameters: CompletionParameters,
@@ -35,16 +56,18 @@ object MacrosCompletionProvider : MvCompletionProvider() {
 
         if (parameters.position !== path.referenceNameElement) return
 
-        val lookupElement = LookupElementBuilder
-            .create("assert!")
-            .withTailText("(_: bool, err: u64)")
-            .withTypeText("()")
-            .withInsertHandler { ctx, _ ->
-                val document = ctx.document
-                document.insertString(ctx.selectionEndOffset, "()")
-                EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
-            }
-        result.addElement(PrioritizedLookupElement.withPriority(lookupElement, MACRO_PRIORITY))
+        macros.forEach { macro ->
+            val lookupElement = LookupElementBuilder
+                .create(macro.name)
+                .withTailText(macro.tailText)
+                .withTypeText(macro.typeText)
+                .withInsertHandler { ctx, _ ->
+                    val document = ctx.document
+                    document.insertString(ctx.selectionEndOffset, macro.insertText)
+                    EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
+                }
+            result.addElement(PrioritizedLookupElement.withPriority(lookupElement, MACRO_PRIORITY))
+        }
     }
 
 }
