@@ -101,7 +101,7 @@ class TyLowering {
         for ((param, value) in psiSubstitution.typeSubst.entries) {
             val paramTy = TyTypeParameter(param)
             val valueTy = when (value) {
-                is RsPsiSubstitution.Value.Present -> lowerTy(value.value, msl)
+                is RsPsiSubstitution.Value.Present -> value.value?.let { lowerTy(it, msl) } ?: TyUnknown
                 is RsPsiSubstitution.Value.OptionalAbsent -> paramTy
                 is RsPsiSubstitution.Value.RequiredAbsent -> TyUnknown
             }

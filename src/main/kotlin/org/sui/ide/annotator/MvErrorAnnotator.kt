@@ -53,7 +53,7 @@ class MvErrorAnnotator: MvAnnotatorBase() {
                 val currentModule = callExpr.containingModule ?: return
                 val typeArg = path.typeArguments.singleOrNull() ?: return
 
-                val typeArgTy = typeArg.type.loweredType(false)
+                val typeArgTy = typeArg.type?.loweredType(false) ?: return
                 if (typeArgTy is TyUnknown) return
 
                 when {

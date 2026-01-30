@@ -36,7 +36,7 @@ class PhantomTypeParameterInspection : MvLocalInspectionTool() {
                             val outerTypeParam = outerStruct.typeParameters.getOrNull(i) ?: continue
                             if (outerTypeParam.isPhantom) {
                                 val typeParam =
-                                    typeArg.type.moveReference?.resolve() as? MvTypeParameter ?: continue
+                                    typeArg.type?.moveReference?.resolve() as? MvTypeParameter ?: continue
                                 fieldUsedTypeParams.remove(typeParam)
                             }
                         }

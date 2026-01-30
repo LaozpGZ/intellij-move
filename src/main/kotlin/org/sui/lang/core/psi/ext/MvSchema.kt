@@ -31,7 +31,7 @@ val MvSchema.fieldStmts: List<MvSchemaFieldStmt> get() = this.specBlock?.schemaF
 
 val MvSchema.fieldsAsBindings get() = this.fieldStmts.map { it.patBinding }
 
-val MvIncludeStmt.expr: MvExpr? get() = this.childOfType()
+
 
 abstract class MvSchemaMixin : MvStubbedNamedElementImpl<MvSchemaStub>,
                                MvSchema {

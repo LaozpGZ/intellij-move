@@ -7,4 +7,4 @@ import org.sui.lang.core.psi.MvMatchExpr
 
 val MvMatchExpr.matchArgument: MvExpr get() = childOfType<MvExpr>()!!
 val MvMatchExpr.matchBody: MvMatchBody get() = childOfType<MvMatchBody>()!!
-val MvMatchExpr.arms: List<MvMatchArm> get() = matchBody.matchArmList
+val MvMatchExpr.arms: List<MvMatchArm> get() = matchBody?.matchArmList ?: emptyList()

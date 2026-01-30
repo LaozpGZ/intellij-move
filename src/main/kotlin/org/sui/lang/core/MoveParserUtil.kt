@@ -17,7 +17,7 @@ import org.sui.stdext.makeBitMask
 import kotlin.math.max
 
 enum class FunModifier {
-    VIS, NATIVE, ENTRY, INLINE;
+    VIS, NATIVE, ENTRY, INLINE, MACRO;
 }
 
 @Suppress("UNUSED_PARAMETER")
@@ -137,6 +137,12 @@ object MoveParserUtil : GeneratedParserUtilBase() {
         val result = parser.parse(b, nextLevel)
         b.flags = oldFlags
         return result
+    }
+
+    @JvmStatic
+    fun pathMode(b: PsiBuilder, level: Int, mode: PathParsingMode): Boolean {
+        // 这是一个临时的重载方法，用于解决解析器生成的代码中缺少参数的问题
+        return false
     }
 
     @JvmStatic
@@ -283,6 +289,12 @@ object MoveParserUtil : GeneratedParserUtilBase() {
                     modifiersLeft.remove(FunModifier.INLINE)
                     parsed = true
                 }
+                macroKeyword(b, level) -> {
+                    if (FunModifier.MACRO !in modifiersLeft) return isParsed()
+                    modifiersLeft.remove(FunModifier.MACRO)
+                    // macro alone only should give true for next token fun
+                    parsed = parsed || (b.lookAhead(1) == FUN)
+                }
                 else -> return isParsed()
             }
 
@@ -360,15 +372,69 @@ object MoveParserUtil : GeneratedParserUtilBase() {
     fun enumKeyword(b: PsiBuilder, level: Int): Boolean = contextualKeyword(b, "enum", ENUM_KW)
 
     @JvmStatic
+    fun macroKeyword(b: PsiBuilder, level: Int): Boolean = contextualKeyword(b, "macro", MACRO)
+
+    @JvmStatic
     fun isNotMatchKeyword(b: PsiBuilder, level: Int): Boolean {
         return b.tokenType == IDENTIFIER && b.tokenText != "match"
     }
 
     @JvmStatic
+    fun isNotMatchExpr(b: PsiBuilder, level: Int): Boolean {
+        // 检查是否在 match 表达式的主体中
+        // 向前查找是否有 match 关键字，并且尚未找到匹配的 }
+        var index = -1
+        var braceCount = 0
+        var hasMatchKeyword = false
+        
+        while (true) {
+            val token = b.rawLookup(index)
+            if (token == null) break
+            
+            if (token == WHITE_SPACE || token in MOVE_COMMENTS) {
+                index--
+                continue
+            }
+            
+            if (token == R_BRACE) {
+                braceCount++
+            } else if (token == L_BRACE) {
+                braceCount--
+            } else if (token == MATCH_KW && braceCount >= 0) {
+                hasMatchKeyword = true
+                break
+            }
+            
+            index--
+        }
+        
+        return !hasMatchKeyword
+    }
+    @JvmStatic
+    fun isMatchBody(b: PsiBuilder, level: Int): Boolean {
+        // 检查当前 token 是否是 {，并在块内查找 => 符号
+        var index = 0
+        var braceCount = 0
+        while (true) {
+            val token = b.rawLookup(index)
+            if (token == null) return false
+            if (token == L_BRACE) braceCount++
+            else if (token == R_BRACE) braceCount--
+            if (braceCount < 0) return false
+            if (token == FAT_ARROW && braceCount > 0) return true
+            index++
+        }
+    }
+
+
+
+    @JvmStatic
     fun matchKeyword(b: PsiBuilder, level: Int): Boolean {
-        return if (b.tokenType == IDENTIFIER && b.tokenText == "match") {
-            b.remapCurrentToken(MATCH_KW)
-            b.advanceLexer()  // Advance to the next token
+        return if (b.tokenType == MATCH_KW || (b.tokenType == IDENTIFIER && b.tokenText == "match")) {
+            if (b.tokenType == IDENTIFIER) {
+                b.remapCurrentToken(MATCH_KW)
+            }
+            b.advanceLexer()
             true
         } else {
             false

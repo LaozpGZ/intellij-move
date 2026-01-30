@@ -62,11 +62,11 @@ fun processItemsInScope(
                             if (pat != null) {
                                 if (processor.processAll(elementNs, pat.bindings)) return true
                             }
-                            // For PathPat, we might need to process its bindings
-                            val pathPat = scope.matchPat.pathPat
-                            if (pathPat != null) {
-                                // Currently PathPat might not have bindings, but we need to handle this case
-                                // We might need to add code to process PathPat's bindings
+                            // For PathExpr, we might need to process its bindings
+                            val pathExpr = scope.matchPat.pathExpr
+                            if (pathExpr != null) {
+                                // Currently PathExpr might not have bindings, but we need to handle this case
+                                // We might need to add code to process PathExpr's bindings
                             }
                             continue
                         }

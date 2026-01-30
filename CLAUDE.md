@@ -54,6 +54,8 @@ graph TD
     click H "./src/main/kotlin/org/sui/bytecode/CLAUDE.md" "查看字节码支持模块"
     click I "./src/main/kotlin/org/sui/toml/CLAUDE.md" "查看 TOML 文件支持模块"
 ```
+## Incompatible Changes in IntelliJ Platform and Plugins API 2025.*
+https://plugins.jetbrains.com/docs/intellij/api-changes-list-2025.html#20253
 
 ## 模块索引
 

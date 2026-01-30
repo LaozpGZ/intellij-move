@@ -3,6 +3,14 @@ module 0x1::paths {
         field: u8,
     }
 
+    struct T has copy, drop, store {
+        s: S,
+    }
+
+    struct Gen<T> has copy, drop, store {
+        value: T,
+    }
+
     fun test_simple_path() {
         let s = S { field: 42 };
         assert!(s.field == 42, 0);
@@ -15,19 +23,11 @@ module 0x1::paths {
     }
 
     fun test_chain_path() {
-        struct T has copy, drop, store {
-            s: S,
-        }
-
         let t = T { s: S { field: 42 } };
         assert!(t.s.field == 42, 0);
     }
 
     fun test_generic_path() {
-        struct Gen<T> has copy, drop, store {
-            value: T,
-        }
-
         let g = Gen<u8> { value: 42 };
         assert!(g.value == 42, 0);
     }

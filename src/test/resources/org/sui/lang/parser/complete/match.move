@@ -1,4 +1,4 @@
-module 0x1::match {
+module 0x1::test_match {
     enum Color {
         Red,
         Green,

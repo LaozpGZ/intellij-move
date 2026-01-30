@@ -150,6 +150,8 @@ IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]* | `type`
       "type"           { return TYPE_KW; }
       "`type`"         { return IDENTIFIER; }
       "`for`"          { return IDENTIFIER; }
+      "macro"          { return MACRO; }
+      "match"          { return MATCH_KW; }
 
   {DIEM_ADDRESS}          { return DIEM_ADDRESS; }
   {PLACEHOLDER_ADDRESS}          { return PLACEHOLDER_ADDRESS; }

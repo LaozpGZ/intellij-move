@@ -2,6 +2,7 @@ package org.sui.lang.core.psi.ext
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiReference
 import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
@@ -13,6 +14,11 @@ import org.sui.lang.core.resolve2.ref.MvBindingPatReferenceImpl
 import org.sui.lang.core.types.ty.Mutability
 import javax.swing.Icon
 
+sealed class RsBindingModeKind {
+    data object BindByValue : RsBindingModeKind()
+    class BindByReference(val mutability: Mutability) : RsBindingModeKind()
+}
+
 val MvPatBinding.owner: PsiElement?
     get() = PsiTreeUtil.findFirstParent(this) {
         it is MvLetStmt
@@ -20,15 +26,11 @@ val MvPatBinding.owner: PsiElement?
                 || it is MvSchemaFieldStmt
     }
 
-sealed class RsBindingModeKind {
-    data object BindByValue : RsBindingModeKind()
-    class BindByReference(val mutability: Mutability) : RsBindingModeKind()
-}
-
-//val MvPatBinding.kind get() = RsBindingModeKind.BindByValue
-
 abstract class MvPatBindingMixin(node: ASTNode) : MvMandatoryNameIdentifierOwnerImpl(node),
                                                   MvPatBinding {
+
+    override fun getEnumVariantPat(): MvEnumVariantPat? = null
+    override fun getPatPath(): MvPatPath? = null
 
     // XXX: RsPatBinding is both a name element and a reference element:
     //

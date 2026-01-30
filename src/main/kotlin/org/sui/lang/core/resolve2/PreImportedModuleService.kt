@@ -130,7 +130,7 @@ class PreImportedModuleService(private val project: Project) {
     }
 
     companion object {
-        val PRELOAD_STD_MODULES = setOf("vector", "option")
+        val PRELOAD_STD_MODULES = setOf("vector", "option", "result")
         val PRELOAD_SUI_MODULES = setOf("transfer", "object", "tx_context")
         val PRELOAD_MODULE_ITEMS = setOf("UID", "ID", "TxContext")
 

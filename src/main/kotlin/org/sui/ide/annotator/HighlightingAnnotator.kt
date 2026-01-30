@@ -15,10 +15,10 @@ import org.sui.lang.core.types.ty.TyAdt
 import org.sui.lang.core.types.ty.TyReference
 
 val SUI_BUILTIN_TYPE_IDENTIFIERS = setOf(
-    "transfer", "object", "tx_context", "vector", "option",
-    "UID", "ID", "Option", "TxContext"
+    "transfer", "object", "tx_context", "vector", "option", "result",
+    "UID", "ID", "Option", "Result", "TxContext"
 )
-val PRELOAD_STD_MODULES = setOf("vector", "option")
+val PRELOAD_STD_MODULES = setOf("vector", "option", "result")
 val PRELOAD_SUI_MODULES = setOf("transfer", "object", "tx_context")
 val PRELOAD_MODULE_ITEMS = setOf("UID", "ID", "TxContext")
 

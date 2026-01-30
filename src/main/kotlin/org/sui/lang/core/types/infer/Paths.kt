@@ -22,7 +22,7 @@ fun pathPsiSubst(
     return RsPsiSubstitution(typeSubst)
 }
 
-private fun <Param : Any, P : Any> associateSubst(
+private fun <Param : Any, P : Any?> associateSubst(
     parameters: List<Param>,
     arguments: List<P>?,
     areOptionalArgs: Boolean,

@@ -54,4 +54,9 @@ abstract class MvParsingTestCase(@NonNls dataPath: String) : ParsingTestCase(
             throw RuntimeException(e)
         }
     }
+
+    // Add no-arg doTest method for compatibility
+    open fun doTest() {
+        doTest(true, true)
+    }
 }

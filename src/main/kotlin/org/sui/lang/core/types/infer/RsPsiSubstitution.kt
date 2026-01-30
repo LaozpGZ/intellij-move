@@ -5,7 +5,7 @@ import org.sui.lang.core.psi.MvTypeParameter
 
 /** Similar to [Substitution], but maps PSI to PSI instead of [Ty] to [Ty] */
 class RsPsiSubstitution(
-    val typeSubst: Map<MvTypeParameter, Value<MvType>> = emptyMap(),
+    val typeSubst: Map<MvTypeParameter, Value<MvType?>> = emptyMap(),
 ) {
     sealed class Value<out P> {
         object RequiredAbsent : Value<Nothing>()

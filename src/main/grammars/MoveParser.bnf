@@ -102,6 +102,7 @@
         HAS     = 'has_kw'
         ENTRY     = 'entry_kw'
         INLINE     = 'inline_kw'
+        MACRO     = 'macro_kw'
         FRIEND     = 'friend_kw'
         PACKAGE     = 'package_kw'
         FOR     = 'for_kw'
@@ -217,6 +218,7 @@ private address ::= <<addressKeyword>>
 private has ::= <<hasKeyword>>
 private entry ::= <<entryKeyword>>
 private inline ::= <<inlineKeyword>>
+private macro ::= <<macroKeyword>>
 private schema ::= <<schemaKeyword>>
 
 private reads ::= <<readsKeyword>>
@@ -457,7 +459,7 @@ PublicUseFun ::= 'public'? UseFunFirst PathStart? 'as' IDENTIFIER'.'IDENTIFIER '
     pin=2
 }
 
-fake Function ::= Attr* native? VisibilityModifier? entry? inline?
+fake Function ::= Attr* native? VisibilityModifier? entry? inline? macro?
                     fun? IDENTIFIER? TypeParameterList? FunctionParameterList?
                         ReturnType? (ResourceAccessItemList | AcquiresType)?
                         (';' | CodeBlock)?
@@ -706,30 +708,30 @@ TypeArgument ::= Type
 //       | StructPat
 //        | WildPat
 //        | BindingPat
-//        | EnumVariantPat
+        | EnumVariantPat
 
 Pat ::= PatWild
         | PatTuple
         | PatBinding
         | PatStruct
         | PatConst
+        | PatPath
+        | EnumVariantPat
 
-MatchPat ::= Pat | PathPat
-PathPat ::= PathImpl
-EnumVariantPat ::= PathImpl
+MatchPat ::= Pat | PatPath
 
 PatWild ::= '_'
 WildPat ::= '_'
 
-ConstPat ::= PathImpl
+ConstPat ::= PathImpl !('(' | '!')
 PatConst ::= PathExpr
 
 PatIdent ::= PatBinding
-//EnumVariantPat ::= PathImpl EnumPat? !('{')
-//private EnumPat ::= '(' EnumArgumentList_items? ')' {
-//    pin = 1
-//}
-//private EnumArgumentList_items ::= BindingPat (',' BindingPat)* ','?
+EnumVariantPat ::= PathImpl EnumPat? !('{')
+private EnumPat ::= '(' EnumArgumentList_items? ')' {
+    pin = 1
+}
+private EnumArgumentList_items ::= Pat (',' Pat)* ','?
 
 // XXX(matklad): it is impossible to distinguish between nullary enum variants
 // and identifiers during parsing.
@@ -845,13 +847,27 @@ private ExprStmt_expr ::= ItemSpecBlockExpr | Expr
     recoverWhile = "ExprStmt_recover"
 }
 private ExprStmt_recover ::= !(';' | '}' | <<mslOnly SpecExpr_first>> | Expr_first)
-private Expr_first ::= let | if | while | loop | continue | break | return | spec
-                        | copy | move | abort | match
-//                        | (<<VECTOR_IDENTIFIER>> ('<' | '['))
-                        | IDENTIFIER
-                        | '*' | '&' | '!' | '|' | '{' | '('
-                        | AnyLitToken_first
+private Expr_first ::= <<matchKeyword>>
+                        | let
+                        | if
+                        | while
+                        | loop
+                        | continue
+                        | break
+                        | return
+                        | spec
+                        | copy
+                        | move
+                        | abort
+                        | '*'
+                        | '&'
+                        | '!'
+                        | '|'
+                        | '{'
+                        | '('
                         | (AddressRef '::')
+                        | AnyLitToken_first
+                        | IDENTIFIER
 private SpecExpr_first ::= include | apply | pragma | emits | assume | assert | ensures
                             | axiom | modifies | aborts_if | aborts_with | requires
                             | invariant | choose | decreases | update
@@ -875,8 +891,8 @@ CodeBlock ::= '{' CodeBlock_items '}'
 }
 
 private CodeBlock_items ::= UseStmt*
-                            Stmt*
-                            ExprStmt_expr?
+                            (StructItem | Enum | Const)*
+                            (Stmt | ExprStmt_expr)*
 {
     recoverWhile = "CodeBlock_items_recover"
 }
@@ -905,7 +921,7 @@ Expr ::= MatchExpr
         | UnaryExpr
         | BorrowExpr
         | AtomExpr
-MatchExpr ::= Attr* <<remapContextualKwOnRollback (match Expr MatchBody)>>
+MatchExpr ::= Attr* <<matchKeyword>> Expr MatchBody
 {
     implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
 }
@@ -1036,7 +1052,7 @@ VectorLitItems ::= '[' <<non_empty_comma_sep_items Expr>>? ']'
     pin = 1
 }
 
-StructLitExpr ::= <<includeStmtModeFalse>> PathImpl StructLitFieldsBlock
+StructLitExpr ::= <<includeStmtModeFalse>> <<isNotMatchExpr>> PathImpl StructLitFieldsBlock
 {
     implements = ["org.sui.lang.core.resolve2.ref.InferenceCachedPathElement"]
 }
@@ -1121,11 +1137,12 @@ private ValueArgument_recover ::= !(<<mslOnly SpecExpr_first>> | Expr_first | ')
 
 
 MatchBody ::= '{' MatchArm_with_recover* '}' { pin = 1 }
-MatchArm ::= Attr* (MatchPat) MatchArmGuard? '=>' Expr ','?
+MatchArm ::= Attr* (MatchPat) (MatchArmGuard)? '=>' (CodeBlockExpr | Expr) ','?
 {
     pin = 2
     implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
 }
+
 MatchArmGuard ::= if Expr
 
 private MatchArm_with_recover ::= !'}' MatchArm
@@ -1210,7 +1227,7 @@ private IndexArg ::= '[' Expr ']'
 //    mixin = "org.move.lang.core.psi.ext.MvPathMixin"
 //}
 
-PathExpr ::= <<isNotMatchKeyword>> PathImpl !('(' | '!')
+PathExpr ::= PathImpl !('(' | '!')
 {
     implements = [ "org.sui.lang.core.resolve2.ref.InferenceCachedPathElement" ]
 }
@@ -1759,3 +1776,4 @@ private dotdot ::= <<dotdotImpl>>
 private meta non_empty_comma_sep_items ::= <<param>> ( ',' <<param>> )* ','?
 private meta comma_separated_list ::= <<param>> ( ',' <<param>> )* ','?
 private meta list_element ::= !'>' <<param>> (',' | &'>') { pin = 2 }
+PatPath ::= <<pathMode 'VALUE'>> PathImpl !('(' | '!')

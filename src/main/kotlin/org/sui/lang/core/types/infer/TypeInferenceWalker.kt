@@ -20,6 +20,7 @@ import org.sui.lang.core.resolve2.ref.resolveAliases
 import org.sui.lang.core.resolve2.ref.resolvePathRaw
 import org.sui.lang.core.resolve2.resolveBindingForFieldShorthand
 import org.sui.lang.core.types.ty.*
+import org.sui.lang.core.resolve2.PreImportedModuleService
 import org.sui.lang.core.types.ty.TyReference.Companion.autoborrow
 import org.sui.stdext.RsResult
 import org.sui.stdext.chain
@@ -294,9 +295,17 @@ class TypeInferenceWalker(
     }
 
     private fun inferBoolSpecExpr(expr: MvBoolSpecExpr): Ty {
-        expr.expr?.inferTypeCoercableTo(TyBool)
-        if (expr is MvAbortsIfSpecExpr) {
-            expr.abortsIfWith?.expr?.inferTypeCoercableTo(TyInteger.DEFAULT)
+        when (expr) {
+            is MvAssertSpecExpr -> expr.expr?.inferTypeCoercableTo(TyBool)
+            is MvAssumeSpecExpr -> expr.expr?.inferTypeCoercableTo(TyBool)
+            is MvAxiomSpecExpr -> expr.expr?.inferTypeCoercableTo(TyBool)
+            is MvAbortsIfSpecExpr -> {
+                expr.expr?.inferTypeCoercableTo(TyBool)
+                expr.abortsIfWith?.expr?.inferTypeCoercableTo(TyInteger.DEFAULT)
+            }
+            is MvEnsuresSpecExpr -> expr.expr?.inferTypeCoercableTo(TyBool)
+            is MvRequiresSpecExpr -> expr.expr?.inferTypeCoercableTo(TyBool)
+            is MvInvariantSpecExpr -> expr.expr?.inferTypeCoercableTo(TyBool)
         }
         return TyUnit
     }
@@ -606,13 +615,36 @@ class TypeInferenceWalker(
             "option" -> {
                 // option! accepts one argument
                 if (macroExpr.valueArguments.size == 1) {
-                    macroExpr.valueArguments.first().expr?.inferType()
+                    val argTy = macroExpr.valueArguments.first().expr?.inferType() ?: TyUnknown
+                    // 尝试获取 option 类型并创建 TyAdt 实例
+                    try {
+                        val optionType = getOptionType()
+                        if (optionType != null && argTy != TyUnknown) {
+                            return createTyAdtWithTypeArgs(optionType, listOf(argTy))
+                        }
+                    } catch (e: Exception) {
+                        // 无法获取 option 类型，返回 TyUnknown
+                        println("Error getting option type: ${e.message}")
+                    }
                 }
                 return TyUnknown // specific type needs to be inferred from argument
             }
             "result" -> {
                 // result! accepts two arguments
-                macroExpr.valueArguments.forEach { it.expr?.inferType() }
+                if (macroExpr.valueArguments.size == 2) {
+                    val arg1Ty = macroExpr.valueArguments[0].expr?.inferType() ?: TyUnknown
+                    val arg2Ty = macroExpr.valueArguments[1].expr?.inferType() ?: TyUnknown
+                    // 尝试获取 result 类型并创建 TyAdt 实例
+                    try {
+                        val resultType = getResultType()
+                        if (resultType != null && arg1Ty != TyUnknown && arg2Ty != TyUnknown) {
+                            return createTyAdtWithTypeArgs(resultType, listOf(arg1Ty, arg2Ty))
+                        }
+                    } catch (e: Exception) {
+                        // 无法获取 result 类型，返回 TyUnknown
+                        println("Error getting result type: ${e.message}")
+                    }
+                }
                 return TyUnknown // specific type needs to be inferred from arguments
             }
             "bcs" -> {
@@ -649,6 +681,37 @@ class TypeInferenceWalker(
             }
         }
         return TyUnknown
+    }
+
+    private fun getOptionType(): MvStructOrEnumItemElement? {
+        val service = PreImportedModuleService.getInstance(project)
+        val preImportedModules = service.getPreImportedModules()
+        println("Pre-imported modules: ${preImportedModules.map { it.name }}")
+        val optionModule = preImportedModules.find { it.name == "option" }
+        println("Option module found: ${optionModule?.name}")
+        val optionStructs = optionModule?.structs()
+        println("Option module structs: ${optionStructs?.map { it.name }}")
+        return optionStructs?.firstOrNull { it.name == "Option" }
+    }
+
+    private fun getResultType(): MvStructOrEnumItemElement? {
+        val service = PreImportedModuleService.getInstance(project)
+        val preImportedModules = service.getPreImportedModules()
+        println("Pre-imported modules: ${preImportedModules.map { it.name }}")
+        val resultModule = preImportedModules.find { it.name == "result" }
+        println("Result module found: ${resultModule?.name}")
+        val resultStructs = resultModule?.structs()
+        println("Result module structs: ${resultStructs?.map { it.name }}")
+        return resultStructs?.firstOrNull { it.name == "Result" }
+    }
+
+    private fun createTyAdtWithTypeArgs(item: MvStructOrEnumItemElement, typeArgs: List<Ty>): TyAdt {
+        val substitution = Substitution(
+            item.typeParameters.withIndex().associate { (index, param) ->
+                TyTypeParameter(param) to typeArgs.getOrElse(index) { TyUnknown }
+            }
+        )
+        return TyAdt(item, substitution, typeArgs)
     }
 
     /**
@@ -1180,13 +1243,13 @@ class TypeInferenceWalker(
         val arms = matchExpr.arms
         for (arm in arms) {
             arm.matchPat.pat?.extractBindings(matchingTy)
-            // For PathPat, we might need to process its bindings
-            if (arm.matchPat.pathPat != null) {
-                // Currently PathPat might not have bindings, but we need to handle this case
-                // We might need to add code to process PathPat's bindings
+            // For PathExpr, we might need to process its bindings
+            if (arm.matchPat.pathExpr != null) {
+                // Currently PathExpr might not have bindings, but we need to handle this case
+                // We might need to add code to process PathExpr's bindings
             }
             arm.expr?.inferType()
-            arm.matchArmGuard?.expr?.inferType(TyBool)
+            (arm.matchArmGuard as MvMatchArmGuard?)?.getExpr()?.inferType(TyBool)
         }
         return intersectTypes(arms.mapNotNull { it.expr?.let(ctx::getExprType) })
     }
@@ -1199,11 +1262,11 @@ class TypeInferenceWalker(
                 includeItem.schemaLitList.forEach { inferSchemaLitTy(it) }
             }
             is MvIfElseIncludeItem -> {
-                includeItem.condition.expr?.inferTypeCoercableTo(TyBool)
+                com.intellij.psi.util.PsiTreeUtil.getChildOfType(includeItem.getCondition(), MvExpr::class.java)?.inferTypeCoercableTo(TyBool)
                 includeItem.schemaLitList.forEach { inferSchemaLitTy(it) }
             }
             is MvImplyIncludeItem -> {
-                includeItem.childOfType<MvExpr>()?.inferTypeCoercableTo(TyBool)
+                com.intellij.psi.util.PsiTreeUtil.getChildOfType(includeItem, MvExpr::class.java)?.inferTypeCoercableTo(TyBool)
                 inferSchemaLitTy(includeItem.schemaLit)
             }
             else -> error("unreachable")
