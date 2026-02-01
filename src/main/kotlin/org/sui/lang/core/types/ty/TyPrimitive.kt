@@ -64,9 +64,10 @@ data class TyInteger(val kind: Kind) : TyPrimitive(kind.name.lowercase()) {
         fun fromSuffixedLiteral(literal: PsiElement): TyInteger? =
             Kind.values().find { literal.text.endsWith(it.name) }?.let(::TyInteger)
 
-        val DEFAULT_KIND = Kind.NoPrecision
+        val DEFAULT_KIND = Kind.u64
         val DEFAULT = default()
         val U8 = TyInteger(Kind.u8)
+        val U64 = TyInteger(Kind.u64)
 
         fun default() = TyInteger(DEFAULT_KIND)
     }

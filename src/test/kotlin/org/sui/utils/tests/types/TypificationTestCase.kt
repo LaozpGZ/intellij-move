@@ -103,6 +103,12 @@ abstract class TypificationTestCase : MvTestBase() {
 
         val msl = expr.isMsl()
         val inference = expr.inference(msl) ?: error("No inference owner at the caret position")
+
+        // Debug information
+        println("Expr: ${expr.text}, Type: ${expr.javaClass.simpleName}")
+        println("Expr in exprTypes: ${inference.hasExprType(expr)}")
+        println("ExprTypes: ${inference.getAllExprTypes().map { "${it.key.text} -> ${it.value.text(true)}" }}")
+
         val actualType = inference.getExprType(expr).text(true)
         check(actualType == expectedType) {
             "Type mismatch. Expected $expectedType, found: $actualType"

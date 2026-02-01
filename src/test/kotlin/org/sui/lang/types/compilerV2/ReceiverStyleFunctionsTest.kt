@@ -46,9 +46,9 @@ class ReceiverStyleFunctionsTest : TypificationTestCase() {
             fun main(s: S<u8>) {
                 let a = s.receiver(1);
                 a;
-              //^ integer
+              //^ u64
             }
-        }        
+        }
     """
     )
 }

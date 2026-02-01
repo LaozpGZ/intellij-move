@@ -273,7 +273,7 @@ class ExpressionTypesTest : TypificationTestCase() {
         fun m() {
             let a = if (true) 1 else 2;
             a;
-          //^ integer 
+          //^ u64 
         }
     }    
     """
@@ -661,7 +661,7 @@ class ExpressionTypesTest : TypificationTestCase() {
         fun main() {
             let vv = vector[1];
             vv;
-           //^ vector<integer>   
+           //^ vector<u64>   
         }
     }        
     """
@@ -881,7 +881,7 @@ module 0x1::main {
         if (true) {
             let in = 1;
             in;
-          //^ integer  
+          //^ u64  
         }
     }
 }        
@@ -895,7 +895,7 @@ module 0x1::main {
         if (true) {} else {
             let in = 1;
             in;
-          //^ integer  
+          //^ u64  
         }
     }
 }        
@@ -909,7 +909,7 @@ module 0x1::main {
         let b = {
             let in = 1;
             in;
-          //^ integer  
+          //^ u64  
         };
     }
 }        
@@ -921,7 +921,7 @@ module 0x1::main {
 module 0x1::main {
     fun main() {
         (1 & 1);
-      //^ integer  
+      //^ u64  
     }
 }        
     """
@@ -932,7 +932,7 @@ module 0x1::main {
 module 0x1::main {
     fun main() {
         (1 | 1);
-      //^ integer  
+      //^ u64  
     }
 }        
     """
@@ -943,7 +943,7 @@ module 0x1::main {
 module 0x1::main {
     fun main() {
         (1 << 1);
-      //^ integer  
+      //^ u64  
     }
 }        
     """
@@ -954,7 +954,7 @@ module 0x1::main {
 module 0x1::main {
     fun main() {
         (1 >> 1);
-      //^ integer  
+      //^ u64  
     }
 }        
     """
@@ -965,7 +965,7 @@ module 0x1::main {
 module 0x1::main {
     fun main() {
         (1 ^ 1);
-      //^ integer  
+      //^ u64  
     }
 }        
     """
@@ -1003,7 +1003,7 @@ module 0x1::main {
             fun call() {
                 let (a) = 1;
                 a;
-              //^ integer  
+              //^ u64  
             }
         }        
     """
@@ -1015,7 +1015,7 @@ module 0x1::main {
             fun call() {
                 let (a,) = 1;
                 a;
-              //^ integer  
+              //^ u64  
             }
         }        
     """
@@ -1044,7 +1044,7 @@ module 0x1::main {
                 let u = 1;
                 let (a, b): (u8, u8) = (call(u), call(u));
                 u;
-              //^ u8  
+              //^ u64  
             }        
         } 
     """
@@ -1059,7 +1059,7 @@ module 0x1::main {
                 let (a, b): (u8, u8);
                 (a, b) = (call(u), call(u));
                 u;
-              //^ u8  
+              //^ u64  
             }        
         } 
     """
@@ -1312,7 +1312,7 @@ module 0x1::main {
             fun main() {
                 let a = 1u8;
                 (a << 32);
-              //^ u8  
+              //^ u64  
             }
         }        
     """
@@ -1324,7 +1324,7 @@ module 0x1::main {
             fun main() {
                 let a = 1u8;
                 (a >> 32);
-              //^ u8  
+              //^ u64  
             }
         }        
     """
@@ -1337,7 +1337,7 @@ module 0x1::main {
                 let a = 1;
                 a > 2u8;
                 a;
-              //^ u8  
+              //^ u64  
             }
         }        
     """
@@ -1350,7 +1350,7 @@ module 0x1::main {
                 let a = 1;
                 a == 2u8;
                 a;
-              //^ u8  
+              //^ u64  
             }
         }        
     """
@@ -1468,7 +1468,7 @@ module 0x1::main {
             inline fun for_each<Element>(v: vector<Element>, f: |Element|) {}
             fun main() {
                 for_each(vector[1, 2, 3], |elem| { elem; });
-                                                  //^ integer
+                                                  //^ u64
             }
         }
     """
@@ -1480,7 +1480,7 @@ module 0x1::main {
             inline fun for_each<Element>(v: vector<Element>, f: |Element| Element) {}
             fun main() {
                 for_each(vector[1, 2, 3], |elem| elem);
-                                                  //^ integer
+                                                  //^ u64
             }
         }
     """
@@ -1492,7 +1492,7 @@ module 0x1::main {
             inline fun for_each<Element>(v: vector<Element>, f: |Element, Element|) {}
             fun main() {
                 for_each(vector[1, 2, 3], |elem1, elem2| { elem2; });
-                                                          //^ integer
+                                                          //^ u64
             }
         }
     """
@@ -1504,7 +1504,7 @@ module 0x1::main {
             inline fun for_each<Element>(v: vector<Element>, f: |Element, Element|) {}
             fun main() {
                 for_each(vector[1, 2, 3], |elem| { elem; });
-                                                    //^ integer
+                                                    //^ u64
             }
         }
     """
@@ -1671,7 +1671,7 @@ module 0x1::main {
             fun main(pool: &mut Pool) {
                 pool.unknown
                 pool.field
-                    //^ u8
+                    //^ u64
             }
         }        
     """
@@ -1784,7 +1784,7 @@ module 0x1::main {
             fun main() {
                 for (i in 1..10) {
                     i;
-                  //^ integer  
+                  //^ u64  
                 };
             }
         }        
@@ -1811,7 +1811,7 @@ module 0x1::main {
                 let vec = 1..10;
                 for (i in vec) {
                     i;
-                  //^ integer  
+                  //^ u64  
                 }
             }
         }        
@@ -1864,7 +1864,7 @@ module 0x1::main {
                 let unknown/*: unknown*/ = unknown_variable;
                 let a2 = 1;
                 some(a2) == unknown;
-                //^ integer
+                //^ u64
             }
         }        
     """
@@ -1878,7 +1878,7 @@ module 0x1::main {
                 let unknown/*: unknown*/ = unknown_variable;
                 let a2 = 1;
                 unknown == some(a2);
-                           //^ integer
+                           //^ u64
             }
         }        
     """

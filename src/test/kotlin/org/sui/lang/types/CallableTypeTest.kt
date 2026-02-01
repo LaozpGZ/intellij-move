@@ -23,9 +23,9 @@ class CallableTypeTest : TypificationTestCase() {
             }
             fun main(s: S<u8>) {
                 s.receiver(1);
-                   //^ fn(&S<u8>, integer) -> integer
+                   //^ fn(&S<u8>, u64) -> u64
             }
-        }        
+        }
     """
     )
 

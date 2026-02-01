@@ -3,12 +3,12 @@ package org.sui.lang.types
 import org.sui.utils.tests.types.TypificationTestCase
 
 class PrimitiveTypesTest : TypificationTestCase() {
-    fun `test default int is u8`() = testExpr(
+    fun `test default int is u64`() = testExpr(
         """
             script {
                 fun main() {
                     let a = 1;
-                          //^ integer
+                          //^ u64
                 }
             }
         """
@@ -52,7 +52,7 @@ class PrimitiveTypesTest : TypificationTestCase() {
             script {
                 fun main() {
                     let a = 0x111;
-                          //^ integer
+                          //^ u64
                 }
             }
         """

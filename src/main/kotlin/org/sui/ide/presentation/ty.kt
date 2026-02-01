@@ -103,11 +103,7 @@ private fun render(
             is TyNum -> "num"
             is TySpecBv -> "bv"
             is TyInteger -> {
-                if (ty.kind == TyInteger.DEFAULT_KIND) {
-                    integer
-                } else {
-                    ty.kind.toString()
-                }
+                ty.kind.toString()
             }
             is TyNever -> "<never>"
             else -> error("unreachable")

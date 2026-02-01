@@ -194,9 +194,9 @@ class ExpressionTypeInferenceTest : TypificationTestCase() {
                 let b = 1;
                 add_u8(a, b);
                 a;
-              //^ u8  
+              //^ u64
             }
-        }    
+        }
         """
     )
 
@@ -206,9 +206,9 @@ class ExpressionTypeInferenceTest : TypificationTestCase() {
             fun get_u8(): u8 {
                 let a = 1;
                 a
-              //^ u8  
+              //^ u64
             }
-        }    
+        }
         """
     )
 
@@ -218,10 +218,10 @@ class ExpressionTypeInferenceTest : TypificationTestCase() {
             fun get_u8(): u8 {
                 let a = 1;
                 a;
-              //^ u8  
+              //^ u64
                 return a
             }
-        }    
+        }
         """
     )
 

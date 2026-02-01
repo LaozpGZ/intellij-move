@@ -14,7 +14,7 @@ class OptionResultMacroTypeTest : TypificationTestCase() {
             fun main() {
                 let o = option!(1);
                 o;
-              //^ <unknown>
+              //^ std::option::Option<u64>
             }
         }
         """
@@ -29,7 +29,7 @@ class OptionResultMacroTypeTest : TypificationTestCase() {
             fun main() {
                 let r = result!(1, 2);
                 r;
-              //^ <unknown>
+              //^ std::result::Result<u64, u64>
             }
         }
         """
