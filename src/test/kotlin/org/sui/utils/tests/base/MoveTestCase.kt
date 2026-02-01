@@ -7,6 +7,8 @@ import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import org.sui.lang.core.psi.MvExpr
+import org.sui.lang.core.psi.MvExprStmt
 
 inline fun <reified T : PsiElement> CodeInsightTestFixture.findElementInEditor(marker: String = "^"): T =
     findElementInEditor(T::class.java, marker)
@@ -62,7 +64,15 @@ fun <T : PsiElement> CodeInsightTestFixture.findElementsWithDataAndOffsetInEdito
         val previousLine = LogicalPosition(markerPosition.line - 1, markerPosition.column)
         val elementOffset = this.editor.logicalPositionToOffset(previousLine)
         val elementAtMarker = this.file.findElementAt(elementOffset)!!
-        val element = PsiTreeUtil.getParentOfType(elementAtMarker, psiClass, false)
+        var element = PsiTreeUtil.getParentOfType(elementAtMarker, psiClass, false)
+        // 如果是查找 MvExpr 类型的元素，但找到了 MvExprStmt 类型的元素，则返回 MvExprStmt 的 expr 属性
+        if (element == null && psiClass == MvExpr::class.java) {
+            val exprStmt = PsiTreeUtil.getParentOfType(elementAtMarker, MvExprStmt::class.java, false)
+            if (exprStmt != null) {
+                element = exprStmt.expr as? T
+            }
+        }
+
         if (element != null) {
             triples.add(Triple(element, data, elementOffset))
         } else {

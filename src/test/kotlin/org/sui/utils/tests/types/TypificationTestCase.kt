@@ -9,6 +9,7 @@ import org.sui.lang.core.psi.MvPatBinding
 import org.sui.lang.core.psi.MvElement
 import org.sui.lang.core.psi.MvExpr
 import org.sui.lang.core.psi.MvType
+import org.sui.lang.core.psi.MslOnlyElement
 import org.sui.lang.core.psi.ext.isMsl
 import org.sui.lang.core.types.infer.MvInferenceContextOwner
 import org.sui.lang.core.types.infer.inferExpectedTy
@@ -102,14 +103,35 @@ abstract class TypificationTestCase : MvTestBase() {
         val expectedType = data.trim()
 
         val msl = expr.isMsl()
+        println("-------------------------------")
+        println("Expr: ${expr.text}")
+        println("Expected: $expectedType")
+        println("MSL: $msl")
+
+        // 打印所有祖先
+        var parent: PsiElement? = expr.parent
+        println("Ancestors:")
+        while (parent != null) {
+            println("  ${parent.javaClass.simpleName}")
+            if (parent is MslOnlyElement) {
+                println("  → MSL Only Element!")
+            }
+            parent = parent.parent
+        }
+
         val inference = expr.inference(msl) ?: error("No inference owner at the caret position")
 
         // Debug information
-        println("Expr: ${expr.text}, Type: ${expr.javaClass.simpleName}")
+        println("-------------------------------")
+        println("Expr: ${expr.text}, Type: ${expr.javaClass.simpleName}, HashCode: ${expr.hashCode()}")
+        println("MSL: $msl")
         println("Expr in exprTypes: ${inference.hasExprType(expr)}")
-        println("ExprTypes: ${inference.getAllExprTypes().map { "${it.key.text} -> ${it.value.text(true)}" }}")
+        println("ExprTypes count: ${inference.getAllExprTypes().size}")
+        println("ExprTypes: ${inference.getAllExprTypes().map { "${it.key.text} -> ${it.value.text(true)}, HashCode: ${it.key.hashCode()}" }}")
 
+        // 直接获取表达式的类型
         val actualType = inference.getExprType(expr).text(true)
+
         check(actualType == expectedType) {
             "Type mismatch. Expected $expectedType, found: $actualType"
         }
@@ -137,7 +159,7 @@ abstract class TypificationTestCase : MvTestBase() {
         val notTypifiedExprs = myFixture.file
             .descendantsOfType<MvExpr>().toList()
             .filter { expr ->
-                expr.inference(false)?.hasExprType(expr) == false
+                expr.inference(expr.isMsl())?.hasExprType(expr) == false
             }
         if (notTypifiedExprs.isNotEmpty()) {
             error(

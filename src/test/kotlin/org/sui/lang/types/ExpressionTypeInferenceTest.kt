@@ -206,7 +206,7 @@ class ExpressionTypeInferenceTest : TypificationTestCase() {
             fun get_u8(): u8 {
                 let a = 1;
                 a
-              //^ u64
+              //^ u8
             }
         }
         """
@@ -218,7 +218,7 @@ class ExpressionTypeInferenceTest : TypificationTestCase() {
             fun get_u8(): u8 {
                 let a = 1;
                 a;
-              //^ u64
+              //^ u8
                 return a
             }
         }
@@ -335,9 +335,9 @@ class ExpressionTypeInferenceTest : TypificationTestCase() {
                 let a = 0;
                 let b: u8 = identity(a);
                 a;
-              //^ u8  
+              //^ u64
             }
-        }    
+        }
         """
     )
 
@@ -453,11 +453,11 @@ module 0x1::main {
                 spec {
                     a = a + 1;
                     a;
+                  //^ num
                 };
                 a;
-              //^ integer  
             }
-        }    
+        }
         """
     )
 

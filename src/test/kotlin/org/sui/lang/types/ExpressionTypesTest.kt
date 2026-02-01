@@ -625,9 +625,9 @@ class ExpressionTypesTest : TypificationTestCase() {
                 myint + get_num();
             };
             myint;
-            //^ u8
+            //^ u64
         }
-    }    
+    }
     """
     )
 
@@ -1596,9 +1596,9 @@ module 0x1::main {
             struct S {}
             fun main() {
                 S;
-              //^ <unknown>  
+              //^ ()
             }
-        }        
+        }
     """
     )
 
@@ -1608,9 +1608,9 @@ module 0x1::main {
             spec schema S {}
             fun main() {
                 S;
-              //^ <unknown>  
+              //^ ()
             }
-        }        
+        }
     """
     )
 
@@ -1620,9 +1620,9 @@ module 0x1::main {
             fun call() {}
             fun main() {
                 call;
-              //^ <unknown>  
+              //^ ()
             }
-        }        
+        }
     """
     )
 
