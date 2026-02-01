@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Sui Move Language IntelliJ Plugin 架构文档
 
 ## 项目愿景
@@ -69,6 +73,39 @@ https://plugins.jetbrains.com/docs/intellij/api-changes-list-2025.html#20253
 | 字节码支持 | src/main/kotlin/org/sui/bytecode | 提供 Move 字节码反编译和查看功能 | SuiDecompiler.kt, SuiBytecodeFileType.kt |
 | TOML 文件支持 | src/main/kotlin/org/sui/toml | 支持 Move.toml 文件的解析和补全 | MoveToml.kt, MoveTomlCompletionContributor.kt |
 | 测试框架 | src/test/kotlin/org/sui | 包含所有测试文件，覆盖语法、语义、功能等方面 | LoadMoveProjectsTest.kt, HighlightingAnnotatorTest.kt, FormatterTest.kt |
+
+## 常用命令
+
+### 开发与构建
+
+```bash
+# 构建项目
+./gradlew build
+
+# 运行插件（启动 IntelliJ IDEA 实例）
+./gradlew runIde
+
+# 打包插件
+./gradlew buildPlugin
+
+# 清理构建
+./gradlew clean
+
+# 编译项目
+./gradlew compileKotlin
+
+# 运行测试
+./gradlew test
+
+# 运行单个测试类
+./gradlew test --tests "org.sui.lang.parser.MoveParserTest"
+
+# 运行单个测试方法
+./gradlew test --tests "org.sui.lang.parser.MoveParserTest.testSimpleModule"
+
+# 生成依赖报告
+./gradlew dependencies
+```
 
 ## 运行与开发
 
