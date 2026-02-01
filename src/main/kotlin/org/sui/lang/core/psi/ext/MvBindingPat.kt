@@ -29,8 +29,8 @@ val MvPatBinding.owner: PsiElement?
 abstract class MvPatBindingMixin(node: ASTNode) : MvMandatoryNameIdentifierOwnerImpl(node),
                                                   MvPatBinding {
 
-    override fun getEnumVariantPat(): MvEnumVariantPat? = null
-    override fun getPatPath(): MvPatPath? = null
+    override fun getPatTupleStruct(): MvPatTupleStruct? = null
+    override fun getPatRest(): MvPatRest? = null
 
     // XXX: RsPatBinding is both a name element and a reference element:
     //

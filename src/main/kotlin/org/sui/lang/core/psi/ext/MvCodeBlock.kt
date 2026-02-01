@@ -8,6 +8,7 @@ import org.sui.lang.core.psi.MvElementImpl
 import org.sui.lang.core.psi.MvExpr
 import org.sui.lang.core.psi.MvLetStmt
 import org.sui.lang.core.psi.MvExprStmt
+import org.sui.lang.core.psi.MvItemSpecBlockExpr
 
 val MvCodeBlock.returningExpr: MvExpr? get() = this.expr
 
@@ -19,12 +20,29 @@ abstract class MvCodeBlockMixin(node: ASTNode) : MvElementImpl(node), MvCodeBloc
 
     override val expr: MvExpr?
         get() {
-            // 检查是否有 ExprStmt 类型的语句
-            val exprStmts = this.stmtList.filterIsInstance<MvExprStmt>()
-            if (exprStmts.isNotEmpty()) {
-                return exprStmts.last().expr
+            // Traverse all statements to find the last ExprStmt that is not spec-related
+            var lastExprStmt: MvExprStmt? = null
+            for (stmt in this.stmtList) {
+                if (stmt is MvExprStmt) {
+                    // Check if it's a spec block related expression (using type check instead of text check)
+                    val isSpecBlock = stmt.expr is MvItemSpecBlockExpr
+                    if (!isSpecBlock) {
+                        lastExprStmt = stmt
+                    }
+                }
             }
-            // 否则，返回 null
+            if (lastExprStmt != null) {
+                return lastExprStmt.expr
+            }
+
+            // If no non-spec block ExprStmt is found, check for direct MvExpr type children
+            for (child in this.children) {
+                if (child is MvExpr && child !is MvItemSpecBlockExpr) {
+                    return child
+                }
+            }
+
+            // Otherwise, return null
             return null
         }
 
