@@ -106,7 +106,6 @@ data class InferenceResult(
     fun getExprTypeOrUnknown(expr: MvExpr): Ty = exprTypes[expr] ?: TyUnknown
     fun getExprTypeOrNull(expr: MvExpr): Ty? = exprTypes[expr]
 
-    @TestOnly
     fun getAllExprTypes(): Map<MvExpr, Ty> = exprTypes
 
     fun getExpectedType(expr: MvExpr): Ty = exprExpectedTypes[expr] ?: TyUnknown

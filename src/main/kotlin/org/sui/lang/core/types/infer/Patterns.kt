@@ -14,15 +14,25 @@ fun MvPat.extractBindings(fcx: TypeInferenceWalker, ty: Ty, defBm: RsBindingMode
         is MvPatWild -> fcx.writePatTy(this, ty)
         is MvPatConst -> {
             // fills resolved paths
-            val inferred = fcx.inferType(pathExpr)
-            val resolvedItem = fcx.getResolvedPath(pathExpr.path).singleOrNull { it.isVisible }?.element
-            val expected = when (resolvedItem) {
-                // copied from intellij-rust, don't know what it's about
-                is MvConst -> ty
-                else -> ty.stripReferences(defBm).first
+            when (val expr = this.expr) {
+                is MvPathExpr -> {
+                    val inferred = fcx.inferType(expr)
+                    val resolvedItem = fcx.getResolvedPath(expr.path).singleOrNull { it.isVisible }?.element
+                    val expected = when (resolvedItem) {
+                        // copied from intellij-rust, don't know what it's about
+                        is MvConst -> ty
+                        else -> ty.stripReferences(defBm).first
+                    }
+                    fcx.coerce(expr, inferred, expected)
+                    fcx.writePatTy(this, expected)
+                }
+                is MvLitExpr -> {
+                    val inferred = fcx.inferType(expr)
+                    val expected = ty.stripReferences(defBm).first
+                    fcx.coerce(expr, inferred, expected)
+                    fcx.writePatTy(this, expected)
+                }
             }
-            fcx.coerce(pathExpr, inferred, expected)
-            fcx.writePatTy(this, expected)
         }
         is MvPatBinding -> {
             val resolveVariants = resolvePatBindingRaw(this, expectedType = ty)
