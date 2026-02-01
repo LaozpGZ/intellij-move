@@ -711,27 +711,31 @@ TypeArgument ::= Type
         | EnumVariantPat
 
 Pat ::= PatWild
+        | PatRest
         | PatTuple
         | PatBinding
         | PatStruct
+        | PatTupleStruct
         | PatConst
-        | PatPath
-        | EnumVariantPat
-
-MatchPat ::= Pat | PatPath
 
 PatWild ::= '_'
-WildPat ::= '_'
+PatRest ::= '..'
+PatConst ::= PathExpr | LitExpr
 
-ConstPat ::= PathImpl !('(' | '!')
-PatConst ::= PathExpr
-
-PatIdent ::= PatBinding
-EnumVariantPat ::= PathImpl EnumPat? !('{')
-private EnumPat ::= '(' EnumArgumentList_items? ')' {
-    pin = 1
+PatStruct ::= PathImpl '{' PatField_with_recover* PatRest? '}'
+{
+    implements = [ "org.sui.lang.core.resolve2.ref.InferenceCachedPathElement" ]
 }
-private EnumArgumentList_items ::= Pat (',' Pat)* ','?
+PatTupleStruct ::= PathImpl '(' PatParenListElem_with_recover* ')'
+{
+    implements = [ "org.sui.lang.core.resolve2.ref.InferenceCachedPathElement" ]
+}
+
+private PatParenListElem_with_recover ::= !')' Pat (',' | &')') {
+  pin = 1
+  recoverWhile = PatParenListElem_recover
+}
+private PatParenListElem_recover ::= !(')' | Pat_first)
 
 // XXX(matklad): it is impossible to distinguish between nullary enum variants
 // and identifiers during parsing.
@@ -750,10 +754,8 @@ PatBinding ::=mut? IDENTIFIER !ForbiddenPatBindingLast {
 }
 BindingPat ::= IDENTIFIER !ForbiddenPatBindingLast
 
-//private ForbiddenBindingPatLast ::= '...' | '::' | '..=' | '..' | '<' | '(' | '{' | '!' {
-private ForbiddenPatBindingLast ::= '::' | '<' | '(' | '{' | '!'{
-  consumeTokenMethod = "consumeTokenFast"
-}
+// 允许标识符后面跟 if 关键字，以便支持 match arm 中的 guard 条件
+private ForbiddenPatBindingLast ::= '::' | '<' | '(' | '{' | '!'
 
 TuplePat ::= '(' ParenListElemPat_with_recover* ')'
 PatTuple ::= '(' ParenListElemPat_with_recover* ')'
@@ -842,13 +844,12 @@ LetMslStmt ::= (let post? ) mut? Pat TypeAnnotation? Initializer? ';'
 }
 
 ExprStmt ::= (ExprStmt_expr !('}')) ';' { pin = 1 }
-private ExprStmt_expr ::= ItemSpecBlockExpr | Expr
+private ExprStmt_expr ::= Expr
 {
     recoverWhile = "ExprStmt_recover"
 }
 private ExprStmt_recover ::= !(';' | '}' | <<mslOnly SpecExpr_first>> | Expr_first)
-private Expr_first ::= <<matchKeyword>>
-                        | let
+private Expr_first ::= let
                         | if
                         | while
                         | loop
@@ -892,7 +893,7 @@ CodeBlock ::= '{' CodeBlock_items '}'
 
 private CodeBlock_items ::= UseStmt*
                             (StructItem | Enum | Const)*
-                            (Stmt | ExprStmt_expr)*
+                            (Stmt | ExprStmt_expr | ItemSpecBlockExpr)*
 {
     recoverWhile = "CodeBlock_items_recover"
 }
@@ -902,8 +903,7 @@ private CodeBlock_items_recover ::= !('}' | <<eof>>)
 // Expressions
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // from lowest to highest
-Expr ::= MatchExpr
-        | AssignmentExpr
+Expr ::= AssignmentExpr
         | RangeExpr
         | (ForallQuantExpr | ExistsQuantExpr | ChooseQuantExpr)
         | CastExpr
@@ -921,10 +921,11 @@ Expr ::= MatchExpr
         | UnaryExpr
         | BorrowExpr
         | AtomExpr
-MatchExpr ::= Attr* <<matchKeyword>> Expr MatchBody
+MatchExpr ::= Attr* <<remapContextualKwOnRollback (match MatchArgument MatchBody)>>
 {
     implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
 }
+MatchArgument ::= '(' Expr ')' { pin = 1 }
 
 fake BinaryExpr ::= Expr BinaryOp Expr {
     methods = [
@@ -947,8 +948,7 @@ private MulExpr_items ::= DivBinExpr | MulBinExpr | ModBinExpr
 private AddExpr_items ::= PlusBinExpr | MinusBinExpr
 private LogicalEqExpr_items ::= EqualsBinExpr | NotEqualsBinExpr | LessEqualsBinExpr | LessBinExpr | GreaterEqualsBinExpr | GreaterBinExpr
 
-private ControlFlowExpr_items ::= IfExpr | LoopExpr | WhileExpr | ForExpr
-private MatchExpr_item ::= MatchExpr
+private ControlFlowExpr_items ::= IfExpr | LoopExpr | MatchExpr | WhileExpr | ForExpr
 private UnaryExpr ::= CopyExpr | MoveExpr | DerefExpr | BangExpr
                       | ReturnExpr | ContinueExpr | BreakExpr | AbortExpr
 private AtomExpr ::=
@@ -1043,8 +1043,8 @@ MoveExpr ::= move Expr
 ReturnExpr ::= return Expr?
 
 AbortExpr ::= abort Expr
-BreakExpr ::= break
-ContinueExpr ::= continue
+BreakExpr ::= break (QUOTE_IDENTIFIER)?
+ContinueExpr ::= continue (QUOTE_IDENTIFIER)?
 
 VectorLitExpr ::= <<vectorIdent>> ('<' TypeArgument '>')? VectorLitItems
 VectorLitItems ::= '[' <<non_empty_comma_sep_items Expr>>? ']'
@@ -1137,12 +1137,11 @@ private ValueArgument_recover ::= !(<<mslOnly SpecExpr_first>> | Expr_first | ')
 
 
 MatchBody ::= '{' MatchArm_with_recover* '}' { pin = 1 }
-MatchArm ::= Attr* (MatchPat) (MatchArmGuard)? '=>' (CodeBlockExpr | Expr) ','?
+MatchArm ::= Attr* Pat MatchArmGuard? '=>' Expr ','?
 {
     pin = 2
     implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
 }
-
 MatchArmGuard ::= if Expr
 
 private MatchArm_with_recover ::= !'}' MatchArm
@@ -1152,6 +1151,7 @@ private MatchArm_with_recover ::= !'}' MatchArm
 }
 private MatchArm_recover ::= !(Pat_first | Path_first | Attr_first | '}')
 
+
 IfExpr ::= if Condition AnyBlock ElseBlock? { pin = 1 }
 
 Condition ::= '(' ConditionBody ')' { pin = 1 }
@@ -1160,16 +1160,16 @@ private ConditionBody_recover ::= !')'
 
 ElseBlock ::= else AnyBlock { pin = 1 }
 
-LoopExpr ::= loop AnyBlock {
-    pin = 1
+LoopExpr ::= LabelDecl? loop AnyBlock {
+    pin = 2
     implements = [ "org.sui.lang.core.psi.MvLoopLike" ]
 }
-WhileExpr ::= while Condition AnyBlock {
-    pin = 1
+WhileExpr ::= LabelDecl? while Condition AnyBlock {
+    pin = 2
     implements = [ "org.sui.lang.core.psi.MvLoopLike" ]
 }
-ForExpr ::= for ForIterCondition AnyBlock {
-    pin = 1
+ForExpr ::= LabelDecl? for ForIterCondition AnyBlock {
+    pin = 2
     implements = [ "org.sui.lang.core.psi.MvLoopLike" ]
 }
 ForIterCondition ::= '(' PatBinding in Expr ')' {
@@ -1441,7 +1441,7 @@ Schema ::= Attr* (spec schema) IDENTIFIER TypeParameterList? <<msl SpecCodeBlock
     hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
 }
 
-ItemSpecBlockExpr ::= spec <<msl SpecCodeBlock>> {
+ItemSpecBlockExpr ::= spec <<msl SpecCodeBlock>> ';'? {
     implements = [
         "org.sui.lang.core.psi.ScopeMslOnlyElement"
     ]
