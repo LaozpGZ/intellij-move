@@ -126,6 +126,9 @@ class MvCompletionTestFixture(
     private fun checkByText(code: String, after: String, action: () -> Unit) {
         prepare(code)
         action()
+        val actual = myFixture.file.text
+        println("Actual content: $actual")
+        println("Expected content: ${replaceCaretMarker(after)}")
         myFixture.checkResult(replaceCaretMarker(after))
     }
 

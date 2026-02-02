@@ -44,21 +44,15 @@ class KeywordCompletionContributor: CompletionContributor() {
         extend(
             CompletionType.BASIC,
             module().and(identifierStatementBeginningPattern()),
-            KeywordCompletionProvider(
-                *(VIS_MODIFIERS.remove("public(script)")),
-                *FUNCTION_MODIFIERS,
-                "native",
-                "fun",
-                "struct",
-                "const",
-                "use",
-                "spec",
-                "friend",
-                "enum",
-                "type",
-                "match",
-                "mut"
-            )
+            KeywordCompletionProvider {
+                buildList {
+                    addAll(VIS_MODIFIERS.filter { modifier ->
+                        (modifier == "public(script)" || modifier != "public(package)" || it.moveSettings.enablePublicPackage)
+                    })
+                    addAll(FUNCTION_MODIFIERS)
+                    addAll(listOf("native", "fun", "struct", "const", "use", "spec", "friend", "enum", "type", "match", "mut"))
+                }
+            }
         )
         extend(
             CompletionType.BASIC,
@@ -81,7 +75,14 @@ class KeywordCompletionContributor: CompletionContributor() {
         extend(
             CompletionType.BASIC,
             module().and(identifierStatementBeginningPattern("native")),
-            KeywordCompletionProvider(*VIS_MODIFIERS, "fun", "entry")
+            KeywordCompletionProvider {
+                buildList {
+                    addAll(VIS_MODIFIERS.filter { modifier ->
+                        modifier == "public(script)" || modifier != "public(package)" || it.moveSettings.enablePublicPackage
+                    })
+                    addAll(listOf("fun", "entry", "struct"))
+                }
+            }
         )
         extend(
             CompletionType.BASIC,

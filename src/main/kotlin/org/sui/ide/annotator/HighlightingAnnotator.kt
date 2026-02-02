@@ -77,13 +77,13 @@ class HighlightingAnnotator : MvAnnotatorBase() {
                 element.isInline -> MvColor.INLINE_FUNCTION
                 element.isView -> MvColor.VIEW_FUNCTION
                 element.isEntry -> MvColor.ENTRY_FUNCTION
-                element.selfParam != null -> MvColor.METHOD
+                element.selfParam != null && element.project.moveSettings.enableReceiverStyleFunctions -> MvColor.METHOD
                 else -> MvColor.FUNCTION
             }
         if (element is MvStruct) return MvColor.STRUCT
         if (element is MvNamedFieldDecl) return MvColor.FIELD
         if (element is MvStructDotField) return MvColor.FIELD
-        if (element is MvMethodCall) return MvColor.METHOD_CALL
+        if (element is MvMethodCall && element.project.moveSettings.enableReceiverStyleFunctions) return MvColor.METHOD_CALL
         if (element is MvPatFieldFull) return MvColor.FIELD
         if (element is MvPatField) return MvColor.FIELD
         if (element is MvStructLitField) return MvColor.FIELD

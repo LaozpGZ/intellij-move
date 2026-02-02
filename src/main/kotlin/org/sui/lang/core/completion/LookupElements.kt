@@ -151,8 +151,13 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : 
                     if (completionCtx?.resolutionCtx?.isUseSpeck == true) return
 
                     val isMethodCall = context.getElementOfType<MvMethodOrField>() != null
+                    // 对于 global 函数，不添加类型参数
                     val requiresExplicitTypes =
-                        element.requiresExplicitlyProvidedTypeArguments(completionCtx)
+                        if (element.name == "global") {
+                            false
+                        } else {
+                            element.requiresExplicitlyProvidedTypeArguments(completionCtx)
+                        }
                     if (isMethodCall) {
                         var suffix = ""
                         if (requiresExplicitTypes && !context.alreadyHasColonColon) {

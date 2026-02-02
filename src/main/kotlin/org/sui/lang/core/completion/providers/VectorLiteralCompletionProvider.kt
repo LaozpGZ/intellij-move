@@ -16,14 +16,7 @@ import org.sui.lang.core.psi.MvPath
 
 object VectorLiteralCompletionProvider : MvCompletionProvider() {
     override val elementPattern: ElementPattern<out PsiElement>
-        get() = MvPsiPattern.path()
-            .andNot(MvPsiPattern.pathType())
-            .andNot(MvPsiPattern.schemaLit())
-            .andNot(
-                PlatformPatterns.psiElement()
-                    .afterLeaf(PlatformPatterns.psiElement(MvElementTypes.COLON_COLON))
-            )
-
+        get() = MvPsiPattern.simplePathPattern
 
     override fun addCompletions(
         parameters: CompletionParameters,
@@ -34,6 +27,10 @@ object VectorLiteralCompletionProvider : MvCompletionProvider() {
         val path = maybePath as? MvPath ?: maybePath.parent as MvPath
 
         if (parameters.position !== path.referenceNameElement) return
+
+        // 提供 vector[] 补全，支持部分输入（如 "vect"）
+        val referenceName = path.referenceName ?: return
+        if (!referenceName.startsWith("vect")) return
 
         val lookupElement = LookupElementBuilder
             .create("vector[]")

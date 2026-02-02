@@ -48,9 +48,15 @@ annotation class NamedAddress(val name: String, val value: String)
 
 fun UsefulTestCase.handleCompilerV2Annotations(project: Project) {
     val enabledCompilerV2 = this.findAnnotationInstance<CompilerV2Features>()
-    if (enabledCompilerV2 != null) {
-        // triggers projects refresh
-        project.moveSettings.modifyTemporary(this.testRootDisposable) {
+    // triggers projects refresh
+    project.moveSettings.modifyTemporary(this.testRootDisposable) {
+        // 默认禁用所有编译器 v2 功能
+        it.enableResourceAccessControl = false
+        it.enableReceiverStyleFunctions = false
+        it.enableIndexExpr = false
+        it.enablePublicPackage = false
+
+        if (enabledCompilerV2 != null) {
             for (feature in enabledCompilerV2.features) {
                 when (feature) {
                     RESOURCE_CONTROL -> it.enableResourceAccessControl = true

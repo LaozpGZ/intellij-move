@@ -35,7 +35,7 @@ class CommonCompletionContributor: CompletionContributor() {
         extend(CompletionType.BASIC, VectorLiteralCompletionProvider)
         extend(CompletionType.BASIC, MethodOrFieldCompletionProvider)
 
-//        extend(CompletionType.BASIC, CommonCompletionProvider)
+        extend(CompletionType.BASIC, CommonCompletionProvider)
     }
 
     fun extend(type: CompletionType?, provider: MvCompletionProvider) {

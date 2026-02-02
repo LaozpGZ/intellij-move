@@ -81,13 +81,13 @@ class BuiltInsCompletionTest : CompletionTestCase() {
         spec module {
             globa/*caret*/
         }
-    }    
+    }
     """, """
     module 0x1::M {
         spec module {
-            global</*caret*/>()
+            global(/*caret*/)
         }
-    }    
+    }
     """
     )
 

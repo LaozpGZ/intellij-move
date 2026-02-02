@@ -341,13 +341,13 @@ class HighlightingAnnotatorTest : AnnotatorTestCase(HighlightingAnnotator::class
         """
         module 0x1::m {
             struct S { field: u8 }
-            fun <FUNCTION>receiver</FUNCTION>(<VARIABLE>self</VARIABLE>: S): u8 { 
-                <VARIABLE>self</VARIABLE>.field 
+            fun <FUNCTION>receiver</FUNCTION>(<VARIABLE>self</VARIABLE>: S): u8 {
+                <VARIABLE>self</VARIABLE>.field
             }
             fun main(s: S, <VARIABLE>self</VARIABLE>: u8) {
-                s.<METHOD_CALL>receiver</METHOD_CALL>();
+                s.receiver();
             }
-        }        
+        }
     """
     )
 

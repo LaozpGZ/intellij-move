@@ -33,7 +33,6 @@ object MacrosCompletionProvider : MvCompletionProvider() {
 
     private val macros = listOf(
         MacroInfo("assert!", "(_: bool, err: u64)", "()"),
-        MacroInfo("vector!", "([_])", "vector<T>"),
         MacroInfo("debug!", "(_: ...)", "()"),
         MacroInfo("option!", "(_)", "option<T>"),
         MacroInfo("result!", "(_, _)", "result<T, E>"),

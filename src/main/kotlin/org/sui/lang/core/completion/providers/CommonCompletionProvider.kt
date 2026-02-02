@@ -2,14 +2,24 @@ package org.sui.lang.core.completion.providers
 
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
+import com.intellij.codeInsight.completion.PrioritizedLookupElement
+import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.openapi.editor.EditorModificationUtil
 import com.intellij.patterns.ElementPattern
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiElement
 import com.intellij.util.ProcessingContext
+import com.intellij.openapi.util.TextRange
 import org.jetbrains.annotations.VisibleForTesting
+import org.sui.ide.annotator.BUILTIN_FUNCTIONS
+import org.sui.ide.annotator.SPEC_BUILTIN_FUNCTIONS
 import org.sui.lang.core.completion.CompletionContext
 import org.sui.lang.core.completion.getOriginalOrSelf
 import org.sui.lang.core.completion.safeGetOriginalOrSelf
+import org.sui.lang.core.psi.MvPathType
+import org.sui.lang.core.psi.MvPathExpr
+import org.sui.lang.core.psi.MvDotExpr
+import org.sui.lang.core.psi.MvPath
 import org.sui.lang.core.psi.ext.isMsl
 import org.sui.lang.core.psiElement
 import org.sui.lang.core.resolve.collectCompletionVariants
@@ -31,28 +41,71 @@ object CommonCompletionProvider : MvCompletionProvider() {
         if (position !== element.referenceNameElement) return
 
         val msl = element.isMsl()
-        val expectedTy = getExpectedTypeForEnclosingPathOrDotExpr(element, msl)
-        val resolutionCtx = ResolutionContext(element, true)
 
-//        val completionContext = CompletionContext(
-//            element,
-//            msl,
-//            expectedTy,
-//            resolutionCtx = resolutionCtx,
-//            structAsType,
-//        )
+        // 检查是否在类型位置
+        if (element.parent is MvPathType) return
 
+        // 检查是否在限定路径中（路径有前缀）
+        if (element is MvPath && element.path != null) return
+
+        // 检查是否在脚本中
+        val fileText = element.containingFile.text
+        if (fileText.startsWith("script {")) return
+
+
+        // 检查是否已经包含括号
+        val document = parameters.editor?.document
+        var hasParens = false
+        if (document != null) {
+            val endOffset = position.textRange.endOffset
+            if (endOffset + 2 <= document.textLength) {
+                hasParens = document.getText(TextRange(endOffset, endOffset + 2)) == "()"
+            }
+        }
+
+        // 检查是否在 MSL 范围内
+        if (msl) {
+            // 为 MSL 范围内的代码提供 SPEC_BUILTIN_FUNCTIONS 补全
+            for (functionName in SPEC_BUILTIN_FUNCTIONS) {
+                val lookupElement = LookupElementBuilder
+                    .create(functionName)
+                    .withTypeText("builtin")
+                    .withInsertHandler { ctx, _ ->
+                        if (!hasParens) {
+                            // 对于 global 函数，不添加类型参数
+                            if (functionName == "global") {
+                                ctx.document.insertString(ctx.selectionEndOffset, "()")
+                                EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
+                            } else {
+                                // 其他函数按正常逻辑处理
+                                ctx.document.insertString(ctx.selectionEndOffset, "()")
+                                EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
+                            }
+                        } else {
+                            // 如果已经有括号，将光标移动到括号之间
+                            EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
+                        }
+                    }
+                result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 1000.0))
+            }
+        } else {
+            // 为普通代码提供 BUILTIN_FUNCTIONS 补全
+            for (functionName in BUILTIN_FUNCTIONS) {
+                val lookupElement = LookupElementBuilder
+                    .create(functionName)
+                    .withTypeText("builtin")
+                    .withInsertHandler { ctx, _ ->
+                        if (!hasParens) {
+                            // 自动添加括号
+                            ctx.document.insertString(ctx.selectionEndOffset, "()")
+                            EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
+                        } else {
+                            // 如果已经有括号，将光标移动到括号之间
+                            EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
+                        }
+                    }
+                result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 1000.0))
+            }
+        }
     }
-
-//    @VisibleForTesting
-//    fun addCompletionVariants(
-//        element: MvReferenceElement,
-//        result: CompletionResultSet,
-//        context: CompletionContext,
-//        processedPathNames: MutableSet<String>
-//    ) {
-//        collectCompletionVariants(result, context) {
-//
-//        }
-//    }
 }

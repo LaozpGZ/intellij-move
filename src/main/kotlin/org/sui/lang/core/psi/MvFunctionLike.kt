@@ -135,6 +135,11 @@ val MvFunction.selfSignatureText: String
 
 fun MvFunctionLike.requiresExplicitlyProvidedTypeArguments(completionContext: CompletionContext?): Boolean
     {
+        // 对于 global 函数，不添加类型参数
+        if (this.name == "global") {
+            return false
+        }
+
         val msl = this.isMslOnlyItem
         val callTy = this.declaredType(msl).substitute(this.tyInfers) as TyFunction
 
