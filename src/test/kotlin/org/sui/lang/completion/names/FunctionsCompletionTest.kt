@@ -230,21 +230,32 @@ class FunctionsCompletionTest : CompletionTestCase() {
     """
     )
 
-    fun `test do not insert () if completed before angle brackets`() = doSingleCompletion(
-        """
+    fun `test do not insert () if completed before angle brackets`() {
+        val testCode = """
     module 0x1::M {
         fun m() {
             borrow_global_m/*caret*/<u8>(@0x1);
         }
-    }    
-    """, """
+    }
+    """.trimIndent()
+
+        myFixture.configureByText("main.move", testCode)
+
+        // 打印调试信息
+        val editor = myFixture.editor
+        val document = editor.document
+        val caretOffset = editor.caretModel.offset
+        println("Document text: \"${document.text}\"")
+        println("Caret offset: $caretOffset")
+
+        doSingleCompletion(testCode, """
     module 0x1::M {
         fun m() {
             borrow_global_mut</*caret*/u8>(@0x1);
         }
-    }    
-    """
-    )
+    }
+    """)
+    }
 
     fun `test no assert completion from module`() = checkNoCompletion(
         """

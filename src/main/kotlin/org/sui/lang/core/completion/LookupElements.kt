@@ -95,7 +95,7 @@ val InsertionContext.alreadyHasSpace: Boolean
     get() = nextCharIs(' ')
 
 val InsertionContext.alreadyHasAngleBrackets: Boolean
-    get() = nextCharIs('<')
+    get() = document.charsSequence.indexOfSkippingSpaceAndComments('<', tailOffset) != null
 
 fun InsertionContext.nextCharIs(c: Char): Boolean =
     nextCharIs(c, 0)
@@ -108,6 +108,50 @@ private fun CharSequence.indexOfSkippingSpace(c: Char, startIndex: Int): Int? {
         val currentChar = this[i]
         if (c == currentChar) return i
         if (currentChar != ' ' && currentChar != '\t') return null
+    }
+    return null
+}
+
+private fun CharSequence.indexOfSkippingSpaceAndComments(c: Char, startIndex: Int): Int? {
+    var i = startIndex
+    while (i < this.length) {
+        val currentChar = this[i]
+        when (currentChar) {
+            ' ' , '\t', '\n', '\r' -> {
+                // 跳过空格和制表符
+                i++
+            }
+            '/' -> {
+                // 跳过注释
+                if (i + 1 < this.length && this[i + 1] == '*') {
+                    // 跳过 /* */ 注释
+                    i += 2
+                    while (i < this.length && !(this[i] == '*' && i + 1 < this.length && this[i + 1] == '/')) {
+                        i++
+                    }
+                    if (i < this.length) {
+                        i += 2 // 跳过 */
+                    }
+                } else if (i + 1 < this.length && this[i + 1] == '/') {
+                    // 跳过 // 注释
+                    i += 2
+                    while (i < this.length && this[i] != '\n' && this[i] != '\r') {
+                        i++
+                    }
+                } else {
+                    // 不是注释，返回 null
+                    return null
+                }
+            }
+            else -> {
+                if (currentChar == c) {
+                    return i
+                } else {
+                    // 遇到了不是空格、制表符或注释的字符，返回 null
+                    return null
+                }
+            }
+        }
     }
     return null
 }
@@ -176,12 +220,19 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : 
                         EditorModificationUtil.moveCaretRelatively(context.editor, caretShift)
                     } else {
                         var suffix = ""
-                        if (requiresExplicitTypes && !context.alreadyHasAngleBrackets) {
+
+                        // 检查后面是否紧跟 < 字符
+                        val hasFollowingAngleBracket = context.alreadyHasAngleBrackets
+
+                        if (requiresExplicitTypes && !hasFollowingAngleBracket) {
                             suffix += "<>"
                         }
-                        if (!context.alreadyHasAngleBrackets && !context.alreadyHasCallParens) {
+
+                        // 对于任何函数，如果后面紧跟 < 字符，则不添加 ()
+                        if (!hasFollowingAngleBracket && !context.alreadyHasCallParens) {
                             suffix += "()"
                         }
+
                         val caretShift = when {
                             requiresExplicitTypes -> 1
                             element.parameters.isNotEmpty() -> 1

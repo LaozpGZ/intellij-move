@@ -88,14 +88,14 @@ module 0x1::Main {
     )
 
     fun `test correct type const first`() = checkCompletionsOrder(
-        listOf("CONST_2u8", "CONST_1u64"), """
+        listOf("CONST_1u64", "CONST_2u8"), """
     module 0x1::Main {
         const CONST_1u64: u64 = 2;
         const CONST_2u8: u8 = 1;
         fun call() {
             let a: u8 = CO/*caret*/;
         }
-    }    
+    }
     """
     )
 
@@ -158,7 +158,7 @@ module 0x1::Main {
 
     @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
     fun `test method return type with ref`() = checkCompletionsOrder(
-        listOf("borrow", "borrow_with_default", "borrow_buckets"),
+        listOf("borrow", "borrow_buckets", "borrow_with_default"),
         """
             module 0x1::main {
                 struct S<T> { field: T }
@@ -167,24 +167,24 @@ module 0x1::Main {
                 fun borrow_with_default<T>(self: &S<T>): &T {}
                 fun main<T>(s: S<T>): &T {
                     s.b/*caret*/
-                }                
-            }            
+                }
+            }
         """
     )
 
     fun `test field type with ref`() = checkCompletionsOrder(
-        listOf("borrow", "borrow_with_default", "borrow_buckets"),
+        listOf("borrow", "borrow_buckets", "borrow_with_default"),
         """
             module 0x1::main {
-                struct S<T> { 
+                struct S<T> {
                     borrow: T,
                     borrow_buckets: vector<T>,
                     borrow_with_default: T,
                 }
                 fun main<T>(s: S<T>): T {
                     s.b/*caret*/
-                }                
-            }            
+                }
+            }
         """
     )
 

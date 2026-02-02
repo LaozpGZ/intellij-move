@@ -34,8 +34,42 @@ interface MvQualNamedElement : MvNamedElement {
 
 val MvNamedElement.completionPriority
     get() = when {
+        isLocal -> LOCAL_ITEM_PRIORITY
         this is MvFunction && this.name in BUILTIN_FUNCTIONS -> BUILTIN_ITEM_PRIORITY
-        else -> LOCAL_ITEM_PRIORITY
+        else -> 0.0 // 默认优先级
+    }
+
+private val MvNamedElement.isLocal: Boolean
+    get() {
+        return when (this) {
+            is MvPatBinding -> true
+            is MvFunction -> {
+                var parent = this.parent
+                while (parent != null) {
+                    if (parent is MvFunction && parent !== this) {
+                        return true
+                    }
+                    if (parent is MvModule) {
+                        // 同一模块中的函数也被视为本地函数
+                        return true
+                    }
+                    parent = parent.parent
+                }
+                false
+            }
+            // 同一模块中的常量也被视为本地常量
+            is MvConst -> {
+                var parent = this.parent
+                while (parent != null) {
+                    if (parent is MvModule) {
+                        return true
+                    }
+                    parent = parent.parent
+                }
+                false
+            }
+            else -> false
+        }
     }
 
 fun MvNamedElement.searchReferences(): Query<PsiReference> =

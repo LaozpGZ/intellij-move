@@ -69,12 +69,7 @@ class MvErrorAnnotator: MvAnnotatorBase() {
                 val itemModule = typeArgTy.declaringModule() ?: return
                 if (currentModule != itemModule) {
                     val itemModuleName = itemModule.fullname() ?: return
-                    var moduleQualTypeName = typeArgTy.fullname()
-                    if (moduleQualTypeName.split("::").size == 3) {
-                        // fq name
-                        moduleQualTypeName =
-                            moduleQualTypeName.split("::").drop(1).joinToString("::")
-                    }
+                    val moduleQualTypeName = typeArgTy.fullname()
                     Diagnostic.StorageAccessError.WrongModule(path, itemModuleName, moduleQualTypeName)
                         .addToHolder(moveHolder)
                 }
@@ -170,7 +165,6 @@ class MvErrorAnnotator: MvAnnotatorBase() {
     }
 
     private fun checkStruct(holder: MvAnnotationHolder, struct: MvStruct) {
-        checkStructVisibility(holder, struct)
         checkStructDuplicates(holder, struct)
     }
 
@@ -384,14 +378,6 @@ private fun checkDuplicates(
         .addToHolder(holder)
 }
 
-private fun checkStructVisibility(holder: MvAnnotationHolder, struct: MvStruct) {
-    // 检查struct是否有public关键字
-    if (!struct.isPublic) {
-        // 如果没有public关键字，创建一个错误注解
-        val identifier = struct.nameIdentifier ?: struct
-        holder.createErrorAnnotation(identifier, "Struct definition must be public")
-    }
-}
 
 private fun checkFunctionDuplicates(
     holder: MvAnnotationHolder,

@@ -127,7 +127,6 @@ class MvCompletionTestFixture(
         prepare(code)
         action()
         val actual = myFixture.file.text
-        println("Actual content: $actual")
         println("Expected content: ${replaceCaretMarker(after)}")
         myFixture.checkResult(replaceCaretMarker(after))
     }

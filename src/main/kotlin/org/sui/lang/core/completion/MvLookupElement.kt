@@ -50,6 +50,11 @@ data class LookupElementProperties(
     val isCompatibleWithContext: Boolean = false,
 
     val typeHasAllRequiredAbilities: Boolean = false,
+
+    /**
+     * `true` if the element is declared locally in the current function or block
+     */
+    val isLocal: Boolean = false,
 )
 
 fun getLookupElementProperties(
@@ -82,6 +87,45 @@ fun getLookupElementProperties(
         props = props.copy(
             isReturnTypeConformsToExpectedType = isCompat
         )
+
+        // 调试日志
+        println("DEBUG: Element=${element.name}, ExpectedType=${expectedTy}, ItemType=${itemTy}, IsCompat=${isCompat}")
     }
-    return props
+
+    // 判断元素是否是本地元素
+    val isLocalResult = when (element) {
+        is MvPatBinding -> {
+            // 变量绑定通常是本地元素
+            true
+        }
+        is MvFunction -> {
+            // 判断函数是否是本地函数（在其他函数内部声明）
+            var parent = element.parent
+            while (parent != null) {
+                if (parent is MvFunction && parent !== element) {
+                    return props.copy(isLocal = true)
+                }
+                if (parent is MvModule) {
+                    // 如果函数直接在模块级别声明，则不是本地函数
+                    break
+                }
+                parent = parent.parent
+            }
+            false
+        }
+        is MvConst -> {
+            // 同一模块中的常量也被视为本地常量
+            var parent = element.parent
+            while (parent != null) {
+                if (parent is MvModule) {
+                    return props.copy(isLocal = true)
+                }
+                parent = parent.parent
+            }
+            false
+        }
+        else -> false
+    }
+
+    return props.copy(isLocal = isLocalResult)
 }

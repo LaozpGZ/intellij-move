@@ -140,6 +140,14 @@ fun MvFunctionLike.requiresExplicitlyProvidedTypeArguments(completionContext: Co
             return false
         }
 
+        // 对于 storage 相关的 builtin 函数，需要添加类型参数
+        if (this.name?.startsWith("borrow_global") == true ||
+            this.name?.startsWith("exists") == true ||
+            this.name?.startsWith("move_from") == true ||
+            this.name?.startsWith("move_to") == true) {
+            return true
+        }
+
         val msl = this.isMslOnlyItem
         val callTy = this.declaredType(msl).substitute(this.tyInfers) as TyFunction
 

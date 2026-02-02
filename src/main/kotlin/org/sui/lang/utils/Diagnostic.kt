@@ -101,8 +101,7 @@ sealed class Diagnostic(
             override fun prepare(): PreparedAnnotation {
                 return PreparedAnnotation(
                     ERROR,
-                    "Invalid operation: storage operation on type `$typeName` can only be done " +
-                            "within the defining module `$correctModuleName`",
+                    "The type '$typeName' was not declared in the current module. Global storage access is internal to the module",
                 )
             }
         }
