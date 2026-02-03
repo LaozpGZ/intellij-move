@@ -65,7 +65,7 @@ fun <T : PsiElement> CodeInsightTestFixture.findElementsWithDataAndOffsetInEdito
         val elementOffset = this.editor.logicalPositionToOffset(previousLine)
         val elementAtMarker = this.file.findElementAt(elementOffset)!!
         var element = PsiTreeUtil.getParentOfType(elementAtMarker, psiClass, false)
-        // 如果是查找 MvExpr 类型的元素，但找到了 MvExprStmt 类型的元素，则返回 MvExprStmt 的 expr 属性
+
         if (element == null && psiClass == MvExpr::class.java) {
             val exprStmt = PsiTreeUtil.getParentOfType(elementAtMarker, MvExprStmt::class.java, false)
             if (exprStmt != null) {

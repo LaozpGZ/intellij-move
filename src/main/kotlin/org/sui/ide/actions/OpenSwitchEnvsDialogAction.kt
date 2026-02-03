@@ -49,7 +49,7 @@ class OpenSwitchEnvsDialogAction : AnAction() {
 
         try {
             ProgressManager.getInstance().runProcessWithProgressSynchronously({
-                future.get(6, TimeUnit.SECONDS) // 设置超时时间为60秒
+                future.get(6, TimeUnit.SECONDS)
             }, "Processing", true, project)
         } catch (e: TimeoutException) {
             future.cancel(true)

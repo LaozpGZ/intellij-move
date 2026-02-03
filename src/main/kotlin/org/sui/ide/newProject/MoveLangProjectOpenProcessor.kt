@@ -22,27 +22,27 @@ class MoveLangProjectOpenProcessor : ProjectOpenProcessor() {
         return canBeOpened
     }
 
-    override fun doOpenProject(
+    override suspend fun openProjectAsync(
         virtualFile: VirtualFile,
         projectToClose: Project?,
         forceOpenInNewFrame: Boolean,
     ): Project? {
         val platformOpenProcessor = PlatformProjectOpenProcessor.getInstance()
-        val basedir = if (virtualFile.isDirectory) virtualFile else virtualFile.parent
-        return platformOpenProcessor.doOpenProject(basedir, projectToClose, forceOpenInNewFrame)
-            ?.also { project ->
-                @Suppress("DEPRECATION")
-                StartupManager.getInstance(project)
-                    .runWhenProjectIsInitialized(object : DumbAwareRunnable {
-                        override fun run() {
-                            ProjectInitializationSteps.createDefaultCompileConfigurationIfNotExists(project)
-                            // NOTE:
-                            // this cannot be moved to a ProjectActivity, as Move.toml files
-                            // are not created by the time those activities are executed
-                            ProjectInitializationSteps.openMoveTomlInEditor(project)
+        val basedir = if (virtualFile.isDirectory) virtualFile else (virtualFile.parent ?: virtualFile)
+        val project = platformOpenProcessor.openProjectAsync(basedir, projectToClose, forceOpenInNewFrame)
+        if (project != null) {
+            @Suppress("DEPRECATION")
+            StartupManager.getInstance(project)
+                .runWhenProjectIsInitialized(object : DumbAwareRunnable {
+                    override fun run() {
+                        ProjectInitializationSteps.createDefaultCompileConfigurationIfNotExists(project)
+                        // NOTE:
+                        // this cannot be moved to a ProjectActivity, as Move.toml files
+                        // are not created by the time those activities are executed
+                        ProjectInitializationSteps.openMoveTomlInEditor(project)
                     }
-                    })
-            }
+                })
+        }
+        return project
     }
 }
-

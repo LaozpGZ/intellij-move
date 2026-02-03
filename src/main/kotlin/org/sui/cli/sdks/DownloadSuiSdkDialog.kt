@@ -23,7 +23,7 @@ class DownloadSuiSdkDialog(val project: Project?) : DialogWrapper(project, true)
     )
     val networkOptions = arrayOf("mainnet", "testnet", "devnet")
     val networkComboBox = JComboBox<String>(DefaultComboBoxModel(networkOptions)).apply {
-        selectedItem = "mainnet" // 假设settings.state.network已经包含了当前选择的网络
+        selectedItem = "mainnet"
     }
 
     init {

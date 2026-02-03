@@ -13,7 +13,7 @@ data class SuiSdk(val sdksDir: String, val version: String, val network: String)
 
     val githubArchiveFileName: String
         get() {
-            // 如果是mac系统，判断当前处理器架构是arm还是x86
+
             val arch = getMacProcessorArchitecture()
             return "sui-$network-v$version-${PluginPathManager.getCurrentOS()}-${arch}.tgz"
         }

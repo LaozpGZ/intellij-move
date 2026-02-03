@@ -31,7 +31,7 @@ class PrintPsiTreeTest : MvProjectTestBase() {
         println("Function body PSI tree:")
         callFunction.codeBlock?.let { printPsiTree(it, 0) }
 
-        // 查找表达式
+
         println("\nAll MvExpr elements in file:")
         val allExprs = PsiTreeUtil.findChildrenOfType(psiFile, MvExpr::class.java)
         allExprs.forEach { expr ->

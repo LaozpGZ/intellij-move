@@ -75,7 +75,7 @@ HEX_INTEGER_LITERAL=0x[0-9a-zA-Z_]*
 HEX_STRING_LITERAL=x\" ( [0-9a-zA-Z]* ) (\")?
 BYTE_STRING_LITERAL=b\" ( [^\\\"\n] | \\[^] )* (\")?
 
-IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]* | `type`
+IDENTIFIER=[$]?[_a-zA-Z][_a-zA-Z0-9]* | `type`
 
 %%
 <YYINITIAL> {

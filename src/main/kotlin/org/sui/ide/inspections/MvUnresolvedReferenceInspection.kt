@@ -157,7 +157,7 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
                 val candidates = AutoImportFix.findApplicableContext(referenceElement)?.candidates.orEmpty()
                 if (candidates.isNotEmpty()) AutoImportFix(referenceElement) else null
             }
-            // 检查是否应该忽略没有快速修复的未解析引用
+
             if (ignoreWithoutQuickFix && fix == null) {
                 return
             }

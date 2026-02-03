@@ -118,28 +118,27 @@ private fun CharSequence.indexOfSkippingSpaceAndComments(c: Char, startIndex: In
         val currentChar = this[i]
         when (currentChar) {
             ' ' , '\t', '\n', '\r' -> {
-                // 跳过空格和制表符
+
                 i++
             }
             '/' -> {
-                // 跳过注释
+
                 if (i + 1 < this.length && this[i + 1] == '*') {
-                    // 跳过 /* */ 注释
                     i += 2
                     while (i < this.length && !(this[i] == '*' && i + 1 < this.length && this[i + 1] == '/')) {
                         i++
                     }
                     if (i < this.length) {
-                        i += 2 // 跳过 */
+                        i += 2
                     }
                 } else if (i + 1 < this.length && this[i + 1] == '/') {
-                    // 跳过 // 注释
+
                     i += 2
                     while (i < this.length && this[i] != '\n' && this[i] != '\r') {
                         i++
                     }
                 } else {
-                    // 不是注释，返回 null
+
                     return null
                 }
             }
@@ -147,7 +146,7 @@ private fun CharSequence.indexOfSkippingSpaceAndComments(c: Char, startIndex: In
                 if (currentChar == c) {
                     return i
                 } else {
-                    // 遇到了不是空格、制表符或注释的字符，返回 null
+
                     return null
                 }
             }
@@ -185,7 +184,7 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : 
         val document = context.document
         val editor = context.editor
 
-        // 在文档修改前禁用高亮更新
+
         editor.markupModel.removeAllHighlighters()
 
         try {
@@ -195,7 +194,7 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : 
                     if (completionCtx?.resolutionCtx?.isUseSpeck == true) return
 
                     val isMethodCall = context.getElementOfType<MvMethodOrField>() != null
-                    // 对于 global 函数，不添加类型参数
+
                     val requiresExplicitTypes =
                         if (element.name == "global") {
                             false
@@ -221,14 +220,14 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : 
                     } else {
                         var suffix = ""
 
-                        // 检查后面是否紧跟 < 字符
+
                         val hasFollowingAngleBracket = context.alreadyHasAngleBrackets
 
                         if (requiresExplicitTypes && !hasFollowingAngleBracket) {
                             suffix += "<>"
                         }
 
-                        // 对于任何函数，如果后面紧跟 < 字符，则不添加 ()
+
                         if (!hasFollowingAngleBracket && !context.alreadyHasCallParens) {
                             suffix += "()"
                         }

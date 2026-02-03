@@ -88,25 +88,25 @@ fun getLookupElementProperties(
             isReturnTypeConformsToExpectedType = isCompat
         )
 
-        // 调试日志
+
         println("DEBUG: Element=${element.name}, ExpectedType=${expectedTy}, ItemType=${itemTy}, IsCompat=${isCompat}")
     }
 
-    // 判断元素是否是本地元素
+
     val isLocalResult = when (element) {
         is MvPatBinding -> {
-            // 变量绑定通常是本地元素
+
             true
         }
         is MvFunction -> {
-            // 判断函数是否是本地函数（在其他函数内部声明）
+
             var parent = element.parent
             while (parent != null) {
                 if (parent is MvFunction && parent !== element) {
                     return props.copy(isLocal = true)
                 }
                 if (parent is MvModule) {
-                    // 如果函数直接在模块级别声明，则不是本地函数
+
                     break
                 }
                 parent = parent.parent
@@ -114,7 +114,7 @@ fun getLookupElementProperties(
             false
         }
         is MvConst -> {
-            // 同一模块中的常量也被视为本地常量
+
             var parent = element.parent
             while (parent != null) {
                 if (parent is MvModule) {

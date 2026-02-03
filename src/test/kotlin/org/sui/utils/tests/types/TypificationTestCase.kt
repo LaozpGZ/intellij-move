@@ -108,7 +108,7 @@ abstract class TypificationTestCase : MvTestBase() {
         println("Expected: $expectedType")
         println("MSL: $msl")
 
-        // 打印所有祖先
+
         var parent: PsiElement? = expr.parent
         println("Ancestors:")
         while (parent != null) {
@@ -129,7 +129,7 @@ abstract class TypificationTestCase : MvTestBase() {
         println("ExprTypes count: ${inference.getAllExprTypes().size}")
         println("ExprTypes: ${inference.getAllExprTypes().map { "${it.key.text} -> ${it.value.text(true)}, HashCode: ${it.key.hashCode()}" }}")
 
-        // 直接获取表达式的类型
+
         val actualType = inference.getExprType(expr).text(true)
 
         check(actualType == expectedType) {

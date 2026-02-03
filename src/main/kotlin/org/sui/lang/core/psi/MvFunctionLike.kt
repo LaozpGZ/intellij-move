@@ -135,12 +135,12 @@ val MvFunction.selfSignatureText: String
 
 fun MvFunctionLike.requiresExplicitlyProvidedTypeArguments(completionContext: CompletionContext?): Boolean
     {
-        // 对于 global 函数，不添加类型参数
+
         if (this.name == "global") {
             return false
         }
 
-        // 对于 storage 相关的 builtin 函数，需要添加类型参数
+
         if (this.name?.startsWith("borrow_global") == true ||
             this.name?.startsWith("exists") == true ||
             this.name?.startsWith("move_from") == true ||

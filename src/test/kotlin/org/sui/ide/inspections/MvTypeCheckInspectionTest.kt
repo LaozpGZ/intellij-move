@@ -274,9 +274,9 @@ module 0x1::M {
         """
     module 0x1::M {
         fun m() {
-            if (true) {1} else {<error descr="Incompatible type 'bool', expected 'integer'">true</error>};
+            if (true) {1} else {<error descr="Incompatible type 'bool', expected 'u64'">true</error>};
         }
-    }    
+    }
     """
     )
 

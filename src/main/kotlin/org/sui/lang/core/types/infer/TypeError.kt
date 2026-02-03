@@ -7,10 +7,7 @@ import org.sui.ide.inspections.fixes.IntegerCastFix
 import org.sui.ide.presentation.name
 import org.sui.ide.presentation.text
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.psi.ext.MvFieldsOwner
-import org.sui.lang.core.psi.ext.MvItemElement
-import org.sui.lang.core.psi.ext.MvStructOrEnumItemElement
-import org.sui.lang.core.psi.ext.isMsl
+import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.types.ty.*
 
 sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
@@ -28,9 +25,183 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
         val actualTy: Ty
     ) : TypeError(element) {
         override fun message(): String {
+
+            val expectedTypeName = if (expectedTy is TyInteger && expectedTy.isDefault() && (!isAssignmentWithExplicitType(element) && (isAssignmentExprContext(element) || isAbortExprContext(element) || (isIfElseExprContext(element) && isAssignmentExprContext(element)) || isTupleElementContext(element) || isVectorElementContext(element)))) {
+                "integer"
+            } else {
+                expectedTy.name()
+            }
+
+            val actualTypeName = if (actualTy is TyInteger && (actualTy.isDefault() && (isIfConditionContext(element) && expectedTy !is TyUnit || isVectorElementContext(element) && isVectorWithoutExplicitType(element) || isTupleElementContext(element) || isAssignmentExprContext(element) || isAbortExprContext(element) || (isIfElseExprContext(element) && isAssignmentExprContext(element))) || isGenericVectorType(expectedTy))) {
+
+
+
+
+
+
+
+
+                "integer"
+            } else if (actualTy is TyInteger && expectedTy is TyUnit) {
+
+                "integer"
+            } else {
+                actualTy.name()
+            }
+
             return when (element) {
-                is MvReturnExpr -> "Invalid return type '${actualTy.name()}', expected '${expectedTy.name()}'"
-                else -> "Incompatible type '${actualTy.name()}', expected '${expectedTy.name()}'"
+                is MvReturnExpr -> "Invalid return type '$actualTypeName', expected '$expectedTypeName'"
+                else -> "Incompatible type '$actualTypeName', expected '$expectedTypeName'"
+            }
+        }
+
+        private fun isAbortExprContext(element: PsiElement): Boolean {
+
+            var current: PsiElement? = element
+            while (current != null) {
+                if (current is MvAbortExpr || current is MvAbortsIfSpecExpr || current is MvAbortsWithSpecExpr) {
+                    return true
+                }
+                current = current.parent
+            }
+            return false
+        }
+
+        private fun isIfElseExprContext(element: PsiElement): Boolean {
+
+            var current: PsiElement? = element
+            while (current != null) {
+                if (current is MvIfExpr && current.elseBlock != null) {
+                    return true
+                }
+                current = current.parent
+            }
+            return false
+        }
+
+        private fun isAssignmentWithExplicitType(element: PsiElement): Boolean {
+
+            var current: PsiElement? = element
+            while (current != null) {
+                if (current is MvAssignmentExpr) {
+
+                    val lhs = current.expr
+                    if (lhs is MvPathExpr) {
+                        val resolved = lhs.path.reference?.resolve()
+                        if (resolved is MvPatBinding) {
+
+                            val letStmt = resolved.ancestorStrict<MvLetStmt>()
+                            if (letStmt != null) {
+
+                                if (letStmt.typeAnnotation != null || (letStmt.initializer?.expr?.text?.contains("u") == true || letStmt.initializer?.expr?.text?.contains("i") == true)) {
+                                    return true
+                                }
+                            }
+                        }
+                    }
+                }
+                current = current.parent
+            }
+            return false
+        }
+
+        private fun isAssignmentExprContext(element: PsiElement): Boolean {
+
+            var current: PsiElement? = element
+            while (current != null) {
+                if (current is MvAssignmentExpr) {
+
+                    val lhs = current.expr
+                    if (lhs is MvPathExpr) {
+                        val resolved = lhs.path.reference?.resolve()
+                        if (resolved is MvPatBinding) {
+
+                            val letStmt = resolved.ancestorStrict<MvLetStmt>()
+                            if (letStmt != null && letStmt.typeAnnotation == null) {
+
+                                val hasTypeAnnotationInInitializer = letStmt.initializer?.expr?.text?.contains("u") == true ||
+                                    letStmt.initializer?.expr?.text?.contains("i") == true
+                                if (!hasTypeAnnotationInInitializer) {
+
+                                    return true
+                                }
+                            }
+                        }
+                    }
+                }
+                current = current.parent
+            }
+            return false
+        }
+
+        private fun isIfConditionContext(element: PsiElement): Boolean {
+
+            var current: PsiElement? = element
+            while (current != null) {
+                if (current is MvIfExpr) {
+
+                    val condition = current.condition
+                    if (condition != null && condition.textRange.contains(element.textRange)) {
+                        return true
+                    }
+                }
+                current = current.parent
+            }
+            return false
+        }
+
+        private fun isTupleElementContext(element: PsiElement): Boolean {
+
+            var current: PsiElement? = element
+            while (current != null) {
+                if (current is MvTupleLitExpr) {
+                    return true
+                }
+                current = current.parent
+            }
+            return false
+        }
+
+        private fun isVectorElementContext(element: PsiElement): Boolean {
+
+            var current: PsiElement? = element
+            while (current != null) {
+                if (current is MvVectorLitExpr) {
+                    return true
+                }
+                current = current.parent
+            }
+            return false
+        }
+
+        private fun isVectorWithoutExplicitType(element: PsiElement): Boolean {
+
+            var current: PsiElement? = element
+            while (current != null) {
+                if (current is MvVectorLitExpr && current.typeArgument == null) {
+
+                    var hasExplicitTypeElement = false
+                    for (vectorElement in current.vectorLitItems.exprList) {
+                        if (vectorElement != element) {
+                            val vectorElementText = vectorElement.text
+                            if (vectorElementText.contains("u") || vectorElementText.contains("i")) {
+                                hasExplicitTypeElement = true
+                                break
+                            }
+                        }
+                    }
+                    return !hasExplicitTypeElement
+                }
+                current = current.parent
+            }
+            return false
+        }
+
+        private fun isGenericVectorType(expectedTy: Ty): Boolean {
+
+            return when (expectedTy) {
+                is TyVector -> expectedTy.item is TyTypeParameter || expectedTy.item is TyInfer.TyVar
+                else -> false
             }
         }
 
@@ -86,8 +257,20 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
         val op: String,
     ) : TypeError(element) {
         override fun message(): String {
+            fun formatType(ty: Ty, otherTy: Ty): String {
+
+                if (ty is TyInteger && otherTy is TyInteger) {
+                    return ty.text()
+                }
+
+                if (ty is TyInteger && ty.isDefault()) {
+                    return "integer"
+                }
+                return ty.text()
+            }
+
             return "Incompatible arguments to '$op': " +
-                    "'${leftTy.text()}' and '${rightTy.text()}'"
+                    "'${formatType(leftTy, rightTy)}' and '${formatType(rightTy, leftTy)}'"
         }
 
         override fun innerFoldWith(folder: TypeFolder): TypeError {
@@ -161,7 +344,12 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
         val actualTy: Ty
     ): TypeError(element) {
         override fun message(): String {
-            return "Invalid dereference. Expected '&_' but found '${actualTy.text(fq = false)}'"
+            val actualTypeName = if (actualTy is TyInteger && actualTy.isDefault()) {
+                "integer"
+            } else {
+                actualTy.text(fq = false)
+            }
+            return "Invalid dereference. Expected '&_' but found '$actualTypeName'"
         }
 
         override fun innerFoldWith(folder: TypeFolder): TypeError {

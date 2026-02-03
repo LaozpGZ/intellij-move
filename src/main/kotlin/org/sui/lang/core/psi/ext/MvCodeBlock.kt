@@ -20,7 +20,24 @@ abstract class MvCodeBlockMixin(node: ASTNode) : MvElementImpl(node), MvCodeBloc
 
     override val expr: MvExpr?
         get() {
-            // Traverse all statements to find the last ExprStmt that is not spec-related
+
+
+            var lastExpr: MvExpr? = null
+            for (child in this.children) {
+                if (child is MvExpr && child !is MvItemSpecBlockExpr) {
+
+                    val isWrappedInExprStmt = child.parent is MvExprStmt
+                    if (!isWrappedInExprStmt) {
+                        lastExpr = child
+                    }
+                }
+            }
+
+            if (lastExpr != null) {
+                return lastExpr
+            }
+
+
             var lastExprStmt: MvExprStmt? = null
             for (stmt in this.stmtList) {
                 if (stmt is MvExprStmt) {
@@ -35,14 +52,6 @@ abstract class MvCodeBlockMixin(node: ASTNode) : MvElementImpl(node), MvCodeBloc
                 return lastExprStmt.expr
             }
 
-            // If no non-spec block ExprStmt is found, check for direct MvExpr type children
-            for (child in this.children) {
-                if (child is MvExpr && child !is MvItemSpecBlockExpr) {
-                    return child
-                }
-            }
-
-            // Otherwise, return null
             return null
         }
 

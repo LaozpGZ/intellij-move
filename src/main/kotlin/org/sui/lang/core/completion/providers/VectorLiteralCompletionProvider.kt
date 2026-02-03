@@ -28,7 +28,7 @@ object VectorLiteralCompletionProvider : MvCompletionProvider() {
 
         if (parameters.position !== path.referenceNameElement) return
 
-        // 提供 vector[] 补全，支持部分输入（如 "vect"）
+
         val referenceName = path.referenceName ?: return
         if (!referenceName.startsWith("vect")) return
 

@@ -163,7 +163,7 @@ fun filterCompletionVariantsByVisibility(
                 is Visibility2.Public,
                 is Visibility2.Restricted.Friend,
                 is Visibility2.Restricted.Package -> {return@wrapWithFilter true}
-                // 允许访问当前模块的私有函数，特别是通过 Self:: 前缀访问时
+
                 is Visibility2.Private -> {
                     val elementModule = element.containingModule
                     val contextModule = context.containingModule

@@ -31,7 +31,8 @@ class TypeInferenceWalker(
     val project: Project,
     private val returnTy: Ty
 ) {
-    val msl: Boolean = ctx.msl
+
+    val msl: Boolean get() = ctx.msl
 
     fun <T> mslScope(action: () -> T): T {
         if (ctx.msl) return action()
@@ -127,19 +128,17 @@ class TypeInferenceWalker(
 
         val tailExpr = this.expr
         val expectedTy = expected.onlyHasTy(ctx)
+
         return if (tailExpr == null) {
-            // 代码块没有尾表达式，返回 TyUnit
+
             if (coerce && expectedTy != null) {
                 coerce(this.rBrace ?: this, TyUnit, expectedTy)
             }
             TyUnit
         } else {
             // Handle tail expression
-            val ty = if (coerce && expectedTy != null) {
-                tailExpr.inferTypeCoerceTo(expectedTy)
-            } else {
-                tailExpr.inferType(expectedTy)
-            }
+            val ty = tailExpr.inferType()
+
             // Ensure the type of the tail expression is correctly written to the context
             // If it's an MvAbortExpr type, we should preserve TyNever and not overwrite it
             if (tailExpr is MvAbortExpr) {
@@ -148,8 +147,69 @@ class TypeInferenceWalker(
                 ctx.writeExprTy(tailExpr, neverTy)
                 return neverTy
             } else {
-                ctx.writeExprTy(tailExpr, ty)
-                return ty
+
+                val actualTy = ctx.getExprType(tailExpr) ?: ty
+
+                println("Block tail expr: ${tailExpr.text}, actual type: $actualTy, expected type: $expectedTy")
+
+
+                if (coerce && expectedTy != null) {
+
+                    var isInsideExprStmt = false
+                    var current: PsiElement? = this
+                    while (current != null) {
+                        if (current is MvExprStmt) {
+                            isInsideExprStmt = true
+                            break
+                        }
+                        current = current.parent
+                    }
+
+                    if (!isInsideExprStmt) {
+
+                        if (!coerce(tailExpr, actualTy, expectedTy)) {
+
+
+                        }
+                    }
+                }
+
+
+
+
+                var shouldReturnTailType = true
+                if (expectedTy == null) {
+                    var current: PsiElement? = this
+                    var isInsideIfElseExpr = false
+                    while (current != null) {
+                        if (current is MvIfExpr && current.elseBlock != null) {
+                            isInsideIfElseExpr = true
+                            shouldReturnTailType = true
+                            break
+                        }
+                        if (current is MvExprStmt) {
+
+                            shouldReturnTailType = false
+                            break
+                        }
+
+                        if (current is MvAssignmentExpr && current.initializer.expr == this) {
+                            shouldReturnTailType = true
+                            break
+                        }
+                        current = current.parent
+                    }
+                }
+
+
+                if (!shouldReturnTailType) {
+                    ctx.writeExprTy(tailExpr, actualTy)
+                    return TyUnit
+                }
+
+
+                ctx.writeExprTy(tailExpr, actualTy)
+                return actualTy
             }
         }
     }
@@ -159,7 +219,7 @@ class TypeInferenceWalker(
             when (stmt) {
                 is MvExprStmt -> {
                     val expr = stmt.expr
-                    // 检查表达式类型是否是 TyNever
+
                     println("hasNeverTypeStatement: Checking expr type: ${expr.text}")
                     if (ctx.isTypeInferred(expr)) {
                         val ty = ctx.getExprType(expr)
@@ -170,7 +230,7 @@ class TypeInferenceWalker(
                         }
                     } else {
                         println("hasNeverTypeStatement: Type not inferred yet, calling inferType()")
-                        // 如果类型尚未推断，调用 inferType() 进行推断
+
                         val ty = expr.inferType()
                         println("hasNeverTypeStatement: Inferred type: $ty")
                         if (ty is TyNever) {
@@ -190,21 +250,27 @@ class TypeInferenceWalker(
     private fun processStatement(stmt: MvStmt) {
         when (stmt) {
             is MvLetStmt -> {
+                println("=== Processing MvLetStmt ===")
+                println("stmt.text: ${stmt.text}")
                 val explicitTy = stmt.type?.loweredType(msl)
                 val expr = stmt.initializer?.expr
                 val pat = stmt.pat
                 val inferredTy =
                     if (expr != null) {
                         val inferredTy = expr.inferType(Expectation.maybeHasType(explicitTy))
+                        println("expr.inferType: $inferredTy")
                         val coercedTy = if (explicitTy != null && coerce(expr, inferredTy, explicitTy)) {
+                            println("Coerced to explicitTy: $explicitTy")
                             explicitTy
                         } else {
+                            println("Using inferredTy: $inferredTy")
                             inferredTy
                         }
                         coercedTy
                     } else {
                         pat?.anonymousTyVar() ?: TyUnknown
                     }
+                println("Final inferredTy: $inferredTy")
                 pat?.extractBindings(
                     this,
                     explicitTy ?: resolveTypeVarsIfPossible(inferredTy)
@@ -219,16 +285,21 @@ class TypeInferenceWalker(
             is MvUpdateSpecStmt -> inferUpdateStmt(stmt)
             is MvExprStmt -> {
                 println("Processing ExprStmt: ${stmt.text}")
-                println("Expr type: ${stmt.expr.javaClass.simpleName}")
-                if (stmt.expr is MvAbortExpr) {
-                    // 对于 MvAbortExpr，我们需要确保类型被正确设置为 TyNever
-                    val ty = stmt.expr.inferType()
+                val expr = stmt.expr
+                println("Expr type: ${expr.javaClass.simpleName}")
+                if (expr is MvAbortExpr) {
+
+                    val ty = expr.inferType()
                     println("MvAbortExpr type: $ty")
-                    ctx.writeExprTy(stmt.expr, ty)
+                    ctx.writeExprTy(expr, ty)
                 } else {
-                    val ty = stmt.expr.inferType()
+
+                    val ty = expr.inferType()
                     println("Inferred type: $ty")
-                    ctx.writeExprTy(stmt.expr, ty)
+                    ctx.writeExprTy(expr, ty)
+
+
+
                 }
             }
             is MvSpecExprStmt -> stmt.expr.inferType()
@@ -298,9 +369,18 @@ class TypeInferenceWalker(
             }
         }
 
+        println("=== inferExprTy ===")
+        println("expr.text: ${expr.text}")
+        println("expr.class: ${expr.javaClass.simpleName}")
         val exprTy = when (expr) {
             is MvAbortExpr -> {
-                expr.expr?.inferTypeCoercableTo(TyInteger.DEFAULT)
+                expr.expr?.let {
+
+                    val argTy = it.inferType()
+                    if (argTy !is TyInteger && argTy !is TyInfer.IntVar && argTy !is TyNum) {
+                        ctx.reportTypeError(TypeError.TypeMismatch(it, TyInteger.DEFAULT, argTy))
+                    }
+                }
                 val ty = TyNever
                 ctx.writeExprTy(expr, ty)
                 println("MvAbortExpr: returning TyNever")
@@ -346,7 +426,11 @@ class TypeInferenceWalker(
                 TyBool
             }
 
-            is MvIfExpr -> inferIfExprTy(expr, expected)
+            is MvIfExpr -> {
+                val ty = inferIfExprTy(expr, expected)
+                ctx.writeExprTy(expr, ty)
+                ty
+            }
             is MvWhileExpr -> {
                 val ty = inferWhileExpr(expr)
                 ctx.writeExprTy(expr, ty)
@@ -382,7 +466,7 @@ class TypeInferenceWalker(
                 expr.expr?.inferTypeCoercableTo(TyInteger.DEFAULT)
                 val ty = TyNever
                 ctx.writeExprTy(expr, ty)
-                // 直接返回 TyNever，避免后面的 mslScopeRefined 处理
+
                 println("MvAbortExpr: returning TyNever")
                 return ty
             }
@@ -405,14 +489,26 @@ class TypeInferenceWalker(
             else -> inferenceErrorOrFallback(expr, TyUnknown)
         }
 
-        // 检查是否已经返回了 TyNever 类型，如果是，直接返回，避免覆盖
+
         if (exprTy is TyNever) {
             println("Already TyNever, returning without writing to ctx")
             return exprTy
         }
         val refinedExprTy = exprTy.mslScopeRefined(msl)
         println("Writing type to ctx for expr: ${expr.text}, type: ${refinedExprTy}")
+        println("exprTy.class: ${exprTy.javaClass.simpleName}")
+        println("refinedExprTy.class: ${refinedExprTy.javaClass.simpleName}")
+        println("exprTy value: ${exprTy}")
         ctx.writeExprTy(expr, refinedExprTy)
+        val retrievedTy = ctx.getExprType(expr)
+        println("Retrieved type from ctx: ${retrievedTy}")
+
+        println("=== exprTypes ===")
+        ctx.exprTypes.forEach {
+            println("${it.key.text} -> ${it.value}, HashCode: ${it.key.hashCode()}")
+        }
+        println("=== exprTypes end ===")
+        println("=== inferExprTy end ===")
         return refinedExprTy
     }
 
@@ -444,11 +540,29 @@ class TypeInferenceWalker(
 //        val resolveVariants = resolvePathRaw(path)
 //        ctx.writePath(path, resolveVariants.map { ResolvedPath.from(it, path)})
 
+        println("=== inferPathExprTy ===")
+        println("pathExpr.text: ${pathExpr.text}")
+        println("pathExpr.class: ${pathExpr.javaClass.simpleName}")
+        println("pathExpr.hashCode(): ${pathExpr.hashCode()}")
+
         val expectedType = expected.onlyHasTy(ctx)
         val item = resolvePathElement(pathExpr, expectedType) ?: return TyUnknown
 
+        println("item: ${item}")
+        println("item.class: ${item.javaClass.simpleName}")
+        println("item.hashCode(): ${item.hashCode()}")
+
         val ty = when (item) {
-            is MvPatBinding -> ctx.getBindingType(item).mslScopeRefined(msl)
+            is MvPatBinding -> {
+                val bindingTy = ctx.getBindingType(item)
+                println("Binding type: $bindingTy")
+
+                if (msl && (bindingTy is TyInteger || bindingTy is TyInfer.IntVar)) {
+                    TyNum
+                } else {
+                    bindingTy.mslScopeRefined(msl)
+                }
+            }
             is MvConst -> item.type?.loweredType(msl) ?: TyUnknown
             is MvGlobalVariableStmt -> item.type?.loweredType(true) ?: TyUnknown
             is MvNamedFieldDecl -> item.type?.loweredType(msl) ?: TyUnknown
@@ -468,7 +582,10 @@ class TypeInferenceWalker(
                 TyUnknown
             )
         }
+        println("Computed ty: $ty")
         ctx.writeExprTy(pathExpr, ty)
+        println("Written to exprTypes")
+        println("=== inferPathExprTy end ===")
         return ty
     }
 
@@ -487,7 +604,56 @@ class TypeInferenceWalker(
 
     private fun inferAssignmentExprTy(assignExpr: MvAssignmentExpr): Ty {
         val lhsTy = assignExpr.expr.inferType()
-        assignExpr.initializer.expr?.inferTypeCoercableTo(lhsTy)
+        val rhsExpr = assignExpr.initializer.expr
+        if (rhsExpr != null) {
+            val rhsTy = if (rhsExpr is MvIfExpr) {
+
+                rhsExpr.inferType(expected = Expectation.maybeHasType(lhsTy))
+            } else {
+                rhsExpr.inferType()
+            }
+
+            if (rhsExpr is MvCodeBlockExpr) {
+
+                val tailExpr = rhsExpr.codeBlock.expr
+                if (tailExpr != null) {
+                    val tailTy = ctx.getExprType(tailExpr)
+
+                    if (lhsTy is TyInteger && tailTy is TyInteger) {
+                        if (lhsTy.kind != tailTy.kind) {
+                            ctx.reportTypeError(TypeError.TypeMismatch(tailExpr, lhsTy, tailTy))
+                        }
+                    } else if (!ctx.tryCoerce(tailTy, lhsTy).isOk) {
+                        ctx.reportTypeError(TypeError.TypeMismatch(tailExpr, lhsTy, tailTy))
+                    }
+                }
+            } else if (rhsExpr is MvTupleLitExpr && lhsTy is TyTuple) {
+
+                val rhsElements = rhsExpr.exprList
+                val lhsElements = lhsTy.types
+
+                rhsElements.forEachIndexed { index, expr ->
+                    if (index < lhsElements.size) {
+                        val elementTy = ctx.getExprType(expr)
+                        val expectedTy = lhsElements[index]
+
+                        if (expectedTy is TyInteger && elementTy is TyInteger) {
+                            if (expectedTy.kind != elementTy.kind) {
+                                ctx.reportTypeError(TypeError.TypeMismatch(expr, expectedTy, elementTy))
+                            }
+                        } else if (!ctx.tryCoerce(elementTy, expectedTy).isOk) {
+                            ctx.reportTypeError(TypeError.TypeMismatch(expr, expectedTy, elementTy))
+                        }
+                    }
+                }
+            } else if (rhsExpr !is MvIfExpr) {
+
+                if (!ctx.tryCoerce(rhsTy, lhsTy).isOk) {
+                    ctx.reportTypeError(TypeError.TypeMismatch(rhsExpr, lhsTy, rhsTy))
+                }
+            }
+
+        }
         return TyUnit
     }
 
@@ -541,13 +707,27 @@ class TypeInferenceWalker(
             }
         val funcTy = ctx.resolveTypeVarsIfPossible(baseTy) as TyCallable
 
-        val expectedInputTys =
+
+
+        val expectedInputTys = if (expected.onlyHasTy(ctx) is TyUnit && callExpr.parent is MvExprStmt) {
+            emptyList()
+        } else {
             expectedInputsForExpectedOutput(expected, funcTy.retType, funcTy.paramTypes)
+        }
+
+
+        val isAbortCall = callExpr.path.text == "abort"
+        val hasExplicitTypeParameters = if (isAbortCall) {
+            false
+        } else {
+            callExpr.path.typeArguments.isNotEmpty()
+        }
 
         inferArgumentTypes(
             funcTy.paramTypes,
             expectedInputTys,
-            callExpr.argumentExprs.map { InferArg.ArgExpr(it) })
+            callExpr.argumentExprs.map { InferArg.ArgExpr(it) },
+            hasExplicitTypeParameters)
 
         writeCallableType(callExpr, funcTy, method = false)
 
@@ -643,6 +823,7 @@ class TypeInferenceWalker(
         formalInputTys: List<Ty>,
         expectedInputTys: List<Ty>,
         inferArgs: List<InferArg>,
+        hasExplicitTypeParameters: Boolean = false,
     ) {
         for ((i, inferArg) in inferArgs.withIndex()) {
             val formalInputTy = formalInputTys.getOrNull(i) ?: TyUnknown
@@ -654,43 +835,37 @@ class TypeInferenceWalker(
                 is InferArg.ArgExpr -> {
                     val argExpr = inferArg.expr ?: continue
                     val argExprTy = argExpr.inferType(expected = expectation)
-//                    val argExprTy = inferExprTy(argExpr, expectation)
-//                        val coercedTy =
-//                            resolveTypeVarsWithObligations(expectation.onlyHasTy(ctx) ?: formalInputTy)
-                    coerce(argExpr, argExprTy, expectedTy)
+                    println("=== inferArgumentTypes ===")
+                    println("argExpr.text: ${argExpr.text}")
+                    println("argExprTy: $argExprTy")
+                    println("expectedTy: $expectedTy")
+                    println("formalInputTy: $formalInputTy")
+                    println("hasExplicitTypeParameters: $hasExplicitTypeParameters")
+                    val isTypeParameter = formalInputTy is TyTypeParameter || formalInputTy is TyInfer.TyVar || hasExplicitTypeParameters
+                    println("isTypeParameter: $isTypeParameter")
+                    println("ctx.msl: ${ctx.msl}")
+                    if (argExprTy is TyInteger && expectedTy is TyInteger) {
+                        println("isCompatibleIntegers result: ${isCompatibleIntegers(expectedTy, argExprTy, ctx.msl, isTypeParameter)}")
+                    }
+                    println("combine result: ${ctx.combineTypes(argExprTy, expectedTy, isTypeParameter)}")
+
+
+                    if (!ctx.tryCoerce(argExprTy, expectedTy, isTypeParameter).isOk) {
+                        ctx.reportTypeError(TypeError.TypeMismatch(argExpr, expectedTy, argExprTy))
+                    }
                     // retrieve obligations
-                    ctx.combineTypes(formalInputTy, expectedTy)
-//                        coercedTy
+                    ctx.combineTypes(formalInputTy, expectedTy, isTypeParameter)
                 }
                 is InferArg.SelfType -> {
-//                        val actualSelfTy = inferArg.selfTy
-//                        val coercedTy =
-//                            resolveTypeVarsWithObligations(expectation.onlyHasTy(ctx) ?: formalInputTy)
-//                        ctx.combineTypes(
-//                            resolveTypeVarsWithObligations(actualTy),
-//                            resolveTypeVarsWithObligations(expectedTy)
-//                        )
-
                     // method already resolved, so autoborrow() should always succeed
                     val actualSelfTy = autoborrow(inferArg.selfTy, expectedTy)
                         ?: error("unreachable, as method call cannot be resolved if autoborrow fails")
                     ctx.combineTypes(actualSelfTy, expectedTy)
-//                        coercedTy
-
                 }
             }
 
             // retrieve obligations
             ctx.combineTypes(formalInputTy, expectedTy)
-//            if (inferArg == null) continue
-
-//            val actualTy = inferExprTy(inferArg, expectation)
-//            val coercedTy =
-//                resolveTypeVarsWithObligations(expectation.onlyHasTy(ctx) ?: formalInputTy)
-//            coerce(inferArg, actualTy, coercedTy)
-//
-//            // retrieve obligations
-//            ctx.combineTypes(formalInputTy, coercedTy)
         }
     }
 
@@ -739,7 +914,7 @@ class TypeInferenceWalker(
                 // option! accepts one argument
                 if (macroExpr.valueArguments.size == 1) {
                     val argTy = macroExpr.valueArguments.first().expr?.inferType() ?: TyUnknown
-                    // 尝试获取 option 类型并创建 TyAdt 实例
+
                     try {
                         val optionType = getOptionType()
                         if (optionType != null && argTy != TyUnknown) {
@@ -752,7 +927,7 @@ class TypeInferenceWalker(
                             return TyAdt(optionType, substitution, typeArguments)
                         }
                     } catch (e: Exception) {
-                        // 无法获取 option 类型，返回 TyUnknown
+
                         println("Error getting option type: ${e.message}")
                     }
                 }
@@ -763,7 +938,7 @@ class TypeInferenceWalker(
                 if (macroExpr.valueArguments.size == 2) {
                     val arg1Ty = macroExpr.valueArguments[0].expr?.inferType() ?: TyUnknown
                     val arg2Ty = macroExpr.valueArguments[1].expr?.inferType() ?: TyUnknown
-                    // 尝试获取 result 类型并创建 TyAdt 实例
+
                     try {
                         val resultType = getResultType()
                         if (resultType != null && arg1Ty != TyUnknown && arg2Ty != TyUnknown) {
@@ -776,7 +951,7 @@ class TypeInferenceWalker(
                             return TyAdt(resultType, substitution, typeArguments)
                         }
                     } catch (e: Exception) {
-                        // 无法获取 result 类型，返回 TyUnknown
+
                         println("Error getting result type: ${e.message}")
                     }
                 }
@@ -819,7 +994,7 @@ class TypeInferenceWalker(
     }
 
     private fun getOptionType(): MvStructOrEnumItemElement? {
-        // 尝试从 PreImportedModuleService 中获取 option 类型
+
         val service = PreImportedModuleService.getInstance(project)
         val preImportedModules = service.getPreImportedModules()
         val optionModule = preImportedModules.find { it.name == "option" }
@@ -828,7 +1003,7 @@ class TypeInferenceWalker(
             return optionStruct
         }
 
-        // 在测试环境中，PreImportedModuleService 可能没有加载标准库，我们需要创建一个虚拟的 option 类型
+
         val psiFactory = project.psiFactory
         val dummyModule = psiFactory.inlineModule("std", "option", """
             struct Option<T> has copy, drop {
@@ -839,7 +1014,7 @@ class TypeInferenceWalker(
     }
 
     private fun getResultType(): MvStructOrEnumItemElement? {
-        // 尝试从 PreImportedModuleService 中获取 result 类型
+
         val service = PreImportedModuleService.getInstance(project)
         val preImportedModules = service.getPreImportedModules()
         val resultModule = preImportedModules.find { it.name == "result" }
@@ -848,7 +1023,7 @@ class TypeInferenceWalker(
             return resultStruct
         }
 
-        // 在测试环境中，PreImportedModuleService 可能没有加载标准库，我们需要创建一个虚拟的 result 类型
+
         val psiFactory = project.psiFactory
         val dummyModule = psiFactory.inlineModule("std", "result", """
             struct Result<T, E> has copy, drop {
@@ -902,6 +1077,12 @@ class TypeInferenceWalker(
         )
 
     private fun coerceResolved(element: PsiElement, inferred: Ty, expected: Ty): Boolean {
+
+        if (expected is TyUnit && element.parent is MvExprStmt) {
+
+            return true
+        }
+
         val coerceResult = ctx.tryCoerce(inferred, expected)
         return when (coerceResult) {
             is RsResult.Ok -> true
@@ -1004,13 +1185,19 @@ class TypeInferenceWalker(
 //        this.resolveToDeclaration()?.type?.loweredType(msl)
 
     fun inferVectorLitExpr(litExpr: MvVectorLitExpr, expected: Expectation): Ty {
+        println("=== inferVectorLitExpr ===")
+        println("litExpr.text: ${litExpr.text}")
+        println("litExpr.typeArgument: ${litExpr.typeArgument}")
+
         val tyVar = TyInfer.TyVar()
         val explicitTy = litExpr.typeArgument?.type?.loweredType(msl)
         if (explicitTy != null) {
+            println("explicitTy: ${explicitTy}")
             ctx.combineTypes(tyVar, explicitTy)
         }
 
         val exprs = litExpr.vectorLitItems.exprList
+        println("exprs.size: ${exprs.size}")
         val formalInputs = generateSequence { ctx.resolveTypeVarsIfPossible(tyVar) }.take(exprs.size).toList()
         val expectedInputTys =
             expectedInputsForExpectedOutput(expected, TyVector(tyVar), formalInputs)
@@ -1020,7 +1207,73 @@ class TypeInferenceWalker(
             exprs.map { InferArg.ArgExpr(it) }
         )
 
+
+        if (explicitTy != null) {
+            for (expr in exprs) {
+                val exprTy = ctx.getExprType(expr)
+                println("expr.text: ${expr.text}, exprTy: ${exprTy}")
+                if (exprTy is TyInteger && explicitTy is TyInteger) {
+                    if (exprTy.kind != explicitTy.kind) {
+
+                        ctx.reportTypeError(TypeError.TypeMismatch(expr, explicitTy, exprTy))
+                    }
+                } else if (!ctx.tryCoerce(exprTy, explicitTy).isOk) {
+                    ctx.reportTypeError(TypeError.TypeMismatch(expr, explicitTy, exprTy))
+                }
+            }
+        } else {
+
+            if (exprs.size > 1) {
+                val firstExprTy = ctx.getExprType(exprs[0])
+                for (i in 1 until exprs.size) {
+                    val expr = exprs[i]
+                    val exprTy = ctx.getExprType(expr)
+                    if (firstExprTy is TyInteger && exprTy is TyInteger) {
+                        if (firstExprTy.kind != exprTy.kind) {
+
+                            ctx.reportTypeError(TypeError.TypeMismatch(expr, firstExprTy, exprTy))
+                        }
+                    } else if (!ctx.tryCoerce(exprTy, firstExprTy).isOk) {
+                        ctx.reportTypeError(TypeError.TypeMismatch(expr, firstExprTy, exprTy))
+                    }
+                }
+            }
+
+
+            var hasIntegerElements = false
+            for (expr in exprs) {
+                val exprTy = ctx.getExprType(expr)
+                if (exprTy is TyInteger) {
+                    hasIntegerElements = true
+                    break
+                }
+            }
+            if (hasIntegerElements) {
+
+                var hasExplicitTypeElement = false
+                for (vectorElement in exprs) {
+                    val vectorElementText = vectorElement.text
+                    if (vectorElementText.contains("u") || vectorElementText.contains("i")) {
+                        hasExplicitTypeElement = true
+                        break
+                    }
+                }
+                if (!hasExplicitTypeElement) {
+
+                    ctx.combineTypes(tyVar, TyInteger.default())
+                }
+            }
+        }
+
+
+        val resolvedTyVar = ctx.resolveTypeVarsIfPossible(tyVar)
+        if (resolvedTyVar is TyInfer.TyVar && !ctx.msl) {
+            ctx.combineTypes(tyVar, TyInteger.default())
+        }
+
         val vectorTy = ctx.resolveTypeVarsIfPossible(TyVector(tyVar))
+        println("vectorTy: ${vectorTy}")
+        println("=== inferVectorLitExpr end ===")
         return vectorTy
     }
 
@@ -1136,16 +1389,16 @@ class TypeInferenceWalker(
                 typeErrorEncountered = true
             }
 
-            // 处理整数类型推断
+
             if (!typeErrorEncountered) {
-                // 如果其中一个是有类型的整数，另一个是无类型的整数，结果类型是有类型的整数的类型
+
                 if (leftTy is TyInteger && rightTy is TyInteger) {
-                    // 如果左操作数是默认类型（u64）而右操作数是其他类型，返回右操作数类型
+
                     if (leftTy.kind == TyInteger.DEFAULT_KIND && rightTy.kind != TyInteger.DEFAULT_KIND) {
                         coerce(leftExpr, leftTy, expected = rightTy)
                         return rightTy
                     }
-                    // 如果右操作数是默认类型（u64）而左操作数是其他类型，返回左操作数类型
+
                     if (rightTy.kind == TyInteger.DEFAULT_KIND && leftTy.kind != TyInteger.DEFAULT_KIND) {
                         coerce(rightExpr, rightTy, expected = leftTy)
                         return leftTy
@@ -1175,7 +1428,21 @@ class TypeInferenceWalker(
                 }
             }
 
-            if (ctx.combineTypes(leftTy, rightTy).isErr) {
+
+            if (ctx.msl) {
+                if (leftTy is TyNum || rightTy is TyNum || leftTy is TyInteger || rightTy is TyInteger) {
+                    return TyBool
+                }
+            }
+
+            if (leftTy is TyInteger && rightTy is TyInteger) {
+                if (leftTy.kind != rightTy.kind) {
+
+                    ctx.reportTypeError(
+                        TypeError.IncompatibleArgumentsToBinaryExpr(binaryExpr, leftTy, rightTy, op)
+                    )
+                }
+            } else if (ctx.combineTypes(leftTy, rightTy).isErr) {
                 ctx.reportTypeError(
                     TypeError.IncompatibleArgumentsToBinaryExpr(binaryExpr, leftTy, rightTy, op)
                 )
@@ -1201,8 +1468,59 @@ class TypeInferenceWalker(
                 ctx.reportTypeError(TypeError.UnsupportedBinaryOp(rightExpr, rightTy, op))
                 typeErrorEncountered = true
             }
-            if (!typeErrorEncountered) {
-                coerce(rightExpr, rightTy, expected = leftTy)
+
+
+            println("=== inferOrderingBinaryExprTy ===")
+            println("binaryExpr.text: ${binaryExpr.text}")
+            println("ctx.msl: ${ctx.msl}")
+            println("binaryExpr.isMsl(): ${binaryExpr.isMsl()}")
+            println("leftTy: $leftTy, leftTy.class: ${leftTy.javaClass.simpleName}")
+            println("rightTy: $rightTy, rightTy.class: ${rightTy.javaClass.simpleName}")
+
+
+            if (ctx.msl || binaryExpr.isMsl()) {
+                return TyBool
+            }
+
+
+            var hasSpecAncestor = false
+            var current = binaryExpr.parent
+            while (current != null) {
+                if (current is MvWhileExpr) {
+
+                    current.accept(object : PsiRecursiveElementWalkingVisitor() {
+                        override fun visitElement(element: PsiElement) {
+                            if (element is MvSpecCodeBlock) {
+                                hasSpecAncestor = true
+                            }
+                            super.visitElement(element)
+                        }
+                    })
+                    break
+                }
+                current = current.parent
+            }
+
+            if (hasSpecAncestor && leftTy is TyInteger && rightTy is TyInteger) {
+                return TyBool
+            }
+
+
+            println("=== inferOrderingBinaryExprTy ===")
+            println("binaryExpr.text: ${binaryExpr.text}")
+            println("ctx.msl: ${ctx.msl}")
+            println("leftTy: $leftTy, leftTy.class: ${leftTy.javaClass.simpleName}")
+            println("rightTy: $rightTy, rightTy.class: ${rightTy.javaClass.simpleName}")
+            if (!typeErrorEncountered && !ctx.msl) {
+                if (leftTy is TyInteger && rightTy is TyInteger) {
+                    if (leftTy.kind != rightTy.kind) {
+
+                        ctx.reportTypeError(TypeError.TypeMismatch(rightExpr, leftTy, rightTy))
+                        typeErrorEncountered = true
+                    }
+                } else {
+                    coerce(rightExpr, rightTy, expected = leftTy)
+                }
             }
         }
         return TyBool
@@ -1236,7 +1554,28 @@ class TypeInferenceWalker(
 
         leftExpr.inferTypeCoercableTo(TyInteger.DEFAULT)
         if (rightExpr != null) {
-            rightExpr.inferTypeCoercableTo(TyInteger.U8)
+
+            if (ctx.msl || binaryExpr.isMsl()) {
+                val rightTy = rightExpr.inferType()
+                if (rightTy !is TyInteger && rightTy !is TyNum) {
+                    ctx.reportTypeError(TypeError.TypeMismatch(rightExpr, TyInteger.U8, rightTy))
+                }
+            } else {
+
+                val rightTy = rightExpr.inferType()
+                if (rightTy !is TyInteger) {
+                    ctx.reportTypeError(TypeError.TypeMismatch(rightExpr, TyInteger.U8, rightTy))
+                } else {
+
+                    val isUnsuffixedIntegerLiteral = rightExpr is MvLitExpr &&
+                        (rightExpr.integerLiteral != null || rightExpr.hexIntegerLiteral != null) &&
+                        !rightExpr.text.contains("u") && !rightExpr.text.contains("i")
+
+                    if (!isUnsuffixedIntegerLiteral && rightTy != TyInteger.U8) {
+                        ctx.reportTypeError(TypeError.TypeMismatch(rightExpr, TyInteger.U8, rightTy))
+                    }
+                }
+            }
         }
         return TyInteger.U64
     }
@@ -1294,13 +1633,42 @@ class TypeInferenceWalker(
             return TyNum
         }
 
+
+        var isInsideVectorLit = false
+
+        var isInsideFunctionCallArg = false
+        var current: PsiElement? = litExpr
+        while (current != null) {
+            if (current is MvVectorLitExpr) {
+                isInsideVectorLit = true
+                break
+            }
+            if (current is MvCallExpr) {
+                isInsideFunctionCallArg = true
+
+                val target = current.reference?.resolve()
+                if (target is MvFunctionLike && target.typeParameters.isNotEmpty()) {
+                    isInsideVectorLit = true
+                }
+                break
+            }
+            current = current.parent
+        }
+
         val litTy =
             when {
                 litExpr.boolLiteral != null -> TyBool
                 litExpr.addressLit != null -> TyAddress
                 litExpr.integerLiteral != null || litExpr.hexIntegerLiteral != null -> {
                     val literal = (litExpr.integerLiteral ?: litExpr.hexIntegerLiteral)!!
-                    TyInteger.fromSuffixedLiteral(literal) ?: TyInteger.default()
+                    val fromLiteral = TyInteger.fromSuffixedLiteral(literal)
+                    if (fromLiteral == null && isInsideVectorLit) {
+
+                        TyInteger.default()
+                    } else {
+
+                        fromLiteral ?: TyInteger.U64
+                    }
                 }
                 litExpr.byteStringLiteral != null -> TyByteString(ctx.msl)
                 litExpr.hexStringLiteral != null -> TyHexString(ctx.msl)
@@ -1310,7 +1678,7 @@ class TypeInferenceWalker(
         val expectedTy = expected.onlyHasTy(this.ctx)
         if (expectedTy != null) {
             coerce(litExpr, litTy, expectedTy)
-            // 对于没有后缀的整数，只有在明确预期类型的情况下返回预期的整数类型
+
             if (!ctx.msl && (litExpr.integerLiteral != null || litExpr.hexIntegerLiteral != null)) {
                 val literal = (litExpr.integerLiteral ?: litExpr.hexIntegerLiteral)!!
                 if (TyInteger.fromSuffixedLiteral(literal) == null && expectedTy is TyInteger) {
@@ -1322,37 +1690,154 @@ class TypeInferenceWalker(
         return litTy
     }
 
+    private fun isGenericContext(element: PsiElement): Boolean {
+
+        var current: PsiElement? = element
+        while (current != null) {
+
+            if (current is MvCallExpr) {
+
+                val target = current.reference?.resolve()
+                if (target is MvFunctionLike && target.typeParameters.isNotEmpty()) {
+                    return true
+                }
+            }
+            current = current.parent
+        }
+        return false
+    }
+
     private fun inferIfExprTy(ifExpr: MvIfExpr, expected: Expectation): Ty {
         ifExpr.condition?.expr?.inferTypeCoercableTo(TyBool)
+
+        println("=== inferIfExprTy ===")
+        println("ifExpr.text: ${ifExpr.text}")
+        println("ifExpr.class: ${ifExpr.javaClass.simpleName}")
+        println("ifExpr.codeBlock: ${ifExpr.codeBlock?.text}")
+        println("ifExpr.codeBlock?.expr: ${ifExpr.codeBlock?.expr?.text}")
+        println("ifExpr.inlineBlock: ${ifExpr.inlineBlock?.text}")
+        println("ifExpr.inlineBlock?.expr: ${ifExpr.inlineBlock?.expr?.text}")
+
+
+        var isInsideExprStmt = false
+        var isInsideAssignment = false
+        var current: PsiElement? = ifExpr
+        while (current != null) {
+            if (current is MvExprStmt) {
+                isInsideExprStmt = true
+                break
+            }
+            if (current is MvAssignmentExpr) {
+                isInsideAssignment = true
+                break
+            }
+            current = current.parent
+        }
+
+        val expectedTy = expected.onlyHasTy(ctx)
         val actualIfTy =
             ifExpr.codeBlock?.inferBlockType(expected, coerce = true)
                 ?: ifExpr.inlineBlock?.expr?.inferTypeCoercableTo(expected)
-        val elseBlock = ifExpr.elseBlock ?: return TyUnknown // 没有 else 分支时返回 unknown，因为类型不确定
+        val elseBlock = ifExpr.elseBlock ?: return TyUnknown
         val actualElseTy =
             elseBlock.codeBlock?.inferBlockType(expected, coerce = true)
                 ?: elseBlock.inlineBlock?.expr?.inferTypeCoercableTo(expected)
 
-        val expectedElseTy = expected.onlyHasTy(ctx) ?: actualIfTy ?: TyUnknown
+        println("elseBlock.text: ${elseBlock.text}")
+        println("elseBlock.class: ${elseBlock.javaClass.simpleName}")
+        println("elseBlock.codeBlock: ${elseBlock.codeBlock?.text}")
+        println("elseBlock.codeBlock?.expr: ${elseBlock.codeBlock?.expr?.text}")
+        println("elseBlock.inlineBlock: ${elseBlock.inlineBlock?.text}")
+        println("elseBlock.inlineBlock?.expr: ${elseBlock.inlineBlock?.expr?.text}")
+        println("elseBlock.tailExpr: ${elseBlock.tailExpr?.text}")
+
+
+        if (expectedTy != null) {
+            val ifExprElement = ifExpr.codeBlock?.expr ?: ifExpr.inlineBlock?.expr
+            if (ifExprElement != null && actualIfTy != null && !ctx.tryCoerce(actualIfTy, expectedTy).isOk) {
+                ctx.reportTypeError(TypeError.TypeMismatch(ifExprElement, expectedTy, actualIfTy))
+            }
+            val elseExprElement = elseBlock.codeBlock?.expr ?: elseBlock.inlineBlock?.expr
+            if (elseExprElement != null && actualElseTy != null && !ctx.tryCoerce(actualElseTy, expectedTy).isOk) {
+                ctx.reportTypeError(TypeError.TypeMismatch(elseExprElement, expectedTy, actualElseTy))
+            }
+        }
+
+        val expectedElseTy = expectedTy ?: actualIfTy ?: TyUnknown
         if (actualElseTy != null) {
-            elseBlock.tailExpr?.let {
-                // special case: `if (true) &s else &mut s` shouldn't show type error
+
+            val elseExpr = elseBlock.inlineBlock?.expr ?: elseBlock.codeBlock?.expr
+            if (elseExpr != null) {
                 if (expectedElseTy is TyReference && actualElseTy is TyReference) {
-                    coerce(it, actualElseTy.referenced, expectedElseTy.referenced)
+                    coerce(elseExpr, actualElseTy.referenced, expectedElseTy.referenced)
                 } else {
-                    coerce(it, actualElseTy, expectedElseTy)
+                    if (actualIfTy != null && !ctx.tryCoerce(actualElseTy, actualIfTy).isOk) {
+                        println("=== Type mismatch found ===")
+                        println("elseExpr.text: ${elseExpr.text}")
+                        println("actualIfTy: $actualIfTy")
+                        println("actualElseTy: $actualElseTy")
+                        ctx.reportTypeError(TypeError.TypeMismatch(elseExpr, actualIfTy, actualElseTy))
+                    } else if (!ctx.tryCoerce(actualElseTy, expectedElseTy).isOk) {
+                        println("=== Type mismatch with expected ===")
+                        println("elseExpr.text: ${elseExpr.text}")
+                        println("expectedElseTy: $expectedElseTy")
+                        println("actualElseTy: $actualElseTy")
+                        ctx.reportTypeError(TypeError.TypeMismatch(elseExpr, expectedElseTy, actualElseTy))
+                    }
                 }
             }
         }
 
-        return intersectTypes(listOfNotNull(actualIfTy, actualElseTy), symmetric = true)
+
+        val resultTy = if (actualIfTy != null && actualElseTy != null) {
+            if (ctx.tryCoerce(actualIfTy, actualElseTy).isOk) {
+                actualElseTy
+            } else if (ctx.tryCoerce(actualElseTy, actualIfTy).isOk) {
+                actualIfTy
+            } else {
+
+                TyUnknown
+            }
+        } else {
+            TyUnknown
+        }
+
+
+        val finalResultTy = if (isInsideExprStmt && !isInsideAssignment) TyUnit else resultTy
+        ctx.writeExprTy(ifExpr, finalResultTy)
+        return finalResultTy
     }
 
-    private fun intersectTypes(types: List<Ty>, symmetric: Boolean = true): Ty {
+    private fun isFunctionReturnContext(element: PsiElement): Boolean {
+        var current: PsiElement? = element
+        while (current != null) {
+            if (current is MvReturnExpr) {
+                return true
+            }
+            if (current is MvFunction) {
+
+                val functionBody = current.codeBlock
+                if (functionBody != null) {
+                    val statements = functionBody.stmtList
+                    if (statements.isNotEmpty()) {
+                        val lastStatement = statements.last()
+                        if (lastStatement is MvExprStmt && lastStatement.expr == element) {
+                            return true
+                        }
+                    }
+                }
+            }
+            current = current.parent
+        }
+        return false
+    }
+
+    private fun intersectTypes(types: List<Ty>, symmetric: Boolean = true, element: PsiElement? = null): Ty {
         if (types.isEmpty()) return TyUnknown
-        return types.reduce { acc, ty -> intersectTypes(acc, ty, symmetric) }
+        return types.reduce { acc, ty -> intersectTypes(acc, ty, symmetric, element) }
     }
 
-    private fun intersectTypes(ty1: Ty, ty2: Ty, symmetric: Boolean = true): Ty {
+    private fun intersectTypes(ty1: Ty, ty2: Ty, symmetric: Boolean = true, element: PsiElement? = null): Ty {
         return when {
             ty1 is TyNever -> ty2
             ty2 is TyNever -> ty1
@@ -1370,6 +1855,10 @@ class TypeInferenceWalker(
                         else -> ty1
                     }
                 } else {
+
+                    if (element != null) {
+                        ctx.reportTypeError(TypeError.TypeMismatch(element, ty1, ty2))
+                    }
                     TyUnknown
                 }
             }
@@ -1385,7 +1874,7 @@ class TypeInferenceWalker(
                 ctx.writeExprTy(conditionExpr, ty)
             }
         }
-        // 确保 while 表达式本身被类型化
+
         if (!ctx.isTypeInferred(whileExpr)) {
             ctx.writeExprTy(whileExpr, TyNever)
         }
@@ -1414,7 +1903,7 @@ class TypeInferenceWalker(
     }
 
     private fun inferLoopLikeBlock(loopLike: MvLoopLike): Ty {
-        // 对循环条件进行类型推断
+
         when (loopLike) {
             is MvWhileExpr -> {
                 val condition = loopLike.condition
@@ -1425,7 +1914,7 @@ class TypeInferenceWalker(
                         ctx.writeExprTy(expr, ty)
                     }
                 }
-                // 对 while 表达式本身进行类型推断
+
                 if (loopLike is MvExpr && !ctx.isTypeInferred(loopLike)) {
                     ctx.writeExprTy(loopLike, TyNever)
                 }
@@ -1439,13 +1928,13 @@ class TypeInferenceWalker(
                         ctx.writeExprTy(expr, ty)
                     }
                 }
-                // 对 for 表达式本身进行类型推断
+
                 if (loopLike is MvExpr && !ctx.isTypeInferred(loopLike)) {
                     ctx.writeExprTy(loopLike, TyNever)
                 }
             }
             is MvLoopExpr -> {
-                // 对 loop 表达式本身进行类型推断
+
                 if (loopLike is MvExpr && !ctx.isTypeInferred(loopLike)) {
                     ctx.writeExprTy(loopLike, TyNever)
                 }
@@ -1516,8 +2005,10 @@ class TypeInferenceWalker(
         expected: Ty
     ) {
         if (result.ty1.javaClass in IGNORED_TYS || result.ty2.javaClass in IGNORED_TYS) return
+
         if (expected is TyReference && inferred is TyReference &&
-            (expected.containsTyOfClass(IGNORED_TYS) || inferred.containsTyOfClass(IGNORED_TYS))
+            (expected.containsTyOfClass(listOf(TyUnknown::class.java, TyInfer.TyVar::class.java)) ||
+             inferred.containsTyOfClass(listOf(TyUnknown::class.java, TyInfer.TyVar::class.java)))
         ) {
             // report errors with unknown types when &mut is needed, but & is present
             if (!(expected.mutability.isMut && !inferred.mutability.isMut)) {

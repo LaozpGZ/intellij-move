@@ -101,6 +101,7 @@ fun Ty.mslScopeRefined(msl: Boolean): Ty {
         ty = this.innermostTy()
         println("  after TyReference: $ty")
     }
+
     if (ty is TyInteger || ty is TyInfer.IntVar) {
         ty = TyNum
         println("  converted to TyNum")

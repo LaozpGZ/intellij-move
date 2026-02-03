@@ -141,7 +141,7 @@ object MoveParserUtil : GeneratedParserUtilBase() {
 
     @JvmStatic
     fun pathMode(b: PsiBuilder, level: Int, mode: PathParsingMode): Boolean {
-        // 这是一个临时的重载方法，用于解决解析器生成的代码中缺少参数的问题
+
         return false
     }
 
@@ -381,8 +381,8 @@ object MoveParserUtil : GeneratedParserUtilBase() {
 
     @JvmStatic
     fun isNotMatchExpr(b: PsiBuilder, level: Int): Boolean {
-        // 检查是否在 match 表达式的主体中
-        // 向前查找是否有 match 关键字，并且尚未找到匹配的 }
+
+
         var index = -1
         var braceCount = 0
         var hasMatchKeyword = false
@@ -412,7 +412,7 @@ object MoveParserUtil : GeneratedParserUtilBase() {
     }
     @JvmStatic
     fun isMatchBody(b: PsiBuilder, level: Int): Boolean {
-        // 检查当前 token 是否是 {，并在块内查找 => 符号
+
         var index = 0
         var braceCount = 0
         while (true) {

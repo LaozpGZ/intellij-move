@@ -241,7 +241,7 @@ class FunctionsCompletionTest : CompletionTestCase() {
 
         myFixture.configureByText("main.move", testCode)
 
-        // 打印调试信息
+
         val editor = myFixture.editor
         val document = editor.document
         val caretOffset = editor.caretModel.offset

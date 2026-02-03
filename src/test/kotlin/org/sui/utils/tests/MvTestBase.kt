@@ -50,7 +50,7 @@ fun UsefulTestCase.handleCompilerV2Annotations(project: Project) {
     val enabledCompilerV2 = this.findAnnotationInstance<CompilerV2Features>()
     // triggers projects refresh
     project.moveSettings.modifyTemporary(this.testRootDisposable) {
-        // 默认禁用所有编译器 v2 功能
+
         it.enableResourceAccessControl = false
         it.enableReceiverStyleFunctions = false
         it.enableIndexExpr = false

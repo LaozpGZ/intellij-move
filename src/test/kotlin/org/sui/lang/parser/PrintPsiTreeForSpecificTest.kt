@@ -34,14 +34,14 @@ class PrintPsiTreeForSpecificTest : MvProjectTestBase() {
         println("Function body PSI tree:")
         callFunction.codeBlock?.let { printPsiTree(it, 0) }
 
-        // 查找所有 MvExpr 元素
+
         println("\nAll MvExpr elements in file:")
         val allExprs = PsiTreeUtil.findChildrenOfType(psiFile, MvExpr::class.java)
         allExprs.forEachIndexed { index, expr ->
             println("Index $index: Type: ${expr.javaClass.simpleName}, Text: '${expr.text}'")
         }
 
-        // 查找所有 MvExprStmt 元素
+
         println("\nAll MvExprStmt elements in file:")
         val allExprStmts = PsiTreeUtil.findChildrenOfType(psiFile, MvExprStmt::class.java)
         allExprStmts.forEachIndexed { index, stmt ->
@@ -51,12 +51,12 @@ class PrintPsiTreeForSpecificTest : MvProjectTestBase() {
             }
         }
 
-        // 查找所有 SpecExprStmt 元素
+
         println("\nAll MvSpecExprStmt elements in file:")
         val allSpecExprStmts = PsiTreeUtil.findChildrenOfType(psiFile, MvSpecExprStmt::class.java)
         allSpecExprStmts.forEachIndexed { index, stmt ->
             println("Index $index: Type: ${stmt.javaClass.simpleName}, Text: '${stmt.text}'")
-            // 尝试获取 SpecExprStmt 内部的表达式
+
             val children = stmt.children
             for (child in children) {
                 if (child is MvExpr) {
@@ -65,12 +65,12 @@ class PrintPsiTreeForSpecificTest : MvProjectTestBase() {
             }
         }
 
-        // 打印函数体中每个子元素的详细信息
+
         println("\nFunction body children details:")
         callFunction.codeBlock?.let { codeBlock ->
             codeBlock.children.forEachIndexed { index, child ->
                 println("Child $index: Type: ${child.javaClass.simpleName}, Text: '${child.text}'")
-                // 打印每个子元素的子元素信息
+
                 child.children.forEachIndexed { subIndex, subChild ->
                     println("  SubChild $subIndex: Type: ${subChild.javaClass.simpleName}, Text: '${subChild.text}'")
                 }

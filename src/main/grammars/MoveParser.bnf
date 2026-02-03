@@ -53,7 +53,7 @@
         HEX_STRING_LITERAL='regexp:x\"([A-F0-9a-f]*)\"'
         BYTE_STRING_LITERAL='regexp:b"(.*)"'
 
-        IDENTIFIER='regexp:[_a-zA-Z][_a-zA-Z0-9]*'
+        IDENTIFIER='regexp:[$]?[_a-zA-Z][_a-zA-Z0-9]*'
         FUNCTION_PATTERN_IDENT='regexp:[*_a-zA-Z][*_a-zA-Z0-9]*'
 
         L_BRACE          =  '{'
@@ -210,7 +210,7 @@ private ScriptItem_with_recover ::= !('}' | <<eof>>) ScriptItem
 }
 // top-level recovery
 private ScriptItem_recover ::= !('}' | ScriptItem_first | TopLevel_first)
-private ScriptItem_first ::= use | CONST_KW | fun
+private ScriptItem_first ::= use | CONST_KW | fun | macro
 
 private ScriptItem ::= UseStmt | Const | FunctionInner
 
@@ -266,7 +266,7 @@ private ModuleItem_with_recover ::= !('}' | <<eof>>) ModuleItem
 }
 private ModuleItem_recover ::= !('}' | ModuleItem_first | TopLevel_first)
 // top-level recovery
-private ModuleItem_first ::= use | public | native | fun | CONST_KW | STRUCT_KW | spec
+private ModuleItem_first ::= use | public | native | fun | CONST_KW | STRUCT_KW | spec | macro
                             | Attr_first | "friend"  | "entry" | "inline" | "enum"
 private TopLevel_first ::= MODULE_KW | SCRIPT_KW
 
@@ -754,7 +754,7 @@ PatBinding ::=mut? IDENTIFIER !ForbiddenPatBindingLast {
 }
 BindingPat ::= IDENTIFIER !ForbiddenPatBindingLast
 
-// 允许标识符后面跟 if 关键字，以便支持 match arm 中的 guard 条件
+
 private ForbiddenPatBindingLast ::= '::' | '<' | '(' | '{' | '!'
 
 TuplePat ::= '(' ParenListElemPat_with_recover* ')'

@@ -24,10 +24,27 @@ import org.sui.utils.recursionGuard
 
 interface MvInferenceContextOwner: MvElement
 
-fun isCompatibleIntegers(expectedTy: TyInteger, inferredTy: TyInteger): Boolean {
-    return expectedTy.kind == TyInteger.DEFAULT_KIND
-            || inferredTy.kind == TyInteger.DEFAULT_KIND
-            || expectedTy.kind == inferredTy.kind
+fun isCompatibleIntegers(expectedTy: TyInteger, inferredTy: TyInteger, msl: Boolean = false, isTypeParameter: Boolean = false, isAbortExpr: Boolean = false): Boolean {
+
+    if (msl) {
+        return true
+    }
+
+    if (isTypeParameter) {
+        return expectedTy.kind == inferredTy.kind
+    }
+
+    if (isAbortExpr) {
+        return true
+    }
+
+
+
+    if (expectedTy.kind != TyInteger.DEFAULT_KIND) {
+        return expectedTy.kind == inferredTy.kind
+    }
+
+    return true
 }
 
 fun compatAbilities(expectedTy: Ty, actualTy: Ty, msl: Boolean): Boolean {
@@ -189,7 +206,7 @@ class InferenceContext(
     override val patTypes = mutableMapOf<MvPat, Ty>()
     private val patFieldTypes = mutableMapOf<MvPatField, Ty>()
 
-    private val exprTypes = mutableMapOf<MvExpr, Ty>()
+    val exprTypes = mutableMapOf<MvExpr, Ty>()
     private val exprExpectedTypes = mutableMapOf<MvExpr, Ty>()
     private val callableTypes = mutableMapOf<MvCallable, Ty>()
 
@@ -382,14 +399,24 @@ class InferenceContext(
 //    fun compareTypes(ty1: Ty, ty2: Ty): RelateResult =
 //        this.freezeUnification { this.combineTypes(ty1, ty2) }
 
-    fun combineTypes(ty1: Ty, ty2: Ty): RelateResult {
+    fun combineTypes(ty1: Ty, ty2: Ty, isTypeParameter: Boolean = false): RelateResult {
         val resolvedTy1 = resolveIfTyInfer(ty1)
         val resolvedTy2 = resolveIfTyInfer(ty2)
-        return combineTypesResolved(resolvedTy1, resolvedTy2)
+
+
+        if (isTypeParameter) {
+            if (resolvedTy1 is TyInteger && resolvedTy2 is TyInteger) {
+                if (resolvedTy1.kind != resolvedTy2.kind) {
+                    return Err(CombineTypeError.TypeMismatch(resolvedTy1, resolvedTy2))
+                }
+            }
+        }
+
+        return combineTypesResolved(resolvedTy1, resolvedTy2, isTypeParameter)
     }
 
     @Suppress("NAME_SHADOWING")
-    private fun combineTypesResolved(ty1: Ty, ty2: Ty): RelateResult {
+    private fun combineTypesResolved(ty1: Ty, ty2: Ty, isTypeParameter: Boolean): RelateResult {
         val ty1 = ty1.mslScopeRefined(msl)
         val ty2 = ty2.mslScopeRefined(msl)
         return when {
@@ -398,15 +425,15 @@ class InferenceContext(
             else -> when {
                 ty1 is TyInfer.IntVar -> combineIntVar(ty1, ty2)
                 ty2 is TyInfer.IntVar -> combineIntVar(ty2, ty1)
-                else -> combineTypesNoVars(ty1, ty2)
+                else -> combineTypesNoVars(ty1, ty2, isTypeParameter)
             }
         }
     }
 
-    private fun <T: Ty> combineTypePairs(pairs: List<Pair<T, T>>): RelateResult {
+    private fun <T: Ty> combineTypePairs(pairs: List<Pair<T, T>>, isTypeParameter: Boolean = false): RelateResult {
         var canUnify: RelateResult = Ok(Unit)
         for ((ty1, ty2) in pairs) {
-            canUnify = combineTypes(ty1, ty2).and { canUnify }
+            canUnify = combineTypes(ty1, ty2, isTypeParameter).and { canUnify }
         }
         return canUnify
     }
@@ -450,7 +477,7 @@ class InferenceContext(
         return Ok(Unit)
     }
 
-    fun combineTypesNoVars(ty1: Ty, ty2: Ty): RelateResult {
+    fun combineTypesNoVars(ty1: Ty, ty2: Ty, isTypeParameter: Boolean = false): RelateResult {
         return when {
             ty1 === ty2 -> Ok(Unit)
             ty1 is TyNever || ty2 is TyNever -> Ok(Unit)
@@ -467,8 +494,9 @@ class InferenceContext(
 
             ty1 is TyTypeParameter && ty2 is TyTypeParameter && ty1 == ty2 -> Ok(Unit)
             ty1 is TyUnit && ty2 is TyUnit -> Ok(Unit)
-            ty1 is TyInteger && ty2 is TyInteger
-                    && isCompatibleIntegers(ty1, ty2) -> Ok(Unit)
+            (ty1 is TyInteger && ty2 is TyInteger
+                    && isCompatibleIntegers(ty1, ty2, msl, isTypeParameter)) ||
+            (msl && ((ty1 is TyNum && ty2 is TyInteger) || (ty1 is TyInteger && ty2 is TyNum))) -> Ok(Unit)
             ty1 is TyPrimitive && ty2 is TyPrimitive && ty1.name == ty2.name -> Ok(Unit)
 
             ty1 is TyVector && ty2 is TyVector -> combineTypes(ty1.item, ty2.item)
@@ -480,8 +508,15 @@ class InferenceContext(
                 combineTypes(ty1.referenced, ty2.referenced)
 
             ty1 is TyAdt && ty2 is TyAdt
-                    && ty1.item == ty2.item ->
-                combineTypePairs(ty1.typeArguments.zip(ty2.typeArguments))
+                    && ty1.item == ty2.item -> {
+                println("=== Combining TyAdt types ===")
+                println("ty1: $ty1")
+                println("ty2: $ty2")
+                println("type arguments: ${ty1.typeArguments.zip(ty2.typeArguments)}")
+                val result = combineTypePairs(ty1.typeArguments.zip(ty2.typeArguments), isTypeParameter = true)
+                println("combineTypePairs result: $result")
+                result
+            }
 
             ty1 is TyTuple && ty2 is TyTuple
                     && ty1.types.size == ty2.types.size ->
@@ -491,11 +526,11 @@ class InferenceContext(
         }
     }
 
-    fun tryCoerce(inferred: Ty, expected: Ty): CoerceResult {
+    fun tryCoerce(inferred: Ty, expected: Ty, isTypeParameter: Boolean = false): CoerceResult {
         if (inferred === expected) {
             return Ok(CoerceOk())
         }
-        return combineTypes(inferred, expected).into()
+        return combineTypes(inferred, expected, isTypeParameter).into()
     }
 
     fun resolveIfTyInfer(ty: Ty) = if (ty is TyInfer) resolveTyInfer(ty) else ty
@@ -559,9 +594,7 @@ class InferenceContext(
     // to disallow annotation intersections. This should be done in a different way
     fun reportTypeError(typeError: TypeError) {
         val element = typeError.element
-        if (!element.descendantHasTypeError(this.typeErrors)
-            && typeError.element.containingFile.isPhysical
-        ) {
+        if (!element.descendantHasTypeError(this.typeErrors)) {
             typeErrors.add(typeError)
         }
     }

@@ -62,9 +62,9 @@ class DownloadSuiSdkTask(
             try {
                 tmpExtractionDir.mkdir()
 
-                val tarFile = File(tmpExtractionDir, tmpDownloadFile.nameWithoutExtension) // 假设输出目录已存在
+                val tarFile = File(tmpExtractionDir, tmpDownloadFile.nameWithoutExtension)
 
-                // 将 .tgz 文件解压成 .tar 文件
+
                 GZIPInputStream(FileInputStream(tmpDownloadFile)).use { gis ->
                     BufferedOutputStream(FileOutputStream(tarFile)).use { bos ->
                         gis.copyTo(bos)

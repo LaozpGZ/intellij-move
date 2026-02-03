@@ -1,8 +1,9 @@
 import org.jetbrains.intellij.platform.gradle.Constants.Constraints
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.io.ByteArrayOutputStream
 import java.util.*
 
 val publishingToken = System.getenv("JB_PUB_TOKEN") ?: null
@@ -16,35 +17,26 @@ fun prop(name: String): String =
 
 fun propOrNull(name: String): String? = extra.properties[name] as? String
 
-fun gitCommitHash(): String {
-    val byteOut = ByteArrayOutputStream()
-    project.exec {
-        commandLine = "git rev-parse --short HEAD".split(" ")
-//            commandLine = "git rev-parse --abbrev-ref HEAD".split(" ")
-        standardOutput = byteOut
-    }
-    return String(byteOut.toByteArray()).trim().also {
-        if (it == "HEAD")
-            logger.warn("Unable to determine current branch: Project is checked out with detached head!")
-    }
-}
+fun execAndGetStdout(vararg args: String): String =
+    providers.exec {
+        commandLine(args.toList())
+    }.standardOutput.asText.get().trim()
 
-fun gitTimestamp(): String {
-    val byteOut = ByteArrayOutputStream()
-    project.exec {
-        commandLine = "git show --no-patch --format=%at HEAD".split(" ")
-//            commandLine = "git rev-parse --abbrev-ref HEAD".split(" ")
-        standardOutput = byteOut
-    }
-    return String(byteOut.toByteArray()).trim().also {
+fun gitCommitHash(): String =
+    execAndGetStdout("git", "rev-parse", "--short", "HEAD").also {
         if (it == "HEAD")
             logger.warn("Unable to determine current branch: Project is checked out with detached head!")
     }
-}
+
+fun gitTimestamp(): String =
+    execAndGetStdout("git", "show", "--no-patch", "--format=%at", "HEAD").also {
+        if (it == "HEAD")
+            logger.warn("Unable to determine current branch: Project is checked out with detached head!")
+    }
 
 val psiViewerPlugin: String by project
 val shortPlatformVersion = prop("shortPlatformVersion")
-val useInstaller = prop("useInstaller").toBooleanStrict()
+val useInstallerFlag = prop("useInstaller").toBooleanStrict()
 val codeVersion = "1.6.2"
 var pluginVersion = "$codeVersion.$shortPlatformVersion"
 if (publishingChannel != "default") {
@@ -59,16 +51,16 @@ val pluginName = "intellij-sui-move"
 val pluginJarName = "intellij-sui-move-$pluginVersion"
 val javaVersion = JavaVersion.VERSION_17
 
-val kotlinReflectVersion = "1.9.10"
+val kotlinReflectVersion = "2.2.20"
 
 group = pluginGroup
 version = pluginVersion
 
 plugins {
     id("java")
-    kotlin("jvm") version "1.9.25"
-    id("org.jetbrains.intellij.platform") version "2.1.0"
-    id("org.jetbrains.grammarkit") version "2022.3.2.2"
+    kotlin("jvm") version "2.2.20"
+    id("org.jetbrains.intellij.platform") version "2.11.0"
+    id("org.jetbrains.grammarkit") version "2023.3.0.1"
     id("net.saliman.properties") version "1.5.2"
     id("org.gradle.idea")
     id("de.undercouch.download") version "5.5.0"
@@ -103,7 +95,18 @@ allprojects {
 
         intellijPlatform {
 //            plugins(listOf(psiViewerPlugin))
-            create(prop("platformType"), prop("platformVersion"), useInstaller = useInstaller)
+            val platformType = prop("platformType")
+            val platformVersion = prop("platformVersion")
+            val shortPlatformVersionInt = shortPlatformVersion.toIntOrNull() ?: 0
+            if (platformType == "IC" && shortPlatformVersionInt >= 253) {
+                intellijIdea(platformVersion) {
+                    useInstaller.set(useInstallerFlag)
+                }
+            } else {
+                create(platformType, platformVersion) {
+                    useInstaller.set(useInstallerFlag)
+                }
+            }
             testFramework(TestFrameworkType.Platform)
             pluginVerifier(Constraints.LATEST_VERSION)
             bundledPlugin("org.toml.lang")
@@ -181,15 +184,6 @@ allprojects {
         }
     }
     tasks {
-        compileKotlin {
-            kotlinOptions {
-                jvmTarget = "17"
-                languageVersion = "1.9"
-                apiVersion = "1.9"
-                freeCompilerArgs = listOf("-Xjvm-default=all")
-            }
-        }
-
         jar {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
@@ -210,6 +204,12 @@ allprojects {
 
         withType<KotlinCompile> {
             dependsOn(generateLexer, generateParser)
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_17)
+                languageVersion.set(KotlinVersion.KOTLIN_2_2)
+                apiVersion.set(KotlinVersion.KOTLIN_2_2)
+                freeCompilerArgs.add("-Xjvm-default=all")
+            }
         }
 
     }
@@ -233,7 +233,7 @@ allprojects {
         }
     }
 
-    task("resolveDependencies") {
+    tasks.register("resolveDependencies") {
         doLast {
             rootProject.allprojects
                 .map { it.configurations }

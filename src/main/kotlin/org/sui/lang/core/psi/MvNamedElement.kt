@@ -36,7 +36,7 @@ val MvNamedElement.completionPriority
     get() = when {
         isLocal -> LOCAL_ITEM_PRIORITY
         this is MvFunction && this.name in BUILTIN_FUNCTIONS -> BUILTIN_ITEM_PRIORITY
-        else -> 0.0 // 默认优先级
+        else -> 0.0
     }
 
 private val MvNamedElement.isLocal: Boolean
@@ -50,14 +50,14 @@ private val MvNamedElement.isLocal: Boolean
                         return true
                     }
                     if (parent is MvModule) {
-                        // 同一模块中的函数也被视为本地函数
+
                         return true
                     }
                     parent = parent.parent
                 }
                 false
             }
-            // 同一模块中的常量也被视为本地常量
+
             is MvConst -> {
                 var parent = this.parent
                 while (parent != null) {
