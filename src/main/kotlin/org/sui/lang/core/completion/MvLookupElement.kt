@@ -89,24 +89,26 @@ fun getLookupElementProperties(
         )
 
 
+        // Debug log.
         println("DEBUG: Element=${element.name}, ExpectedType=${expectedTy}, ItemType=${itemTy}, IsCompat=${isCompat}")
     }
 
 
+    // Determine whether the element should be treated as local.
     val isLocalResult = when (element) {
         is MvPatBinding -> {
-
+            // Bindings are local by definition.
             true
         }
         is MvFunction -> {
-
+            // Functions declared inside another function are local.
             var parent = element.parent
             while (parent != null) {
                 if (parent is MvFunction && parent !== element) {
                     return props.copy(isLocal = true)
                 }
                 if (parent is MvModule) {
-
+                    // Functions declared directly in a module are not local.
                     break
                 }
                 parent = parent.parent
@@ -114,7 +116,7 @@ fun getLookupElementProperties(
             false
         }
         is MvConst -> {
-
+            // Constants in the same module are considered local.
             var parent = element.parent
             while (parent != null) {
                 if (parent is MvModule) {

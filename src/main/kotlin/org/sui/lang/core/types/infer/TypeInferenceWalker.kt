@@ -130,7 +130,7 @@ class TypeInferenceWalker(
         val expectedTy = expected.onlyHasTy(ctx)
 
         return if (tailExpr == null) {
-
+            // No tail expression: the block evaluates to TyUnit.
             if (coerce && expectedTy != null) {
                 coerce(this.rBrace ?: this, TyUnit, expectedTy)
             }
@@ -219,7 +219,7 @@ class TypeInferenceWalker(
             when (stmt) {
                 is MvExprStmt -> {
                     val expr = stmt.expr
-
+                    // Check whether the expression type is TyNever.
                     println("hasNeverTypeStatement: Checking expr type: ${expr.text}")
                     if (ctx.isTypeInferred(expr)) {
                         val ty = ctx.getExprType(expr)
@@ -230,7 +230,7 @@ class TypeInferenceWalker(
                         }
                     } else {
                         println("hasNeverTypeStatement: Type not inferred yet, calling inferType()")
-
+                        // If not inferred yet, infer it now.
                         val ty = expr.inferType()
                         println("hasNeverTypeStatement: Inferred type: $ty")
                         if (ty is TyNever) {
@@ -288,7 +288,7 @@ class TypeInferenceWalker(
                 val expr = stmt.expr
                 println("Expr type: ${expr.javaClass.simpleName}")
                 if (expr is MvAbortExpr) {
-
+                    // Ensure MvAbortExpr is typed as TyNever.
                     val ty = expr.inferType()
                     println("MvAbortExpr type: $ty")
                     ctx.writeExprTy(expr, ty)
@@ -384,6 +384,7 @@ class TypeInferenceWalker(
                 val ty = TyNever
                 ctx.writeExprTy(expr, ty)
                 println("MvAbortExpr: returning TyNever")
+                // Return TyNever directly to avoid later mslScopeRefined handling.
                 return ty
             }
             is MvPathExpr -> inferPathExprTy(expr, expected)
@@ -490,6 +491,7 @@ class TypeInferenceWalker(
         }
 
 
+        // If we already returned TyNever, avoid overwriting it.
         if (exprTy is TyNever) {
             println("Already TyNever, returning without writing to ctx")
             return exprTy
@@ -915,6 +917,7 @@ class TypeInferenceWalker(
                 if (macroExpr.valueArguments.size == 1) {
                     val argTy = macroExpr.valueArguments.first().expr?.inferType() ?: TyUnknown
 
+                    // Try to resolve Option and build a TyAdt.
                     try {
                         val optionType = getOptionType()
                         if (optionType != null && argTy != TyUnknown) {
@@ -927,7 +930,7 @@ class TypeInferenceWalker(
                             return TyAdt(optionType, substitution, typeArguments)
                         }
                     } catch (e: Exception) {
-
+                        // If Option cannot be resolved, fall back to TyUnknown.
                         println("Error getting option type: ${e.message}")
                     }
                 }
@@ -939,6 +942,7 @@ class TypeInferenceWalker(
                     val arg1Ty = macroExpr.valueArguments[0].expr?.inferType() ?: TyUnknown
                     val arg2Ty = macroExpr.valueArguments[1].expr?.inferType() ?: TyUnknown
 
+                    // Try to resolve Result and build a TyAdt.
                     try {
                         val resultType = getResultType()
                         if (resultType != null && arg1Ty != TyUnknown && arg2Ty != TyUnknown) {
@@ -951,7 +955,7 @@ class TypeInferenceWalker(
                             return TyAdt(resultType, substitution, typeArguments)
                         }
                     } catch (e: Exception) {
-
+                        // If Result cannot be resolved, fall back to TyUnknown.
                         println("Error getting result type: ${e.message}")
                     }
                 }
@@ -994,7 +998,7 @@ class TypeInferenceWalker(
     }
 
     private fun getOptionType(): MvStructOrEnumItemElement? {
-
+        // Try to resolve Option from pre-imported modules.
         val service = PreImportedModuleService.getInstance(project)
         val preImportedModules = service.getPreImportedModules()
         val optionModule = preImportedModules.find { it.name == "option" }
@@ -1003,7 +1007,7 @@ class TypeInferenceWalker(
             return optionStruct
         }
 
-
+        // In tests the stdlib may be missing; create a dummy Option type.
         val psiFactory = project.psiFactory
         val dummyModule = psiFactory.inlineModule("std", "option", """
             struct Option<T> has copy, drop {
@@ -1014,7 +1018,7 @@ class TypeInferenceWalker(
     }
 
     private fun getResultType(): MvStructOrEnumItemElement? {
-
+        // Try to resolve Result from pre-imported modules.
         val service = PreImportedModuleService.getInstance(project)
         val preImportedModules = service.getPreImportedModules()
         val resultModule = preImportedModules.find { it.name == "result" }
@@ -1023,7 +1027,7 @@ class TypeInferenceWalker(
             return resultStruct
         }
 
-
+        // In tests the stdlib may be missing; create a dummy Result type.
         val psiFactory = project.psiFactory
         val dummyModule = psiFactory.inlineModule("std", "result", """
             struct Result<T, E> has copy, drop {
@@ -1391,14 +1395,14 @@ class TypeInferenceWalker(
 
 
             if (!typeErrorEncountered) {
-
+                // Integer inference: prefer the suffixed kind over the default kind.
                 if (leftTy is TyInteger && rightTy is TyInteger) {
-
+                    // If left is default and right is concrete, choose right.
                     if (leftTy.kind == TyInteger.DEFAULT_KIND && rightTy.kind != TyInteger.DEFAULT_KIND) {
                         coerce(leftExpr, leftTy, expected = rightTy)
                         return rightTy
                     }
-
+                    // If right is default and left is concrete, choose left.
                     if (rightTy.kind == TyInteger.DEFAULT_KIND && leftTy.kind != TyInteger.DEFAULT_KIND) {
                         coerce(rightExpr, rightTy, expected = leftTy)
                         return leftTy
@@ -1679,6 +1683,7 @@ class TypeInferenceWalker(
         if (expectedTy != null) {
             coerce(litExpr, litTy, expectedTy)
 
+            // For unsuffixed integers, only return the expected integer type when it is explicit.
             if (!ctx.msl && (litExpr.integerLiteral != null || litExpr.hexIntegerLiteral != null)) {
                 val literal = (litExpr.integerLiteral ?: litExpr.hexIntegerLiteral)!!
                 if (TyInteger.fromSuffixedLiteral(literal) == null && expectedTy is TyInteger) {
@@ -1875,6 +1880,7 @@ class TypeInferenceWalker(
             }
         }
 
+        // Ensure the while expression itself is typed.
         if (!ctx.isTypeInferred(whileExpr)) {
             ctx.writeExprTy(whileExpr, TyNever)
         }
@@ -1903,7 +1909,7 @@ class TypeInferenceWalker(
     }
 
     private fun inferLoopLikeBlock(loopLike: MvLoopLike): Ty {
-
+        // Infer loop condition types.
         when (loopLike) {
             is MvWhileExpr -> {
                 val condition = loopLike.condition
@@ -1915,6 +1921,7 @@ class TypeInferenceWalker(
                     }
                 }
 
+                // Type the while expression itself.
                 if (loopLike is MvExpr && !ctx.isTypeInferred(loopLike)) {
                     ctx.writeExprTy(loopLike, TyNever)
                 }
@@ -1929,12 +1936,13 @@ class TypeInferenceWalker(
                     }
                 }
 
+                // Type the for expression itself.
                 if (loopLike is MvExpr && !ctx.isTypeInferred(loopLike)) {
                     ctx.writeExprTy(loopLike, TyNever)
                 }
             }
             is MvLoopExpr -> {
-
+                // Type the loop expression itself.
                 if (loopLike is MvExpr && !ctx.isTypeInferred(loopLike)) {
                     ctx.writeExprTy(loopLike, TyNever)
                 }

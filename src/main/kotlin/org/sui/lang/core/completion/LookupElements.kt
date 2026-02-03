@@ -104,6 +104,7 @@ fun InsertionContext.nextCharIs(c: Char, offset: Int): Boolean =
     document.charsSequence.indexOfSkippingSpace(c, tailOffset + offset) != null
 
 private fun CharSequence.indexOfSkippingSpace(c: Char, startIndex: Int): Int? {
+    // Skip spaces and tabs while searching for the target character.
     for (i in startIndex until this.length) {
         val currentChar = this[i]
         if (c == currentChar) return i
@@ -118,12 +119,13 @@ private fun CharSequence.indexOfSkippingSpaceAndComments(c: Char, startIndex: In
         val currentChar = this[i]
         when (currentChar) {
             ' ' , '\t', '\n', '\r' -> {
-
+                // Skip whitespace.
                 i++
             }
             '/' -> {
-
+                // Skip comments.
                 if (i + 1 < this.length && this[i + 1] == '*') {
+                    // Skip /* */ block comments.
                     i += 2
                     while (i < this.length && !(this[i] == '*' && i + 1 < this.length && this[i + 1] == '/')) {
                         i++
@@ -132,13 +134,13 @@ private fun CharSequence.indexOfSkippingSpaceAndComments(c: Char, startIndex: In
                         i += 2
                     }
                 } else if (i + 1 < this.length && this[i + 1] == '/') {
-
+                    // Skip // line comments.
                     i += 2
                     while (i < this.length && this[i] != '\n' && this[i] != '\r') {
                         i++
                     }
                 } else {
-
+                    // Not a comment start.
                     return null
                 }
             }
@@ -146,7 +148,7 @@ private fun CharSequence.indexOfSkippingSpaceAndComments(c: Char, startIndex: In
                 if (currentChar == c) {
                     return i
                 } else {
-
+                    // Found a non-space/non-comment character that is not the target.
                     return null
                 }
             }
@@ -184,7 +186,7 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : 
         val document = context.document
         val editor = context.editor
 
-
+        // Disable highlighters before modifying the document.
         editor.markupModel.removeAllHighlighters()
 
         try {
@@ -197,6 +199,7 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : 
 
                     val requiresExplicitTypes =
                         if (element.name == "global") {
+                            // `global` does not require type arguments.
                             false
                         } else {
                             element.requiresExplicitlyProvidedTypeArguments(completionCtx)
@@ -220,14 +223,14 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : 
                     } else {
                         var suffix = ""
 
-
+                        // Check if a type argument list already follows.
                         val hasFollowingAngleBracket = context.alreadyHasAngleBrackets
 
                         if (requiresExplicitTypes && !hasFollowingAngleBracket) {
                             suffix += "<>"
                         }
 
-
+                        // Do not add () if a type argument list is already present.
                         if (!hasFollowingAngleBracket && !context.alreadyHasCallParens) {
                             suffix += "()"
                         }

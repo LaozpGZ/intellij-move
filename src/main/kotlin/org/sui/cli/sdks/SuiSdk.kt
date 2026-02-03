@@ -23,6 +23,7 @@ data class SuiSdk(val sdksDir: String, val version: String, val network: String)
 
     private fun getMacProcessorArchitecture(): String {
         if (SystemInfo.isMac) {
+            // Map macOS os.arch to Sui release naming.
             val osArch = System.getProperty("os.arch")
             return when (osArch) {
                 "aarch64" -> "arm64"

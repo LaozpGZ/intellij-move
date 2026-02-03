@@ -141,7 +141,7 @@ object MoveParserUtil : GeneratedParserUtilBase() {
 
     @JvmStatic
     fun pathMode(b: PsiBuilder, level: Int, mode: PathParsingMode): Boolean {
-
+        // Temporary overload to satisfy generated parser calls that pass fewer parameters.
         return false
     }
 
@@ -381,21 +381,21 @@ object MoveParserUtil : GeneratedParserUtilBase() {
 
     @JvmStatic
     fun isNotMatchExpr(b: PsiBuilder, level: Int): Boolean {
-
+        // Check whether we are inside a match expression body.
 
         var index = -1
         var braceCount = 0
         var hasMatchKeyword = false
-        
+
         while (true) {
             val token = b.rawLookup(index)
             if (token == null) break
-            
+
             if (token == WHITE_SPACE || token in MOVE_COMMENTS) {
                 index--
                 continue
             }
-            
+
             if (token == R_BRACE) {
                 braceCount++
             } else if (token == L_BRACE) {
@@ -404,15 +404,15 @@ object MoveParserUtil : GeneratedParserUtilBase() {
                 hasMatchKeyword = true
                 break
             }
-            
+
             index--
         }
-        
+
         return !hasMatchKeyword
     }
     @JvmStatic
     fun isMatchBody(b: PsiBuilder, level: Int): Boolean {
-
+        // Check if current token is '{' and look for '=>' inside the block.
         var index = 0
         var braceCount = 0
         while (true) {

@@ -245,6 +245,7 @@ class FunctionsCompletionTest : CompletionTestCase() {
         val editor = myFixture.editor
         val document = editor.document
         val caretOffset = editor.caretModel.offset
+        // Debug output to diagnose caret and document state.
         println("Document text: \"${document.text}\"")
         println("Caret offset: $caretOffset")
 

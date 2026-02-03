@@ -66,6 +66,7 @@ fun <T : PsiElement> CodeInsightTestFixture.findElementsWithDataAndOffsetInEdito
         val elementAtMarker = this.file.findElementAt(elementOffset)!!
         var element = PsiTreeUtil.getParentOfType(elementAtMarker, psiClass, false)
 
+        // If MvExpr is requested but only MvExprStmt is found, return its expr.
         if (element == null && psiClass == MvExpr::class.java) {
             val exprStmt = PsiTreeUtil.getParentOfType(elementAtMarker, MvExprStmt::class.java, false)
             if (exprStmt != null) {

@@ -137,6 +137,7 @@ fun MvFunctionLike.requiresExplicitlyProvidedTypeArguments(completionContext: Co
     {
 
         if (this.name == "global") {
+            // `global` does not require type arguments.
             return false
         }
 
@@ -145,6 +146,7 @@ fun MvFunctionLike.requiresExplicitlyProvidedTypeArguments(completionContext: Co
             this.name?.startsWith("exists") == true ||
             this.name?.startsWith("move_from") == true ||
             this.name?.startsWith("move_to") == true) {
+            // Storage-related builtins require explicit type arguments.
             return true
         }
 

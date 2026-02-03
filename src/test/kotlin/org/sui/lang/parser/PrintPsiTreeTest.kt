@@ -24,6 +24,7 @@ class PrintPsiTreeTest : MvProjectTestBase() {
         """.trimIndent()
 
         val psiFile = myFixture.configureByText(MoveFileType, code)
+        // Find the target function for inspection.
         val callFunction = PsiTreeUtil.findChildrenOfType(psiFile, MvFunction::class.java)
             .first { it.identifier?.text == "call" }
 

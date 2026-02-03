@@ -39,7 +39,7 @@ object StringUtils {
         return if (start != -1 && end != -1) {
             var cleanString = input.substring(start, end + 1)
             if (cleanString.endsWith("[warn]")) {
-
+                // Strip trailing [warn].
                 cleanString = cleanString.substring(0, cleanString.length - 6)
             }
             return cleanString

@@ -64,7 +64,7 @@ class DownloadSuiSdkTask(
 
                 val tarFile = File(tmpExtractionDir, tmpDownloadFile.nameWithoutExtension)
 
-
+                // Expand .tgz into .tar before extracting.
                 GZIPInputStream(FileInputStream(tmpDownloadFile)).use { gis ->
                     BufferedOutputStream(FileOutputStream(tarFile)).use { bos ->
                         gis.copyTo(bos)

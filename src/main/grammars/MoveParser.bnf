@@ -755,6 +755,7 @@ PatBinding ::=mut? IDENTIFIER !ForbiddenPatBindingLast {
 BindingPat ::= IDENTIFIER !ForbiddenPatBindingLast
 
 
+// Allow identifiers before `if` to support match-arm guards.
 private ForbiddenPatBindingLast ::= '::' | '<' | '(' | '{' | '!'
 
 TuplePat ::= '(' ParenListElemPat_with_recover* ')'

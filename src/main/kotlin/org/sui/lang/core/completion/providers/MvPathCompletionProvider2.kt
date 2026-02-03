@@ -167,6 +167,7 @@ fun filterCompletionVariantsByVisibility(
                 is Visibility2.Private -> {
                     val elementModule = element.containingModule
                     val contextModule = context.containingModule
+                    // Allow private functions within the same module (e.g. Self::).
                     return@wrapWithFilter elementModule == contextModule
                 }
                 else -> return@wrapWithFilter false

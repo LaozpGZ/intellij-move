@@ -108,7 +108,7 @@ abstract class TypificationTestCase : MvTestBase() {
         println("Expected: $expectedType")
         println("MSL: $msl")
 
-
+        // Print all ancestor elements.
         var parent: PsiElement? = expr.parent
         println("Ancestors:")
         while (parent != null) {
@@ -119,6 +119,7 @@ abstract class TypificationTestCase : MvTestBase() {
             parent = parent.parent
         }
 
+        // Get the inference owner for the current expression.
         val inference = expr.inference(msl) ?: error("No inference owner at the caret position")
 
         // Debug information

@@ -44,16 +44,17 @@ object CommonCompletionProvider : MvCompletionProvider() {
         val msl = element.isMsl()
 
 
+        // Skip type positions.
         if (element.parent is MvPathType) return
 
-
+        // Skip qualified paths (already has a prefix).
         if (element is MvPath && element.path != null) return
 
-
+        // Skip script context.
         val fileText = element.containingFile.text
         if (fileText.startsWith("script {")) return
 
-
+        // Skip dot-access positions.
         if (element.parent is MvDotExpr) return
 
 
@@ -62,14 +63,15 @@ object CommonCompletionProvider : MvCompletionProvider() {
         val specBlockStart = fileContent.lastIndexOf("spec", currentOffset)
         val specBlockEnd = fileContent.indexOf("}", specBlockStart)
 
+        // Do not provide builtin completions inside spec blocks.
         if (specBlockStart != -1 && (specBlockEnd == -1 || currentOffset < specBlockEnd)) {
-
             return
         }
 
 
         val document = parameters.editor?.document
         var hasParens = false
+        // Detect whether `()` already exists right after the name.
         if (document != null) {
             val endOffset = position.textRange.endOffset
             if (endOffset + 2 <= document.textLength) {
@@ -78,58 +80,58 @@ object CommonCompletionProvider : MvCompletionProvider() {
         }
 
 
+        // Provide SPEC_BUILTIN_FUNCTIONS completions in MSL.
         if (msl) {
-
             for (functionName in SPEC_BUILTIN_FUNCTIONS) {
                 val lookupElement = LookupElementBuilder
                     .create(functionName)
                     .withTypeText("builtin")
                     .withInsertHandler { ctx, _ ->
                         if (!hasParens) {
-
+                            // `global` does not use type arguments.
                             if (functionName == "global") {
                                 ctx.document.insertString(ctx.selectionEndOffset, "()")
                                 EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
                             } else {
-
+                                // Default behavior for other functions.
                                 ctx.document.insertString(ctx.selectionEndOffset, "()")
                                 EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
                             }
                         } else {
-
+                            // If parentheses already exist, just move inside them.
                             EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
                         }
                     }
                 result.addElement(PrioritizedLookupElement.withPriority(lookupElement, BUILTIN_ITEM_PRIORITY))
             }
         } else {
-
+            // Provide BUILTIN_FUNCTIONS completions in normal code.
             for (functionName in BUILTIN_FUNCTIONS) {
                 val lookupElement = LookupElementBuilder
                     .create(functionName)
                     .withTypeText("builtin")
                     .withInsertHandler { ctx, _ ->
                         if (!hasParens) {
-
+                            // If a type argument list already follows, do not add ().
                             val hasFollowingAngleBracket = ctx.selectionEndOffset < ctx.document.charsSequence.length &&
                                 ctx.document.charsSequence[ctx.selectionEndOffset] == '<'
 
                             if (!hasFollowingAngleBracket) {
-
+                                // borrow_global* requires type arguments.
                                 if (functionName.startsWith("borrow_global")) {
                                     ctx.document.insertString(ctx.selectionEndOffset, "<>()")
                                     EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
                                 } else {
-
+                                    // Other functions only add ().
                                     ctx.document.insertString(ctx.selectionEndOffset, "()")
                                     EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
                                 }
                             } else {
-
+                                // If a type argument list follows, move into it.
                                 EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
                             }
                         } else {
-
+                            // If parentheses already exist, just move inside them.
                             EditorModificationUtil.moveCaretRelatively(ctx.editor, 1)
                         }
                     }

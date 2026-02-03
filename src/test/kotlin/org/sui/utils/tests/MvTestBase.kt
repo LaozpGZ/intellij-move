@@ -50,7 +50,7 @@ fun UsefulTestCase.handleCompilerV2Annotations(project: Project) {
     val enabledCompilerV2 = this.findAnnotationInstance<CompilerV2Features>()
     // triggers projects refresh
     project.moveSettings.modifyTemporary(this.testRootDisposable) {
-
+        // Disable all compiler v2 features by default.
         it.enableResourceAccessControl = false
         it.enableReceiverStyleFunctions = false
         it.enableIndexExpr = false

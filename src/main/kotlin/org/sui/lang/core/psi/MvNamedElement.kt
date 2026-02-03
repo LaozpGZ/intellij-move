@@ -50,7 +50,7 @@ private val MvNamedElement.isLocal: Boolean
                         return true
                     }
                     if (parent is MvModule) {
-
+                        // Functions declared directly in a module are treated as local.
                         return true
                     }
                     parent = parent.parent
@@ -62,6 +62,7 @@ private val MvNamedElement.isLocal: Boolean
                 var parent = this.parent
                 while (parent != null) {
                     if (parent is MvModule) {
+                        // Constants in the same module are treated as local.
                         return true
                     }
                     parent = parent.parent

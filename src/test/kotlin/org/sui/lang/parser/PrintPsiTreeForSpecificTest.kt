@@ -34,14 +34,14 @@ class PrintPsiTreeForSpecificTest : MvProjectTestBase() {
         println("Function body PSI tree:")
         callFunction.codeBlock?.let { printPsiTree(it, 0) }
 
-
+        // List all MvExpr elements.
         println("\nAll MvExpr elements in file:")
         val allExprs = PsiTreeUtil.findChildrenOfType(psiFile, MvExpr::class.java)
         allExprs.forEachIndexed { index, expr ->
             println("Index $index: Type: ${expr.javaClass.simpleName}, Text: '${expr.text}'")
         }
 
-
+        // List all MvExprStmt elements.
         println("\nAll MvExprStmt elements in file:")
         val allExprStmts = PsiTreeUtil.findChildrenOfType(psiFile, MvExprStmt::class.java)
         allExprStmts.forEachIndexed { index, stmt ->
@@ -51,12 +51,13 @@ class PrintPsiTreeForSpecificTest : MvProjectTestBase() {
             }
         }
 
-
+        // List all MvSpecExprStmt elements.
         println("\nAll MvSpecExprStmt elements in file:")
         val allSpecExprStmts = PsiTreeUtil.findChildrenOfType(psiFile, MvSpecExprStmt::class.java)
         allSpecExprStmts.forEachIndexed { index, stmt ->
             println("Index $index: Type: ${stmt.javaClass.simpleName}, Text: '${stmt.text}'")
 
+            // Try to extract nested expressions inside SpecExprStmt.
             val children = stmt.children
             for (child in children) {
                 if (child is MvExpr) {
@@ -65,12 +66,13 @@ class PrintPsiTreeForSpecificTest : MvProjectTestBase() {
             }
         }
 
-
+        // Print details of each child inside the function body.
         println("\nFunction body children details:")
         callFunction.codeBlock?.let { codeBlock ->
             codeBlock.children.forEachIndexed { index, child ->
                 println("Child $index: Type: ${child.javaClass.simpleName}, Text: '${child.text}'")
 
+                // Print child-of-child details.
                 child.children.forEachIndexed { subIndex, subChild ->
                     println("  SubChild $subIndex: Type: ${subChild.javaClass.simpleName}, Text: '${subChild.text}'")
                 }

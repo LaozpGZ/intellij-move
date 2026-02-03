@@ -158,6 +158,7 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
                 if (candidates.isNotEmpty()) AutoImportFix(referenceElement) else null
             }
 
+            // Respect the setting that skips unresolved references without quick-fixes.
             if (ignoreWithoutQuickFix && fix == null) {
                 return
             }
