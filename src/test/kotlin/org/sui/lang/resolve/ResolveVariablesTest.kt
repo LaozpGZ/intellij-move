@@ -433,11 +433,11 @@ module 0x1::string_tests {
     fun `test resolve function with match name`() = checkByCode(
         """
         module 0x1::m {
-            fun match() {}
-              //X
+            fun match_fn() {}
+                //X
             fun main() {
-                match();
-                  //^
+                match_fn();
+                //^
             }
         }
     """

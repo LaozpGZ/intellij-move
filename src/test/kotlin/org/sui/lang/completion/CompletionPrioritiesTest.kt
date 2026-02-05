@@ -23,7 +23,7 @@ module 0x1::Main {
     )
 
     fun `test assert! before unimported assert`() = checkCompletionsOrder(
-        listOf("assert!", "assert_true"),
+        listOf("assert!", "assert_eq!", "assert_ref_eq!", "assert_true"),
         """
 module 0x1::M {
     public fun assert_true() {}

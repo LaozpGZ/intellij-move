@@ -188,7 +188,7 @@ class ModulesCompletionProjectTest : CompletionProjectTestCase() {
             module Pontem::PontemMod {}
             module 0x1::MyMod {
                 use 0x2::Pont/*caret*/
-            }    
+            }
             """
             )
         }
@@ -198,7 +198,7 @@ class ModulesCompletionProjectTest : CompletionProjectTestCase() {
             module Pontem::PontemMod {}
             module 0x1::MyMod {
                 use 0x2::PontemMod/*caret*/
-    }
+            }
         """
     )
 

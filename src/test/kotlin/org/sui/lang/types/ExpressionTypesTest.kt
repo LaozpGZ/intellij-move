@@ -1671,7 +1671,7 @@ module 0x1::main {
             fun main(pool: &mut Pool) {
                 pool.unknown
                 pool.field
-                    //^ u64
+                    //^ u8
             }
         }        
     """

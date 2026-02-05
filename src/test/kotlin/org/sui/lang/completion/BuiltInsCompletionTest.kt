@@ -91,7 +91,7 @@ class BuiltInsCompletionTest : CompletionTestCase() {
     """
     )
 
-    fun `test autocomplete assert! in module`() = doSingleCompletion(
+    fun `test autocomplete assert! in module`() = doFirstCompletion(
         """
     module 0x1::M {
         fun m() {
@@ -107,7 +107,7 @@ class BuiltInsCompletionTest : CompletionTestCase() {
     """
     )
 
-    fun `test autocomplete assert! in script`() = doSingleCompletion(
+    fun `test autocomplete assert! in script`() = doFirstCompletion(
         """
     script {
         fun m() {

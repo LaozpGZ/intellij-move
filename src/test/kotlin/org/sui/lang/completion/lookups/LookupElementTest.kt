@@ -1,5 +1,7 @@
 package org.sui.lang.completion.lookups
 
+import com.intellij.codeInsight.completion.CompletionContributor
+import com.intellij.codeInsight.completion.CompletionResult
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionSorter
 import com.intellij.codeInsight.completion.PrefixMatcher
@@ -220,11 +222,15 @@ class LookupElementTest : MvTestBase() {
         val element = findElementInEditor<MvReferenceElement>()
 
         val lookups = mutableListOf<LookupElement>()
-        val result = object : CompletionResultSet(PrefixMatcher.ALWAYS_TRUE, null, null) {
+        val result = object : CompletionResultSet(
+            PrefixMatcher.ALWAYS_TRUE,
+            java.util.function.Consumer<CompletionResult> { },
+            object : CompletionContributor() {}
+        ) {
             override fun caseInsensitive(): CompletionResultSet = this
             override fun withPrefixMatcher(matcher: PrefixMatcher): CompletionResultSet = this
             override fun withPrefixMatcher(prefix: String): CompletionResultSet = this
-            override fun restartCompletionOnPrefixChange(prefixCondition: ElementPattern<String>?) {}
+            override fun restartCompletionOnPrefixChange(prefixCondition: ElementPattern<String>) {}
             override fun addLookupAdvertisement(text: String) {}
             override fun withRelevanceSorter(sorter: CompletionSorter): CompletionResultSet = this
             override fun restartCompletionWhenNothingMatches() {}

@@ -9,6 +9,7 @@ import com.intellij.codeInspection.InspectionProfileEntry
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.UsefulTestCase
@@ -23,6 +24,7 @@ import org.sui.utils.tests.base.MvTestCase
 import org.sui.utils.tests.base.TestCase
 import org.sui.utils.tests.base.findElementsWithDataAndOffsetInEditor
 import java.lang.annotation.Inherited
+import java.nio.file.Paths
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -87,6 +89,8 @@ abstract class MvTestBase : MvLightTestBase(),
         super.setUp()
 
         setupInspections()
+        val testResourcesPath = Paths.get(TestCase.testResourcesPath).toAbsolutePath().normalize().toString()
+        VfsRootAccess.allowRootAccess(testRootDisposable, testResourcesPath)
 
 //        val isDebugMode = this.findAnnotationInstance<DebugMode>()?.enabled ?: true
 //        setRegistryKey("org.move.debug.enabled", isDebugMode)

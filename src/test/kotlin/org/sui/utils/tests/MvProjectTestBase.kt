@@ -32,7 +32,7 @@ abstract class MvProjectTestBase : CodeInsightFixtureTestCase<ModuleFixtureBuild
         super.setUp()
 
         val isDebugMode = this.findAnnotationInstance<DebugMode>()?.enabled ?: true
-        setRegistryKey("org.move.debug.enabled", isDebugMode)
+        setRegistryKey("org.sui.debug.enabled", isDebugMode)
 
         this.handleCompilerV2Annotations(project)
     }

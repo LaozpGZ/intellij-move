@@ -421,34 +421,34 @@ class ResolveFunctionTest : ResolveTestCase() {
 
     fun `testpublicscriptfunctionavailableinentryfunction`() = checkByCode(
         """
-module0x1::M{
-public(script)funcall(){}
-//X
+module 0x1::M {
+    public(script) fun call() {}
+                       //X
 }
-module0x1::main{
-use0x1::M::call;
+module 0x1::main {
+    use 0x1::M::call;
 
-entryfuntest_1(){
-call();
-//^
-}
+    entry fun test_1() {
+        call();
+        //^
+    }
 }
 """
     )
 
     fun `testpublicscriptfunctionavailableinpublicscriptfunction`() = checkByCode(
         """
-module0x1::M{
-public(script)funcall(){}
-//X
+module 0x1::M {
+    public(script) fun call() {}
+                       //X
 }
-module0x1::main{
-use0x1::M::call;
+module 0x1::main {
+    use 0x1::M::call;
 
-public(script)funtest_1(){
-call();
-//^
-}
+    public(script) fun test_1() {
+        call();
+        //^
+    }
 }
 """
     )
@@ -786,7 +786,7 @@ module 0x1::mod {
         }
         module 0x1::main {
             use 0x1::m::spec_sip_hash;
-                //^
+                        //^
             }
     """
     )

@@ -2,12 +2,13 @@ package org.sui.utils.tests
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vcs.ex.ProjectLevelVcsManagerEx
-import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
+import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.common.runAll
 import com.intellij.util.ThrowableRunnable
 import com.intellij.util.ui.UIUtil
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 abstract class WithAptosCliTestBase : MvProjectTestBase() {
 
@@ -61,7 +62,7 @@ abstract class WithAptosCliTestBase : MvProjectTestBase() {
         runAll(
             {
                 // Fixes flaky tests
-                (ProjectLevelVcsManagerEx.getInstance(project) as ProjectLevelVcsManagerImpl).waitForInitialized()
+                waitForVcsInitialization()
             },
             { Disposer.dispose(earlyTestRootDisposable) },
             { rustupFixture.tearDown() },
@@ -71,6 +72,13 @@ abstract class WithAptosCliTestBase : MvProjectTestBase() {
 
     override fun getTestRootDisposable(): Disposable {
         return if (myFixture != null) myFixture.testRootDisposable else super.getTestRootDisposable()
+    }
+
+    private fun waitForVcsInitialization() {
+        val latch = CountDownLatch(1)
+        ProjectLevelVcsManager.getInstance(project).runAfterInitialization { latch.countDown() }
+        UIUtil.dispatchAllInvocationEvents()
+        latch.await(5, TimeUnit.SECONDS)
     }
 
 //    protected fun buildProject(builder: FileTreeBuilder.() -> Unit): TestProject =

@@ -1,6 +1,6 @@
 package org.sui.lang.types
 
-import org.sui.lang.core.psi.MvRefExpr
+import org.sui.lang.core.psi.MvPathExpr
 import org.sui.utils.tests.types.TypificationTestCase
 
 class ExpectedTypeTest : TypificationTestCase() {
@@ -171,7 +171,7 @@ class ExpectedTypeTest : TypificationTestCase() {
     """
     )
 
-    fun `test borrow type`() = testExpectedType<MvRefExpr>(
+    fun `test borrow type`() = testExpectedType<MvPathExpr>(
         """
     module 0x1::main {
         struct LiquidityPool {}
@@ -184,7 +184,7 @@ class ExpectedTypeTest : TypificationTestCase() {
     """
     )
 
-    fun `test borrow mut type`() = testExpectedType<MvRefExpr>(
+    fun `test borrow mut type`() = testExpectedType<MvPathExpr>(
         """
     module 0x1::main {
         struct LiquidityPool {}
