@@ -12,6 +12,7 @@ class MoveToml(
     val project: Project,
     val tomlFile: TomlFile,
     val packageTable: MoveTomlPackageTable? = null,
+    val edition: MoveEdition = MoveEdition.DEFAULT,
 
     val addresses: RawAddressMap = mutableRawAddressMap(),
     val dev_addresses: RawAddressMap = mutableRawAddressMap(),
@@ -52,6 +53,7 @@ class MoveToml(
 
             val packageTomlTable = tomlFile.getTable("package")
             var packageTable: MoveTomlPackageTable? = null
+            var edition = MoveEdition.DEFAULT
             if (packageTomlTable != null) {
                 val name = packageTomlTable.findValue("name")?.stringValue()
                 val version = packageTomlTable.findValue("version")?.stringValue()
@@ -60,6 +62,8 @@ class MoveToml(
                         .orEmpty()
                         .mapNotNull { it.stringValue() }
                 val license = packageTomlTable.findValue("license")?.stringValue()
+                val rawEdition = packageTomlTable.findValue("edition")?.stringValue()
+                edition = MoveEdition.fromToml(rawEdition) ?: MoveEdition.DEFAULT
                 packageTable = MoveTomlPackageTable(name, version, authors, license)
             }
 
@@ -73,6 +77,7 @@ class MoveToml(
                 tomlFile.project,
                 tomlFile,
                 packageTable,
+                edition,
                 addresses,
                 devAddresses,
                 deps,

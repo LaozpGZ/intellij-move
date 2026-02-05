@@ -47,6 +47,8 @@ data class MoveProject(
 
     val contentRoot: VirtualFile get() = this.currentPackage.contentRoot
     val contentRootPath: Path? get() = this.currentPackage.contentRoot.toNioPathOrNull()
+    val edition: MoveEdition get() = this.currentPackage.edition
+    val languageFeatures: MoveLanguageFeatures get() = this.currentPackage.languageFeatures
 
     fun movePackages(): Sequence<MovePackage> = currentPackage.wrapWithList().chain(depPackages())
     fun depPackages(): List<MovePackage> = dependencies.map { it.first }.reversed()
@@ -215,7 +217,8 @@ data class MoveProject(
             val moveToml = MoveToml(project, tomlFile)
             val movePackage = MovePackage(project, contentRoot,
                                           packageName = "DummyPackage",
-                                          tomlMainAddresses = moveToml.declaredAddresses())
+                                          tomlMainAddresses = moveToml.declaredAddresses(),
+                                          edition = moveToml.edition)
             return movePackage
         }
 

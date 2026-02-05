@@ -18,16 +18,74 @@ import org.toml.lang.psi.TomlFile
 import java.nio.file.Path
 import kotlin.io.path.relativeToOrNull
 
+enum class MoveEdition(
+    val displayName: String,
+    val tomlValues: Set<String>
+) {
+    MOVE_1("Move 1", setOf("1", "move-1")),
+    MOVE_2024_ALPHA("Move 2024 Alpha", setOf("2024.alpha", "2024-alpha", "move-2024-alpha")),
+    MOVE_2024("Move 2024", setOf("2024", "move-2024"));
+
+    val isMove2024: Boolean get() = this != MOVE_1
+
+    companion object {
+        val DEFAULT: MoveEdition = MOVE_1
+        private val lookup: Map<String, MoveEdition> =
+            values().flatMap { edition -> edition.tomlValues.map { it to edition } }.toMap()
+
+        val supportedEditionValues: List<String> = listOf("1", "2024", "2024.alpha")
+
+        fun fromToml(rawValue: String?): MoveEdition? {
+            if (rawValue.isNullOrBlank()) return null
+            val normalized = rawValue.trim().lowercase()
+            return lookup[normalized]
+        }
+    }
+}
+
+data class MoveLanguageFeatures(
+    val receiverStyleFunctions: Boolean,
+    val resourceAccessControl: Boolean,
+    val indexExpr: Boolean,
+    val publicPackageVisibility: Boolean,
+    val macroFunctions: Boolean,
+    val typeKeyword: Boolean,
+    val publicStructRequired: Boolean,
+    val letMutRequired: Boolean,
+    val publicFriendDisabled: Boolean,
+) {
+    companion object {
+        val DEFAULT: MoveLanguageFeatures = fromEdition(MoveEdition.DEFAULT)
+
+        fun fromEdition(edition: MoveEdition): MoveLanguageFeatures {
+            val move2024 = edition.isMove2024
+            return MoveLanguageFeatures(
+                receiverStyleFunctions = move2024,
+                resourceAccessControl = false,
+                indexExpr = move2024,
+                publicPackageVisibility = true,
+                macroFunctions = move2024,
+                typeKeyword = move2024,
+                publicStructRequired = move2024,
+                letMutRequired = move2024,
+                publicFriendDisabled = move2024,
+            )
+        }
+    }
+}
+
 data class MovePackage(
     val project: Project,
     val contentRoot: VirtualFile,
     val packageName: String,
     val tomlMainAddresses: PackageAddresses,
+    val edition: MoveEdition = MoveEdition.DEFAULT,
 ) {
     val manifestFile: VirtualFile get() = contentRoot.findChild(MvConstants.MANIFEST_FILE)!!
 
     val manifestTomlFile: TomlFile get() = manifestFile.toPsiFile(project) as TomlFile
     val moveToml: MoveToml get() = MoveToml.fromTomlFile(this.manifestTomlFile)
+    val languageFeatures: MoveLanguageFeatures get() = MoveLanguageFeatures.fromEdition(edition)
 
 //    val packageName = this.moveToml.packageName ?: ""
 
@@ -97,7 +155,8 @@ data class MovePackage(
             return MovePackage(
                 moveToml.project, contentRoot,
                 packageName = moveToml.packageName ?: "",
-                tomlMainAddresses = moveToml.declaredAddresses()
+                tomlMainAddresses = moveToml.declaredAddresses(),
+                edition = moveToml.edition,
             )
         }
     }
