@@ -2,6 +2,7 @@ package org.sui.ide.annotator
 
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.psi.PsiElement
+import org.sui.cli.settings.moveSettings
 import org.sui.ide.presentation.declaringModule
 import org.sui.ide.presentation.fullname
 import org.sui.ide.utils.functionSignature
@@ -36,6 +37,8 @@ class MvErrorAnnotator: MvAnnotatorBase() {
 
             override fun visitPath(o: MvPath) = checkMethodOrPath(o, moveHolder)
             override fun visitMethodCall(o: MvMethodCall) = checkMethodOrPath(o, moveHolder)
+            override fun visitAssignmentExpr(o: MvAssignmentExpr) = checkAssignmentMutability(moveHolder, o)
+            override fun visitBorrowExpr(o: MvBorrowExpr) = checkBorrowMutability(moveHolder, o)
 
             override fun visitCallExpr(callExpr: MvCallExpr) {
                 val msl = callExpr.path.isMslScope
@@ -161,6 +164,35 @@ class MvErrorAnnotator: MvAnnotatorBase() {
             }
         }
         element.accept(visitor)
+    }
+
+    private fun checkAssignmentMutability(holder: MvAnnotationHolder, assignmentExpr: MvAssignmentExpr) {
+        if (assignmentExpr.isMsl()) return
+        if (!assignmentExpr.project.moveSettings.requireLetMut) return
+        val binding = resolveBindingFromExpr(assignmentExpr.expr) ?: return
+        if (binding.isDeclaredMutable) return
+        val pathExpr = assignmentExpr.expr as? MvPathExpr
+        val target = pathExpr?.path?.referenceNameElement ?: assignmentExpr.expr
+        Diagnostic.MutBindingRequiredForAssignment(target)
+            .addToHolder(holder)
+    }
+
+    private fun checkBorrowMutability(holder: MvAnnotationHolder, borrowExpr: MvBorrowExpr) {
+        if (!borrowExpr.isMut) return
+        if (borrowExpr.isMsl()) return
+        if (!borrowExpr.project.moveSettings.requireLetMut) return
+        val binding = resolveBindingFromExpr(borrowExpr.expr) ?: return
+        if (binding.isDeclaredMutable) return
+        val pathExpr = borrowExpr.expr as? MvPathExpr
+        val target = pathExpr?.path?.referenceNameElement ?: borrowExpr
+        Diagnostic.MutBindingRequiredForBorrow(target)
+            .addToHolder(holder)
+    }
+
+    private fun resolveBindingFromExpr(expr: MvExpr?): MvPatBinding? {
+        val pathExpr = expr as? MvPathExpr ?: return null
+        val resolved = pathExpr.path.reference?.resolve() ?: return null
+        return resolved as? MvPatBinding
     }
 
     private fun expectedArgsCountForMacro(call: MvMacroCallExpr): Int? {

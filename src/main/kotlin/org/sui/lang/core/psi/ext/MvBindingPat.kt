@@ -75,3 +75,10 @@ abstract class MvPatBindingMixin(node: ASTNode) : MvMandatoryNameIdentifierOwner
         }
     }
 }
+
+val MvPatBinding.isDeclaredMutable: Boolean
+    get() {
+        if (this.mut != null) return true
+        val letStmt = this.owner as? MvLetStmt ?: return false
+        return letStmt.isMut
+    }

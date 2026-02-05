@@ -26,6 +26,8 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
             override fun visitSpecFunction(o: MvSpecFunction) = checkSpecFunction(moveHolder, o)
             override fun visitIndexExpr(o: MvIndexExpr) = checkIndexExpr(moveHolder, o)
             override fun visitMethodCall(o: MvMethodCall) = checkMethodCall(moveHolder, o)
+            override fun visitFriendDecl(o: MvFriendDecl) = checkFriendDecl(moveHolder, o)
+            override fun visitVisibilityModifier(o: MvVisibilityModifier) = checkVisibilityModifier(moveHolder, o)
 
             override fun visitModule(o: MvModule) {
                 checkVisibilityModifiers(moveHolder, o)
@@ -110,10 +112,16 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
     }
 
     private fun checkStruct(holder: MvAnnotationHolder, struct: MvStruct) {
-        val native = struct.native ?: return
-        val errorRange = TextRange.create(native.startOffset, struct.structKw.endOffset)
-        Diagnostic.NativeStructNotSupported(struct, errorRange)
-            .addToHolder(holder)
+        val native = struct.native
+        if (native != null) {
+            val errorRange = TextRange.create(native.startOffset, struct.structKw.endOffset)
+            Diagnostic.NativeStructNotSupported(struct, errorRange)
+                .addToHolder(holder)
+        }
+        if (struct.project.moveSettings.requirePublicStruct && !struct.isPublic) {
+            Diagnostic.PublicStructIsRequired(struct.structKw)
+                .addToHolder(holder)
+        }
     }
 
     private fun checkVisibilityModifiers(
@@ -142,6 +150,20 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
                     .PackageAndFriendModifiersCannotBeUsedTogether(visibilityModifier)
                     .addToHolder(holder)
             }
+        }
+    }
+
+    private fun checkFriendDecl(holder: MvAnnotationHolder, friendDecl: MvFriendDecl) {
+        if (!friendDecl.project.moveSettings.publicFriendDisabled) return
+        Diagnostic.FriendDeclIsNotSupportedInMove2024(friendDecl)
+            .addToHolder(holder)
+    }
+
+    private fun checkVisibilityModifier(holder: MvAnnotationHolder, modifier: MvVisibilityModifier) {
+        if (!modifier.project.moveSettings.publicFriendDisabled) return
+        if (modifier.hasFriend) {
+            Diagnostic.PublicFriendIsNotSupportedInMove2024(modifier)
+                .addToHolder(holder)
         }
     }
 

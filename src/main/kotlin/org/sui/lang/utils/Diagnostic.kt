@@ -210,6 +210,51 @@ sealed class Diagnostic(
         }
     }
 
+    class PublicStructIsRequired(structKeyword: PsiElement) : Diagnostic(structKeyword) {
+        override fun prepare(): PreparedAnnotation {
+            return PreparedAnnotation(
+                ERROR,
+                "public struct is required in Move 2024"
+            )
+        }
+    }
+
+    class PublicFriendIsNotSupportedInMove2024(modifier: MvVisibilityModifier) : Diagnostic(modifier) {
+        override fun prepare(): PreparedAnnotation {
+            return PreparedAnnotation(
+                ERROR,
+                "public(friend) is not supported in Move 2024"
+            )
+        }
+    }
+
+    class FriendDeclIsNotSupportedInMove2024(friendDecl: MvFriendDecl) : Diagnostic(friendDecl) {
+        override fun prepare(): PreparedAnnotation {
+            return PreparedAnnotation(
+                ERROR,
+                "friend is not supported in Move 2024"
+            )
+        }
+    }
+
+    class MutBindingRequiredForAssignment(element: PsiElement) : Diagnostic(element) {
+        override fun prepare(): PreparedAnnotation {
+            return PreparedAnnotation(
+                ERROR,
+                "Mutable binding is required for assignment in Move 2024"
+            )
+        }
+    }
+
+    class MutBindingRequiredForBorrow(element: PsiElement) : Diagnostic(element) {
+        override fun prepare(): PreparedAnnotation {
+            return PreparedAnnotation(
+                ERROR,
+                "Mutable binding is required for &mut borrow in Move 2024"
+            )
+        }
+    }
+
     class ReceiverStyleFunctionsIsNotSupportedInCompilerV1(methodCall: MvMethodCall) : Diagnostic(methodCall) {
 
         override fun prepare(): PreparedAnnotation {
