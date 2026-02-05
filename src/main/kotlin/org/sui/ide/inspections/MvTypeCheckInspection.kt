@@ -86,12 +86,35 @@ class MvTypeCheckInspection: MvLocalInspectionTool() {
 
 
     fun ProblemsHolder.registerTypeError(typeError: TypeError) {
-        this.registerProblem(
-            typeError.element,
-            typeError.message(),
-            GENERIC_ERROR,
-            *(listOfNotNull(typeError.fix()).toTypedArray())
-        )
+        val element = typeError.element
+        val elementRange = element.textRange
+        val errorRange = typeError.range()
+        val relativeRange =
+            if (errorRange.startOffset >= elementRange.startOffset
+                && errorRange.endOffset <= elementRange.endOffset
+            ) {
+                errorRange.shiftLeft(elementRange.startOffset)
+            } else {
+                null
+            }
+
+        val fixes = listOfNotNull(typeError.fix()).toTypedArray()
+        if (relativeRange != null) {
+            this.registerProblem(
+                element,
+                typeError.message(),
+                GENERIC_ERROR,
+                relativeRange,
+                *fixes
+            )
+        } else {
+            this.registerProblem(
+                element,
+                typeError.message(),
+                GENERIC_ERROR,
+                *fixes
+            )
+        }
     }
 }
 

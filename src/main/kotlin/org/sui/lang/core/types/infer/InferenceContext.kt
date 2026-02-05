@@ -590,8 +590,8 @@ class InferenceContext(
         }
     }
 
-    // Awful hack: check that inner expressions did not annotated as an error
-    // to disallow annotation intersections. This should be done in a different way
+    // Awful hack: skip overlapping errors to avoid annotation intersections.
+    // This should be done in a different way.
     fun reportTypeError(typeError: TypeError) {
         val element = typeError.element
         if (!element.descendantHasTypeError(this.typeErrors)) {
@@ -613,7 +613,8 @@ data class ResolvedItem(
 }
 
 fun PsiElement.descendantHasTypeError(existingTypeErrors: List<TypeError>): Boolean {
-    return existingTypeErrors.any { typeError -> this.isAncestorOf(typeError.element) }
+    val range = this.textRange
+    return existingTypeErrors.any { typeError -> range.intersects(typeError.range()) }
 }
 
 fun <T> inferenceErrorOrFallback(inferredElement: MvElement, fallback: T): T =
