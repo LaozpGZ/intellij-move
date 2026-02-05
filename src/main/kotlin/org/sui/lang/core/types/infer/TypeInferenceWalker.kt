@@ -1626,6 +1626,10 @@ class TypeInferenceWalker(
                 }
             }
             receiverTy is TyAdt -> {
+                if (isResourceIndexExpr(indexExpr, receiverTy)) {
+                    indexExpr.argExpr.inferTypeCoercableTo(TyAddress)
+                    return receiverTy
+                }
                 val syntaxFunction = resolveIndexSyntaxFunction(indexExpr, receiverTy)
                 if (syntaxFunction == null) {
                     ctx.reportTypeError(TypeError.IndexingIsNotAllowed(indexExpr.receiverExpr, receiverTy))
@@ -1661,6 +1665,13 @@ class TypeInferenceWalker(
         }
     }
 
+    private fun isResourceIndexExpr(indexExpr: MvIndexExpr, receiverTy: TyAdt): Boolean {
+        val receiverPath = indexExpr.receiverExpr as? MvPathExpr ?: return false
+        val resolved = resolvePathElement(receiverPath, receiverTy) ?: return false
+        val structItem = resolved as? MvStruct ?: return false
+        return structItem.hasKey
+    }
+
     private fun resolveIndexSyntaxFunction(
         indexExpr: MvIndexExpr,
         receiverTy: Ty
@@ -1669,7 +1680,10 @@ class TypeInferenceWalker(
         val itemModule = receiverTy.itemModule(moveProject) ?: return null
         val candidates = itemModule.syntaxIndexFunctions()
         return candidates.firstOrNull { function ->
-            val selfTy = function.selfParamTy(msl) ?: return@firstOrNull false
+            // #[syntax(index)] should not depend on receiver-style function feature gate.
+            val selfParam = function.parameters.firstOrNull()?.takeIf { it.name == "self" }
+                ?: return@firstOrNull false
+            val selfTy = selfParam.type?.loweredType(msl) ?: return@firstOrNull false
             val selfTyWithTyVars =
                 selfTy.deepFoldTyTypeParameterWith { tp -> TyInfer.TyVar(tp) }
             TyReference.isCompatibleWithAutoborrow(receiverTy, selfTyWithTyVars, msl)

@@ -2,10 +2,12 @@ package org.sui.lang.core.psi.ext
 
 import com.intellij.psi.PsiComment
 import org.sui.lang.core.psi.*
+import org.sui.lang.core.psi.ext.stubChildrenOfType
 import org.sui.stdext.buildList
 
 interface MvItemsOwner: MvElement {
     val useStmtList: List<MvUseStmt>
+        get() = this.stubChildrenOfType()
 }
 
 fun MvItemsOwner.items(): Sequence<MvElement> {

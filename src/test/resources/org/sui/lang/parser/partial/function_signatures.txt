@@ -88,7 +88,7 @@ FILE
     MvFunctionImpl(FUNCTION)
       MvVisibilityModifierImpl(VISIBILITY_MODIFIER)
         PsiElement(public)('public')
-      PsiErrorElement:'(', fun, native, struct_kw or use fun expected, got 'public'
+      PsiErrorElement:'(', fun, native or struct_kw expected, got 'public'
         <empty list>
     PsiWhiteSpace('\n    ')
     MvFunctionImpl(FUNCTION)
