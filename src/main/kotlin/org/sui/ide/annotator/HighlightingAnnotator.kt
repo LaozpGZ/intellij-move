@@ -1,6 +1,7 @@
 package org.sui.ide.annotator
 
 import com.intellij.lang.annotation.AnnotationHolder
+import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import org.sui.cli.settings.moveSettings
@@ -42,6 +43,7 @@ val HAS_DROP_ABILITY_TYPES = INTEGER_TYPE_IDENTIFIERS + PRIMITIVE_BUILTIN_TYPE_I
 )
 class HighlightingAnnotator : MvAnnotatorBase() {
     override fun annotateInternal(element: PsiElement, holder: AnnotationHolder) {
+        if (DumbService.isDumb(element.project)) return
         val color = when {
             element is LeafPsiElement -> highlightLeaf(element)
             element is MvLitExpr && element.text.startsWith("@") -> MvColor.ADDRESS

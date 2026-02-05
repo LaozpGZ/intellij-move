@@ -95,7 +95,7 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
                             val letStmt = resolved.ancestorStrict<MvLetStmt>()
                             if (letStmt != null) {
 
-                                if (letStmt.typeAnnotation != null || (letStmt.initializer?.expr?.text?.contains("u") == true || letStmt.initializer?.expr?.text?.contains("i") == true)) {
+                                if (letStmt.typeAnnotation != null || hasSuffixedIntegerLiteral(letStmt.initializer?.expr)) {
                                     return true
                                 }
                             }
@@ -121,8 +121,7 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
                             val letStmt = resolved.ancestorStrict<MvLetStmt>()
                             if (letStmt != null && letStmt.typeAnnotation == null) {
 
-                                val hasTypeAnnotationInInitializer = letStmt.initializer?.expr?.text?.contains("u") == true ||
-                                    letStmt.initializer?.expr?.text?.contains("i") == true
+                                val hasTypeAnnotationInInitializer = hasSuffixedIntegerLiteral(letStmt.initializer?.expr)
                                 if (!hasTypeAnnotationInInitializer) {
 
                                     return true
@@ -182,16 +181,9 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
             while (current != null) {
                 if (current is MvVectorLitExpr && current.typeArgument == null) {
 
-                    var hasExplicitTypeElement = false
-                    for (vectorElement in current.vectorLitItems.exprList) {
-                        if (vectorElement != element) {
-                            val vectorElementText = vectorElement.text
-                            if (vectorElementText.contains("u") || vectorElementText.contains("i")) {
-                                hasExplicitTypeElement = true
-                                break
-                            }
-                        }
-                    }
+                    val hasExplicitTypeElement = current.vectorLitItems.exprList
+                        .filter { it != element }
+                        .any { hasSuffixedIntegerLiteral(it) }
                     return !hasExplicitTypeElement
                 }
                 current = current.parent
@@ -213,10 +205,7 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
             val letStmt = resolved.ancestorStrict<MvLetStmt>() ?: return false
             if (letStmt.typeAnnotation != null) return false
             val initExpr = letStmt.initializer?.expr as? MvVectorLitExpr ?: return false
-            return initExpr.vectorLitItems.exprList.none {
-                val text = it.text
-                text.contains("u") || text.contains("i")
-            }
+            return initExpr.vectorLitItems.exprList.none { hasSuffixedIntegerLiteral(it) }
         }
 
         private fun isRangeExprContext(element: PsiElement): Boolean {
@@ -236,6 +225,18 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
                 is TyVector -> expectedTy.item is TyTypeParameter || expectedTy.item is TyInfer.TyVar
                 else -> false
             }
+        }
+
+        private fun hasSuffixedIntegerLiteral(expr: MvExpr?): Boolean {
+            if (expr == null) return false
+            if (expr is MvLitExpr && isSuffixedIntegerLiteral(expr)) return true
+            return PsiTreeUtil.findChildrenOfType(expr, MvLitExpr::class.java)
+                .any { isSuffixedIntegerLiteral(it) }
+        }
+
+        private fun isSuffixedIntegerLiteral(litExpr: MvLitExpr): Boolean {
+            val literal = litExpr.integerLiteral ?: litExpr.hexIntegerLiteral ?: return false
+            return TyInteger.fromSuffixedLiteral(literal) != null
         }
 
         override fun innerFoldWith(folder: TypeFolder): TypeError {
