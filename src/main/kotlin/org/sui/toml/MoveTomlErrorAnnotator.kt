@@ -4,6 +4,7 @@ import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiElement
 import com.intellij.util.text.findTextRange
+import org.sui.cli.MoveEdition
 import org.sui.ide.annotator.MvAnnotatorBase
 import org.sui.openapiext.stringValue
 import org.toml.lang.psi.TomlTable
@@ -17,8 +18,17 @@ class MoveTomlErrorAnnotator : MvAnnotatorBase() {
         if (element !is TomlTable) return
 
         val tableKey = element.header.key ?: return
-        if (!tableKey.textMatches("addresses")) return
+        when {
+            tableKey.textMatches("addresses") -> annotateAddresses(element, holder)
+            tableKey.textMatches("package") -> annotatePackageEdition(element, holder)
+        }
+    }
 
+    companion object {
+        private val DIEM_ADDRESS_REGEX = Regex("[0-9a-fA-F]{1,64}")
+    }
+
+    private fun annotateAddresses(element: TomlTable, holder: AnnotationHolder) {
         for (tomlKeyValue in element.entries) {
             val tomlValue = tomlKeyValue.value ?: continue
             val rawStringValue = tomlValue.stringValue() ?: continue
@@ -48,7 +58,29 @@ class MoveTomlErrorAnnotator : MvAnnotatorBase() {
         }
     }
 
-    companion object {
-        private val DIEM_ADDRESS_REGEX = Regex("[0-9a-fA-F]{1,64}")
+    private fun annotatePackageEdition(element: TomlTable, holder: AnnotationHolder) {
+        val editionEntry = element.entries.firstOrNull { it.key.textMatches("edition") } ?: return
+        val tomlValue = editionEntry.value ?: return
+        val rawStringValue = tomlValue.stringValue()
+        if (rawStringValue == null) {
+            holder.newAnnotation(
+                HighlightSeverity.ERROR,
+                "Invalid edition: expected a string literal"
+            )
+                .range(tomlValue.textRange)
+                .create()
+            return
+        }
+        if (MoveEdition.fromToml(rawStringValue) != null) return
+        val expected = MoveEdition.supportedEditionValues.joinToString(", ")
+        val stringRange =
+            tomlValue.text.findTextRange(rawStringValue)?.shiftRight(tomlValue.textOffset)
+                ?: tomlValue.textRange
+        holder.newAnnotation(
+            HighlightSeverity.ERROR,
+            "Invalid edition: expected one of $expected"
+        )
+            .range(stringRange)
+            .create()
     }
 }

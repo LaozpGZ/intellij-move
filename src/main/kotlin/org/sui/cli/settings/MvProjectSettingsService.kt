@@ -1,19 +1,25 @@
 package org.sui.cli.settings
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.StoragePathMacros
 import com.intellij.openapi.components.service
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import org.sui.bytecode.createDisposableOnFileChange
+import org.sui.cli.MoveLanguageFeatures
+import org.sui.cli.MoveProject
+import org.sui.cli.MoveProjectsService
 import org.sui.cli.runConfigurations.aptos.Aptos
 import org.sui.cli.runConfigurations.sui.Sui
 import org.sui.cli.settings.MvProjectSettingsService.MoveProjectSettings
 import org.sui.cli.settings.aptos.AptosExecType
 import org.sui.cli.settings.sui.SuiExecType
+import org.sui.openapiext.common.isUnitTestMode
 import org.sui.stdext.exists
 import org.sui.stdext.isExecutableFile
 import java.nio.file.Path
@@ -42,11 +48,19 @@ class MvProjectSettingsService(
     val skipFetchLatestGitDeps: Boolean get() = state.skipFetchLatestGitDeps
     val dumpStateOnTestFailure: Boolean get() = state.dumpStateOnTestFailure
 
-    val enableReceiverStyleFunctions: Boolean get() = state.enableReceiverStyleFunctions
-    val enableResourceAccessControl: Boolean get() = state.enableResourceAccessControl
-    val enableIndexExpr: Boolean get() = state.enableIndexExpr
-    val enablePublicPackage: Boolean get() = state.enablePublicPackage
+    val enableReceiverStyleFunctions: Boolean get() = effectiveLanguageFeatures().receiverStyleFunctions
+    val enableResourceAccessControl: Boolean get() = effectiveLanguageFeatures().resourceAccessControl
+    val enableIndexExpr: Boolean get() = effectiveLanguageFeatures().indexExpr
+    val enablePublicPackage: Boolean get() = effectiveLanguageFeatures().publicPackageVisibility
     val addCompilerV2CLIFlags: Boolean get() = state.addCompilerV2CLIFlags
+
+    fun effectiveLanguageFeatures(moveProject: MoveProject? = null): MoveLanguageFeatures {
+        val baseFeatures =
+            moveProject?.languageFeatures
+                ?: findRelevantMoveProject()?.languageFeatures
+                ?: MoveLanguageFeatures.DEFAULT
+        return applyFeatureOverrides(baseFeatures)
+    }
 
     // default values for settings
     class MoveProjectSettings : MvProjectSettingsBase<MoveProjectSettings>() {
@@ -74,6 +88,8 @@ class MvProjectSettingsService(
         @AffectsHighlighting
         var enablePublicPackage: Boolean by property(true)
 
+        var featureOverridesActive: Boolean by property(false)
+
         @AffectsMoveProjectsMetadata
         var fetchAptosDeps: Boolean by property(false)
 
@@ -98,7 +114,18 @@ class MvProjectSettingsService(
     override fun createSettingsChangedEvent(
         oldEvent: MoveProjectSettings,
         newEvent: MoveProjectSettings
-    ): SettingsChangedEvent = SettingsChangedEvent(oldEvent, newEvent)
+    ): SettingsChangedEvent {
+        if (!newEvent.featureOverridesActive && oldEvent.featureOverridesActive == false) {
+            if (oldEvent.enableReceiverStyleFunctions != newEvent.enableReceiverStyleFunctions
+                || oldEvent.enableIndexExpr != newEvent.enableIndexExpr
+                || oldEvent.enablePublicPackage != newEvent.enablePublicPackage
+                || oldEvent.enableResourceAccessControl != newEvent.enableResourceAccessControl
+            ) {
+                newEvent.featureOverridesActive = true
+            }
+        }
+        return SettingsChangedEvent(oldEvent, newEvent)
+    }
 
     class SettingsChangedEvent(
         oldState: MoveProjectSettings,
@@ -111,6 +138,47 @@ class MvProjectSettingsService(
                 if (AptosExecType.isPreCompiledSupportedForThePlatform) AptosExecType.BUNDLED else AptosExecType.LOCAL
         private val defaultSuiExecType
             get() = SuiExecType.LOCAL
+    }
+
+    private fun applyFeatureOverrides(base: MoveLanguageFeatures): MoveLanguageFeatures {
+        if (!featureOverridesActive()) return base
+        return base.copy(
+            receiverStyleFunctions = state.enableReceiverStyleFunctions,
+            resourceAccessControl = state.enableResourceAccessControl,
+            indexExpr = state.enableIndexExpr,
+            publicPackageVisibility = state.enablePublicPackage,
+        )
+    }
+
+    private fun featureOverridesActive(): Boolean {
+        return state.featureOverridesActive || state.hasNonDefaultFeatureOverrides()
+    }
+
+    private fun MoveProjectSettings.hasNonDefaultFeatureOverrides(): Boolean {
+        return !isDefaultValue(MoveProjectSettings::enableReceiverStyleFunctions)
+            || !isDefaultValue(MoveProjectSettings::enableIndexExpr)
+            || !isDefaultValue(MoveProjectSettings::enablePublicPackage)
+            || !isDefaultValue(MoveProjectSettings::enableResourceAccessControl)
+    }
+
+    private fun MoveProjectSettings.isDefaultValue(prop: kotlin.reflect.KProperty1<MoveProjectSettings, *>): Boolean {
+        val storedProperty = __getProperties().firstOrNull { it.name == prop.name } ?: return true
+        return storedProperty.isEqualToDefault()
+    }
+
+    private fun findRelevantMoveProject(): MoveProject? {
+        val moveProjectsService = project.getService(MoveProjectsService::class.java) ?: return null
+        val selectedFile =
+            if (!isUnitTestMode && ApplicationManager.getApplication().isDispatchThread) {
+                FileEditorManager.getInstance(project).selectedTextEditor?.virtualFile
+            } else {
+                null
+            }
+        if (selectedFile != null) {
+            val moveProject = moveProjectsService.findMoveProjectForFile(selectedFile)
+            if (moveProject != null) return moveProject
+        }
+        return moveProjectsService.allProjects.firstOrNull()
     }
 }
 
