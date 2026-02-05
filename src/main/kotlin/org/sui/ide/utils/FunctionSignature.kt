@@ -11,6 +11,7 @@ import com.intellij.psi.util.CachedValueProvider
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.types.ty.Ability
+import org.sui.lang.core.macros.MvMacroRegistry
 import org.sui.utils.cache
 import org.sui.utils.cacheManager
 
@@ -41,8 +42,8 @@ data class FunctionSignature(
     }
 
     companion object {
-        fun resolve(callable: MvCallable): FunctionSignature? =
-            when (callable) {
+        fun resolve(callable: MvCallable): FunctionSignature? {
+            return when (callable) {
                 is MvCallExpr -> {
                     val function = callable.path.reference?.resolveFollowingAliases() as? MvFunction
                     function?.getSignature()
@@ -53,7 +54,22 @@ data class FunctionSignature(
                     function?.getSignature()
                 }
 
+                is MvMacroCallExpr -> {
+                    val function = callable.path.reference?.resolveFollowingAliases() as? MvFunction
+                    if (function != null) {
+                        function.getSignature()
+                    } else {
+                        val name = callable.path.referenceName ?: return null
+                        fromMacroSpec(MvMacroRegistry.specOf(name))
+                    }
+                }
+
+                is MvAssertMacroExpr -> {
+                    fromMacroSpec(MvMacroRegistry.builtinSpecOf("assert"))
+                }
+
                 else -> null
+            }
         }
 
         fun fromFunction(function: MvFunction): FunctionSignature? {
@@ -90,6 +106,17 @@ data class FunctionSignature(
                 }
             val returnType = specSignature.returnType?.type?.text
             return FunctionSignature(signatureTypeParams, signatureParams, returnType)
+        }
+
+        fun fromMacroSpec(spec: org.sui.lang.core.macros.MacroSpec?): FunctionSignature? {
+            if (spec == null) return null
+            val parameters = spec.params
+                .map { param -> Parameter(param.name, param.type) }
+            return FunctionSignature(
+                typeParameters = emptyList(),
+                parameters = parameters,
+                returnType = spec.typeText.takeIf { it.isNotBlank() && it != "()" },
+            )
         }
     }
 }

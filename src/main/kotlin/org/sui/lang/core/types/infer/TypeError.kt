@@ -3,6 +3,7 @@ package org.sui.lang.core.types.infer
 import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import com.intellij.psi.util.PsiTreeUtil
 import org.sui.ide.inspections.fixes.IntegerCastFix
 import org.sui.ide.presentation.name
 import org.sui.ide.presentation.text
@@ -26,27 +27,28 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
     ) : TypeError(element) {
         override fun message(): String {
 
-            val expectedTypeName = if (expectedTy is TyInteger && expectedTy.isDefault() && (!isAssignmentWithExplicitType(element) && (isAssignmentExprContext(element) || isAbortExprContext(element) || (isIfElseExprContext(element) && isAssignmentExprContext(element)) || isTupleElementContext(element) || isVectorElementContext(element)))) {
+            val expectedTypeName = if (expectedTy is TyInteger && expectedTy.isDefault() && (!isAssignmentWithExplicitType(element) && (isAssignmentExprContext(element) || isAbortExprContext(element) || (isIfElseExprContext(element) && isAssignmentExprContext(element)) || isTupleElementContext(element) || isVectorElementContext(element) || isRangeExprContext(element)))) {
                 "integer"
             } else {
                 expectedTy.name()
             }
 
-            val actualTypeName = if (actualTy is TyInteger && (actualTy.isDefault() && (isIfConditionContext(element) && expectedTy !is TyUnit || isVectorElementContext(element) && isVectorWithoutExplicitType(element) || isTupleElementContext(element) || isAssignmentExprContext(element) || isAbortExprContext(element) || (isIfElseExprContext(element) && isAssignmentExprContext(element))) || isGenericVectorType(expectedTy))) {
-
-
-
-
-
-
-
-
-                "integer"
-            } else if (actualTy is TyInteger && expectedTy is TyUnit) {
-
-                "integer"
-            } else {
-                actualTy.name()
+            val actualTypeName = when {
+                actualTy is TyReference
+                        && actualTy.referenced is TyVector
+                        && isImplicitDefaultVectorBindingElement(element) -> {
+                    val mutPrefix = if (actualTy.mutability.isMut) "&mut " else "&"
+                    "${mutPrefix}vector<integer>"
+                }
+                actualTy is TyVector
+                        && isImplicitDefaultVectorBindingElement(element) -> {
+                    "vector<integer>"
+                }
+                actualTy is TyInteger && (actualTy.isDefault() && (isUnsuffixedIntegerLiteralElement(element) || (isIfConditionContext(element) && expectedTy !is TyUnit) || isVectorElementContext(element) && isVectorWithoutExplicitType(element) || isTupleElementContext(element) || isAssignmentExprContext(element) || isAbortExprContext(element) || (isIfElseExprContext(element) && isAssignmentExprContext(element))) || isGenericVectorType(expectedTy)) -> {
+                    "integer"
+                }
+                actualTy is TyInteger && expectedTy is TyUnit -> "integer"
+                else -> actualTy.name()
             }
 
             return when (element) {
@@ -197,6 +199,37 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
             return false
         }
 
+        private fun isUnsuffixedIntegerLiteralElement(element: PsiElement): Boolean {
+            val litExpr = element as? MvLitExpr ?: return false
+            val literal = litExpr.integerLiteral ?: litExpr.hexIntegerLiteral ?: return false
+            return TyInteger.fromSuffixedLiteral(literal) == null
+        }
+
+        private fun isImplicitDefaultVectorBindingElement(element: PsiElement): Boolean {
+            val pathExpr = (element as? MvPathExpr)
+                ?: PsiTreeUtil.findChildOfType(element, MvPathExpr::class.java)
+                ?: return false
+            val resolved = pathExpr.path.reference?.resolve() as? MvPatBinding ?: return false
+            val letStmt = resolved.ancestorStrict<MvLetStmt>() ?: return false
+            if (letStmt.typeAnnotation != null) return false
+            val initExpr = letStmt.initializer?.expr as? MvVectorLitExpr ?: return false
+            return initExpr.vectorLitItems.exprList.none {
+                val text = it.text
+                text.contains("u") || text.contains("i")
+            }
+        }
+
+        private fun isRangeExprContext(element: PsiElement): Boolean {
+            var current: PsiElement? = element
+            while (current != null) {
+                if (current is MvRangeExpr) {
+                    return true
+                }
+                current = current.parent
+            }
+            return false
+        }
+
         private fun isGenericVectorType(expectedTy: Ty): Boolean {
 
             return when (expectedTy) {
@@ -211,12 +244,11 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
 
         override fun fix(): LocalQuickFix? {
             if (element is MvExpr) {
-                if (expectedTy is TyInteger && actualTy is TyInteger
-                    && !expectedTy.isDefault() && !actualTy.isDefault()
-                ) {
+                if (expectedTy is TyInteger && actualTy is TyInteger) {
                     if (this.element.isMsl()) return null
 
                     val expr = element
+                    if (actualTy.isDefault() && isImplicitDefaultIntegerExpr(expr)) return null
                     val inference = expr.inference(false) ?: return null
 
                     if (expr is MvParensExpr && expr.expr is MvCastExpr) {
@@ -232,6 +264,21 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
                 }
             }
             return null
+        }
+
+        private fun isImplicitDefaultIntegerExpr(element: PsiElement): Boolean {
+            val expr = element as? MvExpr ?: return false
+            return when (expr) {
+                is MvLitExpr -> isUnsuffixedIntegerLiteralElement(expr)
+                is MvPathExpr -> {
+                    val resolved = expr.path.reference?.resolve() as? MvPatBinding ?: return false
+                    val letStmt = resolved.ancestorStrict<MvLetStmt>() ?: return false
+                    if (letStmt.typeAnnotation != null) return false
+                    val initExpr = letStmt.initializer?.expr as? MvLitExpr ?: return false
+                    isUnsuffixedIntegerLiteralElement(initExpr)
+                }
+                else -> false
+            }
         }
     }
 

@@ -7,6 +7,7 @@ import org.sui.ide.inspections.fixes.RemoveRedundantCastFix
 import org.sui.lang.core.psi.MvCastExpr
 import org.sui.lang.core.psi.MvVisitor
 import org.sui.lang.core.psi.ext.endOffsetInParent
+import org.sui.lang.core.psi.ext.hexIntegerLiteral
 import org.sui.lang.core.psi.ext.isMsl
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.infer.loweredType
@@ -30,8 +31,13 @@ class RedundantTypeCastInspection : MvLocalInspectionTool() {
 //            val objectExprTy = inferExprTy(objectExpr, inferenceCtx)
             if (objectExprTy is TyUnknown) return
 
-            // cannot be redundant cast for untyped integer
-            if (objectExprTy is TyInteger && (objectExprTy.kind == TyInteger.DEFAULT_KIND)) return
+            // cannot be redundant cast for untyped integer literal
+            if (objectExprTy is TyInteger && (objectExprTy.kind == TyInteger.DEFAULT_KIND)) {
+                val litExpr = castExpr.expr as? org.sui.lang.core.psi.MvLitExpr
+                val literal = litExpr?.integerLiteral ?: litExpr?.hexIntegerLiteral
+                val hasSuffix = literal?.let { TyInteger.fromSuffixedLiteral(it) != null } ?: false
+                if (!hasSuffix) return
+            }
 
             val castTypeTy = castExpr.type.loweredType(msl)
 //            val castTypeTy = itemContext.rawType(castExpr.type)

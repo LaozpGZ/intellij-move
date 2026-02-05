@@ -158,17 +158,27 @@ fun filterCompletionVariantsByVisibility(
         val element = e.element
 
         if (element is MvFunction) {
+            val elementModule = element.containingModule
+            val contextModule = context.containingModule
+            if (elementModule != null && elementModule == contextModule) {
+                return@wrapWithFilter true
+            }
             val visibility = (element as? MvVisibilityOwner)?.visibility2
             when (visibility) {
                 is Visibility2.Public,
                 is Visibility2.Restricted.Friend,
                 is Visibility2.Restricted.Package -> {return@wrapWithFilter true}
 
+                is Visibility2.PublicScript -> {
+                    val function = context.containingFunction
+                    val isVisibleInScript = context.containingScript != null
+                    val isVisibleInEntryOrScript =
+                        function?.isEntry == true || function?.isPublicScript == true
+                    return@wrapWithFilter isVisibleInScript || isVisibleInEntryOrScript
+                }
+
                 is Visibility2.Private -> {
-                    val elementModule = element.containingModule
-                    val contextModule = context.containingModule
-                    // Allow private functions within the same module (e.g. Self::).
-                    return@wrapWithFilter elementModule == contextModule
+                    return@wrapWithFilter false
                 }
                 else -> return@wrapWithFilter false
             }

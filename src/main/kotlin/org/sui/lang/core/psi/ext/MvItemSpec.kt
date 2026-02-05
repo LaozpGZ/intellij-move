@@ -21,7 +21,7 @@ val MvItemSpec.module: MvModule?
         return when (parent) {
             is MvModule -> parent
             is MvModuleSpecBlock -> parent.moduleSpec.moduleItem
-            else -> error("unreachable")
+            else -> this.ancestorStrict()
         }
     }
 

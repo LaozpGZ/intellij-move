@@ -10,6 +10,8 @@ import org.sui.lang.MoveLanguage
 import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.MvStruct
 import org.sui.lang.core.psi.ext.structs
+import org.sui.lang.core.types.StubAddress
+import org.sui.lang.core.types.stubAddress
 import org.sui.lang.core.psi.namespaceModule
 import org.sui.lang.core.resolve.RsResolveProcessor
 import org.sui.lang.core.resolve.process
@@ -45,8 +47,9 @@ class PreImportedModuleService(private val project: Project) {
                     preImportedModules.add(module)
                 }
 
-                val address = module.addressRef?.namedAddress?.identifier?.text ?: ""
-                if (address == "sui" && module.name in PRELOAD_SUI_MODULES) {
+                val address = module.stubAddress
+                val addressName = (address as? StubAddress.Named)?.name
+                if (addressName == "sui" && module.name in PRELOAD_SUI_MODULES) {
                     preImportedModules.add(module)
                 }
             }

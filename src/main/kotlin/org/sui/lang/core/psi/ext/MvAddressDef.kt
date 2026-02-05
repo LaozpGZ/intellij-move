@@ -10,7 +10,7 @@ import org.sui.lang.core.types.address
 import org.sui.lang.moveProject
 
 fun MvAddressDef.modules(): List<MvModule> =
-    addressBlock?.childrenOfType<MvModule>().orEmpty()
+    addressBlock?.stubChildrenOfType<MvModule>().orEmpty()
 
 
 abstract class MvAddressDefMixin(node: ASTNode) : MvElementImpl(node),

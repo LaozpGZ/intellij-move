@@ -43,12 +43,15 @@ fun createSpacingBuilder(commonSettings: CommonCodeStyleSettings): SpacingBuilde
         //== empty parens
         .between(L_BRACE, R_BRACE).spacing(0, 0, 0, false, 0)
         .between(L_PAREN, R_PAREN).spacing(0, 0, 0, false, 0)
+        .between(L_BRACK, R_BRACK).spacing(0, 0, 0, false, 0)
 
         //== paren delimited lists
         .afterInside(L_PAREN, PAREN_DELIMITED_BLOCKS).spacing(0, 0, 0, true, 0)
         .beforeInside(R_PAREN, PAREN_DELIMITED_BLOCKS).spacing(0, 0, 0, true, 0)
         .afterInside(LT, ANGLE_DELIMITED_BLOCKS).spacing(0, 0, 0, true, 0)
         .beforeInside(GT, ANGLE_DELIMITED_BLOCKS).spacing(0, 0, 0, true, 0)
+        .afterInside(L_BRACK, BRACK_LISTS).spacing(0, 0, 0, true, 0)
+        .beforeInside(R_BRACK, BRACK_LISTS).spacing(0, 0, 0, true, 0)
 
         .afterInside(L_BRACE, BLOCK_LIKE).parentDependentLFSpacing(1, 1, true, 0)
         .beforeInside(R_BRACE, BLOCK_LIKE).parentDependentLFSpacing(1, 1, true, 0)
@@ -98,6 +101,8 @@ fun createSpacingBuilder(commonSettings: CommonCodeStyleSettings): SpacingBuilde
         .around(BINARY_OP).spaces(1)
         .around(EQ).spaces(1)
         .around(MOVE_KEYWORDS).spaces(1)
+        .between(TYPE_KW, TYPE_ARGUMENT_LIST).spaceIf(false)
+        .between(TYPE_KW, LT).spaceIf(false)
 
         .applyForEach(BLOCK_LIKE) { before(it).spaces(1) }
 
@@ -109,6 +114,9 @@ fun createSpacingBuilder(commonSettings: CommonCodeStyleSettings): SpacingBuilde
 fun Block.computeSpacing(child1: Block?, child2: Block, ctx: MvFmtContext): Spacing? {
     if (child1 is ASTBlock && child2 is ASTBlock) SpacingContext.create(child1, child2)?.apply {
         when {
+            ncPsi1.text == "type" && elementType2 == LT
+            -> return Spacing.createSpacing(0, 0, 0, true, 0)
+
             ncPsi1.isStmt && ncPsi2.isStmtOrExpr
             -> return lineBreak(
                 keepLineBreaks = ctx.commonSettings.KEEP_LINE_BREAKS,

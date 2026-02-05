@@ -7,6 +7,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.impl.source.PsiFileImpl
 import com.intellij.psi.util.CachedValuesManager.getProjectPsiDependentCache
 import com.intellij.psi.util.PsiTreeUtil
 import org.sui.cli.MvConstants
@@ -67,8 +68,16 @@ class MoveFile(fileViewProvider: FileViewProvider) : MoveFileBase(fileViewProvid
 
     fun modules(): Sequence<MvModule> {
         return getProjectPsiDependentCache(this) {
-            it.childrenOfType<MvModule>()
-                .chain(it.childrenOfType<MvAddressDef>().flatMap { a -> a.modules() })
+            val file = it as? PsiFileImpl
+            val stub = file?.greenStub
+            if (stub != null) {
+                val modules = stub.childrenStubs.mapNotNull { child -> child.psi as? MvModule }
+                val addressDefs = stub.childrenStubs.mapNotNull { child -> child.psi as? MvAddressDef }
+                modules.asSequence() + addressDefs.asSequence().flatMap { a -> a.modules().asSequence() }
+            } else {
+                it.childrenOfType<MvModule>().asSequence() +
+                    it.childrenOfType<MvAddressDef>().asSequence().flatMap { a -> a.modules().asSequence() }
+            }
         }
     }
 

@@ -5,6 +5,7 @@ import com.intellij.codeInsight.lookup.LookupElementDecorator
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.types.infer.*
 import org.sui.lang.core.types.ty.TyUnknown
+import org.sui.lang.core.types.ty.hasTyTypeParameters
 
 fun LookupElement.toMvLookupElement(properties: LookupElementProperties): MvLookupElement =
     MvLookupElement(this, properties)
@@ -64,7 +65,7 @@ fun getLookupElementProperties(
 ): LookupElementProperties {
     var props = LookupElementProperties()
     val expectedTy = context.expectedTy
-    if (expectedTy != null) {
+    if (expectedTy != null && !expectedTy.hasTyTypeParameters && element !is MvConst) {
         val msl = context.msl
         val declaredTy =
             when (element) {
@@ -87,10 +88,6 @@ fun getLookupElementProperties(
         props = props.copy(
             isReturnTypeConformsToExpectedType = isCompat
         )
-
-
-        // Debug log.
-        println("DEBUG: Element=${element.name}, ExpectedType=${expectedTy}, ItemType=${itemTy}, IsCompat=${isCompat}")
     }
 
 

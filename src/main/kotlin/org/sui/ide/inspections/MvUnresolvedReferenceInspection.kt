@@ -8,6 +8,7 @@ import org.sui.ide.inspections.imports.AutoImportFix
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.psi.impl.MvPathImpl
+import org.sui.lang.core.macros.MvMacroRegistry
 import org.sui.lang.core.resolve.ref.MvReferenceElement
 import org.sui.lang.core.resolve2.PathKind.*
 import org.sui.lang.core.resolve2.pathKind
@@ -29,6 +30,11 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
             if (path.isPrimitiveType()) return
             // destructuring assignment like `Coin { val1: _ } = get_coin()`
             if (path.textMatches("_") && path.isInsideAssignmentLhs()) return
+            // builtin macro call callee (debug!, transfer!, etc.)
+            if (path.parent is MvMacroCallExpr) {
+                val macroName = path.referenceName
+                if (macroName != null && MvMacroRegistry.isBuiltin(macroName)) return
+            }
             // assert macro
             if (path.text == "assert") return
             // attribute values are special case
@@ -134,12 +140,33 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
         // if (referenceElement.hasAncestor<MvDotExpr>() && referenceElement is MvMethodCall) return
         // if (referenceElement.hasAncestor<MvCallExpr>() && referenceElement is MvPathImpl) return
 
-        val reference = referenceElement.reference ?: return
-
-        val resolveVariants = reference.multiResolve()
-        if (resolveVariants.size == 1) return
-
         val referenceName = referenceElement.referenceName ?: return
+        val reference = referenceElement.reference ?: return
+        val resolveVariants = reference.multiResolve()
+        if (referenceElement is MvStructLitField && referenceElement.isShorthand) {
+            val hasField = resolveVariants.any { it is MvNamedFieldDecl }
+            val hasBinding = resolveVariants.any { it is MvPatBinding }
+            val highlightedElement = referenceElement.referenceNameElement ?: referenceElement
+            when {
+                hasField && !hasBinding -> {
+                    holder.registerProblem(
+                        highlightedElement,
+                        "Unresolved reference: `$referenceName`",
+                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
+                    )
+                    return
+                }
+                !hasField && hasBinding -> {
+                    holder.registerProblem(
+                        highlightedElement,
+                        "Unresolved field: `$referenceName`",
+                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
+                    )
+                    return
+                }
+            }
+        }
+        if (resolveVariants.size == 1) return
         val parent = referenceElement.parent
         val itemType = when {
             parent is MvPathType -> "type"

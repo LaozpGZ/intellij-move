@@ -12,7 +12,9 @@ import com.intellij.util.ProcessingContext
 import org.sui.lang.MvElementTypes
 import org.sui.lang.core.MvPsiPattern
 import org.sui.lang.core.completion.MACRO_PRIORITY
+import org.sui.lang.core.macros.MvMacroRegistry
 import org.sui.lang.core.psi.MvPath
+import org.sui.lang.core.psi.MvMacroCallExpr
 
 object MacrosCompletionProvider : MvCompletionProvider() {
     override val elementPattern: ElementPattern<out PsiElement>
@@ -24,27 +26,6 @@ object MacrosCompletionProvider : MvCompletionProvider() {
                     .afterLeaf(PlatformPatterns.psiElement(MvElementTypes.COLON_COLON))
             )
 
-    data class MacroInfo(
-        val name: String,
-        val tailText: String,
-        val typeText: String,
-        val insertText: String = "()"
-    )
-
-    private val macros = listOf(
-        MacroInfo("assert!", "(_: bool, err: u64)", "()"),
-        MacroInfo("debug!", "(_: ...)", "()"),
-        MacroInfo("option!", "(_)", "option<T>"),
-        MacroInfo("result!", "(_, _)", "result<T, E>"),
-        MacroInfo("bcs!", "(_)", "vector<u8>"),
-        MacroInfo("object!", "(_)", "object"),
-        MacroInfo("transfer!", "(_, _)", "()"),
-        MacroInfo("event!", "(_)", "()"),
-        MacroInfo("table!", "(_)", "table<K, V>"),
-        MacroInfo("system!", "(_)", "()"),
-        MacroInfo("vote!", "(_)", "()")
-    )
-
     override fun addCompletions(
         parameters: CompletionParameters,
         context: ProcessingContext,
@@ -55,9 +36,19 @@ object MacrosCompletionProvider : MvCompletionProvider() {
 
         if (parameters.position !== path.referenceNameElement) return
 
+        val includeStdlib = path.parent is MvMacroCallExpr
+        val alwaysVisibleStdlib = setOf("assert_eq", "assert_ref_eq")
+        val macros = if (includeStdlib) {
+            MvMacroRegistry.completionSpecs()
+        } else {
+            MvMacroRegistry.completionSpecs().filter {
+                MvMacroRegistry.isBuiltin(it.name) || it.name in alwaysVisibleStdlib
+            }
+        }
+
         macros.forEach { macro ->
             val lookupElement = LookupElementBuilder
-                .create(macro.name)
+                .create(macro.completionName)
                 .withTailText(macro.tailText)
                 .withTypeText(macro.typeText)
                 .withInsertHandler { ctx, _ ->

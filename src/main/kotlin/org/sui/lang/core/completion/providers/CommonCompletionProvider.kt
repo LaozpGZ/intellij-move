@@ -21,7 +21,9 @@ import org.sui.lang.core.psi.MvPathType
 import org.sui.lang.core.psi.MvPathExpr
 import org.sui.lang.core.psi.MvDotExpr
 import org.sui.lang.core.psi.MvPath
+import org.sui.lang.core.psi.MvPat
 import org.sui.lang.core.psi.ext.isMsl
+import org.sui.lang.core.psi.ext.hasAncestor
 import org.sui.lang.core.psiElement
 import org.sui.lang.core.resolve.collectCompletionVariants
 import org.sui.lang.core.resolve.ref.MvReferenceElement
@@ -46,6 +48,9 @@ object CommonCompletionProvider : MvCompletionProvider() {
 
         // Skip type positions.
         if (element.parent is MvPathType) return
+
+        // Skip pattern positions (e.g. let bindings).
+        if (element is MvPat || element.hasAncestor<MvPat>()) return
 
         // Skip qualified paths (already has a prefix).
         if (element is MvPath && element.path != null) return

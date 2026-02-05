@@ -509,12 +509,7 @@ class InferenceContext(
 
             ty1 is TyAdt && ty2 is TyAdt
                     && ty1.item == ty2.item -> {
-                println("=== Combining TyAdt types ===")
-                println("ty1: $ty1")
-                println("ty2: $ty2")
-                println("type arguments: ${ty1.typeArguments.zip(ty2.typeArguments)}")
                 val result = combineTypePairs(ty1.typeArguments.zip(ty2.typeArguments), isTypeParameter = true)
-                println("combineTypePairs result: $result")
                 result
             }
 
@@ -529,6 +524,11 @@ class InferenceContext(
     fun tryCoerce(inferred: Ty, expected: Ty, isTypeParameter: Boolean = false): CoerceResult {
         if (inferred === expected) {
             return Ok(CoerceOk())
+        }
+        if (inferred is TyInteger && expected is TyInteger
+            && !isCompatibleIntegers(expected, inferred, msl, isTypeParameter)
+        ) {
+            return Err(CombineTypeError.TypeMismatch(inferred, expected))
         }
         return combineTypes(inferred, expected, isTypeParameter).into()
     }
@@ -583,8 +583,8 @@ class InferenceContext(
                 is TyUnknown -> (ty as? TyInfer.TyVar)?.origin ?: TyUnknown
                 // replace TyVar with the origin TyTypeParameter
                 is TyInfer.TyVar -> resTy.origin ?: TyUnknown
-                // replace integer with TyUnknown, todo: why?
-                is TyInfer.IntVar -> TyUnknown
+                // keep unresolved integer variables to preserve "integer" in diagnostics
+                is TyInfer.IntVar -> resTy
                 else -> resTy.innerFoldWith(this)
             }
         }

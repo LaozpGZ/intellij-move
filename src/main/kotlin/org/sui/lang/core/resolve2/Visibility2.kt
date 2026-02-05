@@ -103,7 +103,16 @@ fun ItemVisibilityInfo.createFilter(): VisibilityFilter {
                 }
             }
             is Public -> Visible
+            is PublicScript -> {
+                if (isPublicScriptVisibleFrom(methodOrPath)) Visible else Invisible
+            }
             is Private -> Invisible
         }
     }
+}
+
+private fun isPublicScriptVisibleFrom(methodOrPath: MvMethodOrPath): Boolean {
+    if (methodOrPath.containingScript != null) return true
+    val function = methodOrPath.containingFunction ?: return false
+    return function.isEntry || function.isPublicScript
 }

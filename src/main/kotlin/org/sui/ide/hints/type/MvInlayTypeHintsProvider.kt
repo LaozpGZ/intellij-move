@@ -17,8 +17,11 @@ import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.declaration
 import org.sui.lang.core.psi.ext.endOffset
 import org.sui.lang.core.psi.ext.isMsl
+import org.sui.lang.core.psi.ext.owner
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.ty.Ty
+import org.sui.lang.core.types.ty.TyInfer
+import org.sui.lang.core.types.ty.TyInteger
 import org.sui.lang.core.types.ty.TyUnknown
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -109,7 +112,17 @@ class MvInlayTypeHintsProvider : InlayHintsProvider<MvInlayTypeHintsProvider.Set
 
             private fun presentTypeForBinding(binding: MvPatBinding, ty: Ty) {
                 if (ty is TyUnknown) return
-                val presentation = typeHintsFactory.typeHint(ty)
+                val hintTy =
+                    if (binding.owner is MvLetStmt
+                        && (binding.owner as MvLetStmt).initializer == null
+                        && ty is TyInteger
+                        && ty.isDefault()
+                    ) {
+                        TyInfer.IntVar()
+                    } else {
+                        ty
+                    }
+                val presentation = typeHintsFactory.typeHint(hintTy)
                 val offset = binding.endOffset
                 val finalPresentation = presentation.withDisableAction(project)
                 sink.addInlineElement(

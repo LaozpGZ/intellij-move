@@ -7,6 +7,7 @@ import org.sui.ide.presentation.fullname
 import org.sui.ide.utils.functionSignature
 import org.sui.ide.utils.getSignature
 import org.sui.lang.MvElementTypes.R_PAREN
+import org.sui.lang.core.macros.MvMacroRegistry
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.types.address
@@ -107,13 +108,11 @@ class MvErrorAnnotator: MvAnnotatorBase() {
                             // 1 for self
                             callTy.paramTypes.size - 1
                         }
-                        is MvAssertBangExpr -> {
-//                            if (parentCallable.identifier.text == "assert") {
-//                                2
-//                            } else {
-//                                return
-//                            }
-                            return
+                        is MvAssertMacroExpr -> {
+                            MvMacroRegistry.specOf("assert")?.fixedArgsCountOrNull() ?: return
+                        }
+                        is MvMacroCallExpr -> {
+                            expectedArgsCountForMacro(parentCallable) ?: return
                         }
                         else -> return
                     }
@@ -162,6 +161,15 @@ class MvErrorAnnotator: MvAnnotatorBase() {
             }
         }
         element.accept(visitor)
+    }
+
+    private fun expectedArgsCountForMacro(call: MvMacroCallExpr): Int? {
+        val name = call.path.referenceName ?: return null
+        MvMacroRegistry.specOf(name)?.fixedArgsCountOrNull()?.let { return it }
+
+        val resolved = call.path.reference?.resolve()
+        val function = resolved as? MvFunctionLike ?: return null
+        return function.parameters.size
     }
 
     private fun checkStruct(holder: MvAnnotationHolder, struct: MvStruct) {

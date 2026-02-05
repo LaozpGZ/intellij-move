@@ -27,9 +27,8 @@ val MvVisibilityModifier.stubVisKind: VisKind
     get() = when {
         hasFriend -> FRIEND
         hasPackage -> PACKAGE
-        hasPublic -> PUBLIC
-        // deprecated, should be at the end
         hasScript -> SCRIPT
+        hasPublic -> PUBLIC
         else -> error("exhaustive")
     }
 
@@ -44,11 +43,9 @@ val MvVisibilityOwner.visibility2: Visibility2
                 Visibility2.Restricted.Friend(/*lazy { module.friendModules }*/)
             }
             // public(script) == public entry
-            SCRIPT -> Visibility2.Public
+            SCRIPT -> Visibility2.PublicScript
             PUBLIC -> Visibility2.Public
         }
     }
-
-
 
 

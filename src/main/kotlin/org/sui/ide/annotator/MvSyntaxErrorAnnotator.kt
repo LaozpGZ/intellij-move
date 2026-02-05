@@ -42,14 +42,6 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
                 // no error if #[test]
                 if (function.hasTestAttr) return
                 val returnType = function.returnType ?: return
-                // entry function can return type which has drop ability
-                if (HAS_DROP_ABILITY_TYPES.contains(returnType.lastChild.text)) return
-                if (returnType is MvStruct) {
-                    val returnStruct = returnType as MvStruct
-                    if (returnStruct.abilities.contains(Ability.DROP)) {
-                        return
-                    }
-                }
                 Diagnostic
                     .EntryFunCannotHaveReturnValue(returnType)
                     .addToHolder(holder)
@@ -66,12 +58,12 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
     }
 
     private fun checkCastExpr(holder: MvAnnotationHolder, castExpr: MvCastExpr) {
-//        val parent = castExpr.parent
-//        if (parent !is MvParensExpr) {
-//            Diagnostic
-//                .ParensAreRequiredForCastExpr(castExpr)
-//                .addToHolder(holder)
-//        }
+        val parent = castExpr.parent
+        if (parent !is MvParensExpr) {
+            Diagnostic
+                .ParensAreRequiredForCastExpr(castExpr)
+                .addToHolder(holder)
+        }
     }
 
     private fun checkIndexExpr(holder: MvAnnotationHolder, indexExpr: MvIndexExpr) {

@@ -2,15 +2,21 @@ package org.sui.ide.formatter.impl
 
 import com.intellij.formatting.Indent
 import com.intellij.lang.ASTNode
+import com.intellij.psi.PsiErrorElement
 import org.sui.ide.formatter.MoveFmtBlock
 import org.sui.ide.formatter.MvFmtContext
 import org.sui.lang.MvElementTypes.*
 import org.sui.lang.core.psi.*
+import org.sui.lang.core.psi.ext.getPrevNonCommentSibling
 
 fun MoveFmtBlock.computeIndent(child: ASTNode, childCtx: MvFmtContext): Indent? {
     val parentNode = node
     val parentPsi = node.psi
     val parentType = node.elementType
+    val indentSize = childCtx.commonSettings.indentOptions?.INDENT_SIZE ?: 4
+    val isResourceStructBlock =
+        parentPsi is MvBlockFields &&
+            (parentPsi.parent?.getPrevNonCommentSibling() as? PsiErrorElement)?.text?.trim() == "resource"
     return when {
         // do not indent contents of an address block
         // address {
@@ -25,6 +31,14 @@ fun MoveFmtBlock.computeIndent(child: ASTNode, childCtx: MvFmtContext): Indent? 
         //     2 + 2;
         parentType == ELSE_BLOCK
                 && child.elementType == INLINE_BLOCK -> Indent.getContinuationIndent()
+
+        // indent struct fields even if block node is flattened in PSI.
+        // "resource struct" is parsed with a preceding error element; adjust indentation accordingly.
+        child.elementType == NAMED_FIELD_DECL ->
+            if (isResourceStructBlock) Indent.getSpaceIndent(indentSize * 2) else Indent.getNormalIndent()
+
+        // align closing brace for "resource struct" blocks
+        isResourceStructBlock && child.elementType == R_BRACE -> Indent.getSpaceIndent(indentSize)
 
         // do not indent else block
         child.elementType == ELSE_BLOCK -> Indent.getNoneIndent()
