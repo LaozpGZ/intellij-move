@@ -193,7 +193,10 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : 
             when (element) {
                 is MvFunctionLike -> {
                     // no suffix for imports
-                    if (completionCtx?.resolutionCtx?.isUseSpeck == true) return
+                    val resolutionCtx = completionCtx?.resolutionCtx
+                    val isUseFun = resolutionCtx?.path?.hasAncestor<MvUseFun>() == true
+                        || resolutionCtx?.path?.hasAncestor<MvPublicUseFun>() == true
+                    if (resolutionCtx?.isUseSpeck == true || isUseFun) return
 
                     val isMethodCall = context.getElementOfType<MvMethodOrField>() != null
 

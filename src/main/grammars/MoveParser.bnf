@@ -473,13 +473,13 @@ PublicUseFunStmt ::= Attr* PublicUseFun ';'
     implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
 }
 
-UseFunFirst::= 'use fun'
+UseFunFirst::= use fun
 UseFun ::= UseFunFirst PathImpl UseFunAlias
 {
     pin = 1
 }
 
-PublicUseFunFirst ::= 'public use fun'
+PublicUseFunFirst ::= public use fun
 PublicUseFun ::= PublicUseFunFirst PathImpl UseFunAlias
 {
     pin = 1

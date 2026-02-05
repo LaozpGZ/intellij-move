@@ -97,6 +97,8 @@ fun createSpacingBuilder(commonSettings: CommonCodeStyleSettings): SpacingBuilde
             VISIBILITY_MODIFIER
         ).spaces(0)
         .after(VISIBILITY_MODIFIER).spaces(1)
+        .between(PUBLIC, USE).spacing(1, 1, 0, false, 0)
+        .between(USE, FUN).spacing(1, 1, 0, false, 0)
 
         .around(BINARY_OP).spaces(1)
         .around(EQ).spaces(1)
@@ -229,6 +231,8 @@ private fun ASTNode?.isWhiteSpaceWithLineBreak(): Boolean =
 
 private fun SpacingContext.needsBlankLineBetweenItems(): Boolean {
     if (elementType1 in MOVE_COMMENTS || elementType2 in MOVE_COMMENTS)
+        return false
+    if (elementType1 in USE_ITEMS && elementType2 in USE_ITEMS)
         return false
 
     // Allow to keep consecutive runs of `use`, `const` or other "one line" items without blank lines

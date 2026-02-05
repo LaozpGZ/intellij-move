@@ -18,7 +18,8 @@ import com.intellij.psi.tree.TokenSet.create as ts
 //    OR, AND, OR_OR, AND_AND,
 //    EQ, EQ_EQ, NOT_EQ,
 //)
-val ONE_LINE_ITEMS = ts(USE_STMT, CONST)
+val USE_ITEMS = ts(USE_STMT, USE_FUN_STMT, PUBLIC_USE_FUN_STMT)
+val ONE_LINE_ITEMS = ts(USE_STMT, USE_FUN_STMT, PUBLIC_USE_FUN_STMT, CONST)
 
 val PAREN_DELIMITED_BLOCKS = ts(
     PARENS_EXPR, PAT_TUPLE, TUPLE_TYPE, TUPLE_LIT_EXPR,
@@ -70,6 +71,7 @@ val PsiElement.isTopLevelItem: Boolean
 
 val PsiElement.isModuleItem: Boolean
     get() = this is MvFunction || this is MvConst || this is MvStruct || this is MvUseStmt
+            || this is MvUseFunStmt || this is MvPublicUseFunStmt
             || this is MvSpecFunction || this is MvSchema
 
 val PsiElement.isDeclarationItem: Boolean

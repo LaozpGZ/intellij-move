@@ -40,6 +40,7 @@ class CompleteParsingTest : MvParsingTestCase("complete") {
 
     // use
     fun `test use`() = doTest()
+    fun `test use fun`() = doTest()
     fun `test friend`() = doTest()
 
     // assignments

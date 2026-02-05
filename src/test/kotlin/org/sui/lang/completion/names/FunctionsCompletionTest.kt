@@ -192,6 +192,26 @@ class FunctionsCompletionTest : CompletionTestCase() {
     """
     )
 
+    fun `test use fun completion`() = doSingleCompletion(
+        """
+    module 0x1::M1 {
+        public fun call() {}
+    }
+    module 0x1::M2 {
+        struct S {}
+        use fun 0x1::M1::c/*caret*/ as S.call;
+    }
+    """, """
+    module 0x1::M1 {
+        public fun call() {}
+    }
+    module 0x1::M2 {
+        struct S {}
+        use fun 0x1::M1::call/*caret*/ as S.call;
+    }
+    """
+    )
+
     fun `test fq completion for reference expr`() = doSingleCompletion(
         """
     module 0x1::M1 {
