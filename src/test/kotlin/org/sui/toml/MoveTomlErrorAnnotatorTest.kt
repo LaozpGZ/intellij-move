@@ -56,7 +56,7 @@ class MoveTomlErrorAnnotatorTest : AnnotatorTestCase(MoveTomlErrorAnnotator::cla
         """
         [package]
         name = "test_pkg"
-        edition = "<error descr="Invalid edition: expected one of 1, 2024, 2024.alpha">2024.beta</error>"
+        edition = "<error descr="Invalid edition: expected one of 1, 2024, 2024.alpha, 2024.beta">2024.gamma</error>"
     """
     )
 

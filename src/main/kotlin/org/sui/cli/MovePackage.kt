@@ -24,6 +24,7 @@ enum class MoveEdition(
 ) {
     MOVE_1("Move 1", setOf("1", "move-1")),
     MOVE_2024_ALPHA("Move 2024 Alpha", setOf("2024.alpha", "2024-alpha", "move-2024-alpha")),
+    MOVE_2024_BETA("Move 2024 Beta", setOf("2024.beta", "2024-beta", "move-2024-beta")),
     MOVE_2024("Move 2024", setOf("2024", "move-2024"));
 
     val isMove2024: Boolean get() = this != MOVE_1
@@ -33,7 +34,7 @@ enum class MoveEdition(
         private val lookup: Map<String, MoveEdition> =
             values().flatMap { edition -> edition.tomlValues.map { it to edition } }.toMap()
 
-        val supportedEditionValues: List<String> = listOf("1", "2024", "2024.alpha")
+        val supportedEditionValues: List<String> = listOf("1", "2024", "2024.alpha", "2024.beta")
 
         fun fromToml(rawValue: String?): MoveEdition? {
             if (rawValue.isNullOrBlank()) return null
