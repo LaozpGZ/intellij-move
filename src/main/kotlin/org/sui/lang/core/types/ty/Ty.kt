@@ -75,39 +75,20 @@ abstract class Ty(val flags: TypeFlags = 0) : TypeFoldable<Ty> {
 //fun Ty.mslTy(msl: Boolean): Ty = if (this is TyReference && msl) this.innermostTy() else this
 
 fun Ty.mslScopeRefined(msl: Boolean): Ty {
-    println("mslScopeRefined called")
-    println("  this: $this")
-    println("  this.class: ${this.javaClass}")
-    println("  msl: $msl")
-
-    // Do nothing for TyNever type, return directly
-    if (this is TyNever) {
-        println("  TyNever, returning this")
-        return this
-    }
+    if (this is TyNever) return this
+    if (!msl) return this
 
     var ty = this
-    if (!msl) {
-        println("  not msl, returning this")
-        return ty
-    }
-
-    if (ty is TyNum) { // If it's already TyNum, return directly without processing
-        println("  already TyNum, returning this")
-        return ty
-    }
+    if (ty is TyNum) return ty
 
     if (this is TyReference) {
         ty = this.innermostTy()
-        println("  after TyReference: $ty")
     }
 
     if (ty is TyInteger || ty is TyInfer.IntVar) {
         ty = TyNum
-        println("  converted to TyNum")
     }
 
-    println("  final ty: $ty")
     return ty
 }
 

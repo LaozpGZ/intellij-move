@@ -33,6 +33,12 @@ class MvHighlighter : SyntaxHighlighterBase() {
             DOT -> MvColor.DOT
             COMMA -> MvColor.COMMA
 
+            EQ, EQ_EQ, NOT_EQ,
+            LT, LT_EQ, LT_LT, LT_EQ_EQ_GT,
+            GT, GT_EQ, GT_GT, EQ_EQ_GT,
+            PLUS, MINUS, MUL, DIV, MODULO, XOR,
+            AND, OR, EXCL, FAT_ARROW, COLON_COLON -> MvColor.OPERATORS
+
             BYTE_STRING_LITERAL, HEX_STRING_LITERAL -> MvColor.STRING
             INTEGER_LITERAL -> MvColor.NUMBER
 

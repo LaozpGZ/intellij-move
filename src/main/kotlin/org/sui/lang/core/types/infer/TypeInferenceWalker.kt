@@ -473,13 +473,6 @@ class TypeInferenceWalker(
                 ctx.writeExprTy(expr, ty)
                 ty
             }
-            is MvAbortExpr -> {
-                expr.expr?.inferTypeCoercableTo(TyInteger.DEFAULT)
-                val ty = TyNever
-                ctx.writeExprTy(expr, ty)
-
-                return ty
-            }
             is MvCodeBlockExpr -> expr.codeBlock.inferBlockType(expected, coerce = true)
             is MvAssignmentExpr -> inferAssignmentExprTy(expr)
             is MvBoolSpecExpr -> inferBoolSpecExpr(expr)
@@ -2216,7 +2209,7 @@ class TypeInferenceWalker(
                 }
 
                 // Type the while expression itself.
-                if (loopLike is MvExpr && !ctx.isTypeInferred(loopLike)) {
+                if (!ctx.isTypeInferred(loopLike)) {
                     ctx.writeExprTy(loopLike, TyNever)
                 }
             }
@@ -2231,13 +2224,13 @@ class TypeInferenceWalker(
                 }
 
                 // Type the for expression itself.
-                if (loopLike is MvExpr && !ctx.isTypeInferred(loopLike)) {
+                if (!ctx.isTypeInferred(loopLike)) {
                     ctx.writeExprTy(loopLike, TyNever)
                 }
             }
             is MvLoopExpr -> {
                 // Type the loop expression itself.
-                if (loopLike is MvExpr && !ctx.isTypeInferred(loopLike)) {
+                if (!ctx.isTypeInferred(loopLike)) {
                     ctx.writeExprTy(loopLike, TyNever)
                 }
             }

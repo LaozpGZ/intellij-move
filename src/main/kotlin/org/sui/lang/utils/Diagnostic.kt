@@ -271,7 +271,7 @@ fun Diagnostic.addToHolder(moveHolder: MvAnnotationHolder) {
     ann.highlightType(prepared.severity.toProblemHighlightType())
         .range(textRange)
 
-    val message = prepared.description
+    val message = if (prepared.description.isNotBlank()) prepared.description else prepared.header
     for (fix in prepared.fixes) {
         if (fix is IntentionAction) {
             ann.withFix(fix)
