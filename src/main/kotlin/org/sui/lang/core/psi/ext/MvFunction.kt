@@ -29,6 +29,12 @@ val MvFunction.isPublicScript: Boolean get() = this.visibilityModifier?.hasScrip
 
 val MvFunction.isInline: Boolean get() = this.isChildExists(MvElementTypes.INLINE)
 
+val MvFunction.isMacro: Boolean
+    get() {
+        val stub = greenStub
+        return stub?.isMacro ?: this.isChildExists(MvElementTypes.MACRO)
+    }
+
 val MvFunction.isView: Boolean
     get() {
         val stub = greenStub

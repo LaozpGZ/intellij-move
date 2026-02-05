@@ -35,6 +35,9 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
     }
 
     private fun checkFunction(holder: MvAnnotationHolder, function: MvFunction) {
+        if (function.isMacro) {
+            checkMacroFunctionParams(holder, function)
+        }
         when {
             function.isEntry -> {
                 // no error if #[test_only]
@@ -46,6 +49,36 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
                     .EntryFunCannotHaveReturnValue(returnType)
                     .addToHolder(holder)
             }
+        }
+    }
+
+    private fun checkMacroFunctionParams(holder: MvAnnotationHolder, function: MvFunction) {
+        for (typeParam in function.typeParameters) {
+            val name = typeParam.name ?: continue
+            if (isValidMacroParamName(name)) continue
+            val element = typeParam.nameIdentifier ?: typeParam
+            holder.createErrorAnnotation(element, macroParamErrorMessage("type", name))
+        }
+        for (param in function.parameters) {
+            val binding = param.patBinding ?: continue
+            val name = binding.name ?: continue
+            if (isValidMacroParamName(name)) continue
+            val element = binding.nameIdentifier ?: binding
+            holder.createErrorAnnotation(element, macroParamErrorMessage("value", name))
+        }
+    }
+
+    private fun isValidMacroParamName(name: String): Boolean {
+        if (name == "_") return true
+        if (!name.startsWith("$")) return false
+        return name.length > 1
+    }
+
+    private fun macroParamErrorMessage(kind: String, name: String): String {
+        return if (name.startsWith("_") && name != "_") {
+            "Macro function $kind parameter cannot start with '_'; use `\$_`"
+        } else {
+            "Macro function $kind parameter must start with `\$`"
         }
     }
 

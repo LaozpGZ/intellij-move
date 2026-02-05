@@ -125,6 +125,7 @@ class MvFunctionStub(
     val isTest: Boolean get() = BitUtil.isSet(flags, TEST_MASK)
     val isEntry: Boolean get() = BitUtil.isSet(flags, IS_ENTRY_MASK)
     val isView: Boolean get() = BitUtil.isSet(flags, IS_VIEW_MASK)
+    val isMacro: Boolean get() = BitUtil.isSet(flags, IS_MACRO_MASK)
 
     val unresolvedQualName: String?
         get() {
@@ -192,6 +193,7 @@ class MvFunctionStub(
             flags = BitUtil.set(flags, TEST_MASK, attrs.isTest)
             flags = BitUtil.set(flags, IS_ENTRY_MASK, psi.isEntry)
             flags = BitUtil.set(flags, IS_VIEW_MASK, psi.isView)
+            flags = BitUtil.set(flags, IS_MACRO_MASK, psi.isMacro)
 
             val moduleStub = parentStub as? MvModuleStub
             val moduleAddress = moduleStub?.address ?: StubAddress.Unknown
@@ -215,6 +217,7 @@ class MvFunctionStub(
         private val TEST_MASK: Int = makeBitMask(MvAttributeOwnerStub.USED_BITS + 1)
         private val IS_ENTRY_MASK: Int = makeBitMask(MvAttributeOwnerStub.USED_BITS + 2)
         private val IS_VIEW_MASK: Int = makeBitMask(MvAttributeOwnerStub.USED_BITS + 3)
+        private val IS_MACRO_MASK: Int = makeBitMask(MvAttributeOwnerStub.USED_BITS + 4)
     }
 }
 

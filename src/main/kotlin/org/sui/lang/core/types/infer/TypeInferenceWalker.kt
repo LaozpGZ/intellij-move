@@ -14,12 +14,15 @@ import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.collectMethodOrPathResolveVariants
 import org.sui.lang.core.resolve.collectResolveVariantsAsScopeEntries
+import org.sui.lang.core.resolve.isVisibleFrom
 import org.sui.lang.core.resolve.processAll
+import org.sui.lang.core.resolve.ref.FUNCTIONS
 import org.sui.lang.core.resolve.ref.ITEM_NAMESPACES
 import org.sui.lang.core.resolve.ref.NONE
 import org.sui.lang.core.resolve.resolveSingleResolveVariant
 import org.sui.lang.core.resolve2.PathKind
 import org.sui.lang.core.resolve2.processMethodResolveVariants
+import org.sui.lang.core.resolve2.processNestedScopesUpwards
 import org.sui.lang.core.resolve2.ref.InferenceCachedPathElement
 import org.sui.lang.core.resolve2.ref.ResolutionContext
 import org.sui.lang.core.resolve2.ref.processPathResolveVariantsWithExpectedType
@@ -379,6 +382,7 @@ class TypeInferenceWalker(
                 is MvPathExpr,
                 is MvDotExpr,
                 is MvCallExpr,
+                is MvMacroCallExpr,
                 is MvRefExpr -> this.ctx.writeExprExpectedTy(expr, it)
             }
         }
@@ -401,7 +405,7 @@ class TypeInferenceWalker(
             is MvBorrowExpr -> inferBorrowExprTy(expr, expected)
             is MvCallExpr -> inferCallExprTy(expr, expected)
             is MvAssertMacroExpr -> inferMacroCallExprTy(expr)
-            is MvMacroCallExpr -> inferMacroCallExprTy(expr)
+            is MvMacroCallExpr -> inferMacroCallExprTy(expr, expected, receiverTy = null)
             is MvStructLitExpr -> inferStructLitExprTy(expr, expected)
             is MvVectorLitExpr -> inferVectorLitExpr(expr, expected)
             is MvIndexExpr -> inferIndexExprTy(expr)
@@ -845,6 +849,13 @@ class TypeInferenceWalker(
     }
 
     fun inferMethodCallTy(receiverTy: Ty, methodCall: MvMethodCall, expected: Expectation): Ty {
+        if (methodCall.excl != null) {
+            val macroFunction = resolveMacroMethodCall(methodCall, receiverTy)
+            if (macroFunction != null) {
+                ctx.resolvedMethodCalls[methodCall] = macroFunction
+                return inferMethodCallFromFunction(receiverTy, methodCall, expected, macroFunction)
+            }
+        }
 
         val resolutionCtx = ResolutionContext(methodCall, isCompletion = false)
         val resolvedMethods =
@@ -867,6 +878,50 @@ class TypeInferenceWalker(
                     TyFunction.unknownTyFunction(methodCall.project, 1 + methodCall.valueArguments.size)
                 }
             }
+        val methodTy = ctx.resolveTypeVarsIfPossible(baseTy) as TyCallable
+
+        val expectedInputTys =
+            expectedInputsForExpectedOutput(expected, methodTy.retType, methodTy.paramTypes)
+
+        val methodArgs = collectCallArgumentExprs(methodCall).toMutableList()
+        val leadingEmptyMethodArgs = countLeadingEmptyArgs(methodCall.text)
+        if (leadingEmptyMethodArgs > 0 && methodArgs.size < methodTy.paramTypes.size) {
+            val toInsert = minOf(leadingEmptyMethodArgs, methodTy.paramTypes.size - methodArgs.size)
+            repeat(toInsert) { methodArgs.add(0, null) }
+        }
+        inferArgumentTypes(
+            methodTy.paramTypes,
+            expectedInputTys,
+            listOf(InferArg.SelfType(receiverTy)) + methodArgs.map { InferArg.ArgExpr(it) }
+        )
+
+        writeCallableType(methodCall, methodTy, method = true)
+
+        return methodTy.retType
+    }
+
+    private fun resolveMacroMethodCall(methodCall: MvMethodCall, receiverTy: Ty): MvFunction? {
+        val resolutionCtx = ResolutionContext(methodCall, isCompletion = false)
+        val resolvedMethods =
+            collectMethodOrPathResolveVariants(methodCall, resolutionCtx) {
+                processMethodResolveVariants(methodCall, receiverTy, msl, it)
+            }
+        return resolvedMethods.asSequence()
+            .filter { it.isVisible }
+            .mapNotNull { it.element as? MvFunction }
+            .firstOrNull { it.isMacro }
+    }
+
+    private fun inferMethodCallFromFunction(
+        receiverTy: Ty,
+        methodCall: MvMethodCall,
+        expected: Expectation,
+        function: MvFunction
+    ): Ty {
+        val baseTy =
+            ctx.instantiateMethodOrPath<TyFunction>(methodCall, function)
+                ?.first
+                ?: TyFunction.unknownTyFunction(methodCall.project, 1 + methodCall.valueArguments.size)
         val methodTy = ctx.resolveTypeVarsIfPossible(baseTy) as TyCallable
 
         val expectedInputTys =
@@ -1077,7 +1132,107 @@ class TypeInferenceWalker(
         return TyUnit
     }
 
-    fun inferMacroCallExprTy(macroExpr: MvMacroCallExpr): Ty {
+    fun inferMacroCallExprTy(macroExpr: MvMacroCallExpr): Ty =
+        inferMacroCallExprTy(macroExpr, Expectation.NoExpectation, receiverTy = null)
+
+    private fun inferMacroCallExprTy(
+        macroExpr: MvMacroCallExpr,
+        expected: Expectation,
+        receiverTy: Ty?
+    ): Ty {
+        val resolvedMacro = resolveMacroFunction(macroExpr)
+        if (resolvedMacro != null) {
+            return inferMacroCallFromFunction(macroExpr, resolvedMacro, expected, receiverTy)
+        }
+        return inferBuiltinMacroCallExprTy(macroExpr)
+    }
+
+    private fun resolveMacroFunction(macroExpr: MvMacroCallExpr): MvFunction? {
+        val referenceName = macroExpr.path.referenceName ?: return null
+        val resolutionCtx = ResolutionContext(macroExpr, isCompletion = false)
+        val entries = collectResolveVariantsAsScopeEntries(referenceName) {
+            processNestedScopesUpwards(macroExpr, FUNCTIONS, resolutionCtx, it)
+        }
+        val path = macroExpr.path
+        if (entries.isNotEmpty()) {
+            val resolvedItems = entries.map { ResolvedItem.from(it, path) }
+            ctx.writePath(path, resolvedItems)
+        }
+        return entries.asSequence()
+            .filter { it.isVisibleFrom(path) }
+            .mapNotNull { resolveAliases(it.element) as? MvFunction }
+            .firstOrNull { it.isMacro }
+    }
+
+    private fun inferMacroCallFromFunction(
+        macroExpr: MvMacroCallExpr,
+        function: MvFunction,
+        expected: Expectation,
+        receiverTy: Ty?
+    ): Ty {
+        val path = macroExpr.path
+        val baseTy =
+            ctx.instantiateMethodOrPath<TyFunction>(path, function)
+                ?.first
+                ?: function.declaredType(msl)
+        val funcTy = ctx.resolveTypeVarsIfPossible(baseTy) as TyCallable
+        val paramTypes = funcTy.paramTypes
+
+        val expectedInputTys =
+            if (expected.onlyHasTy(ctx) is TyUnit && macroExpr.parent is MvExprStmt) {
+                emptyList()
+            } else {
+                expectedInputsForExpectedOutput(expected, funcTy.retType, paramTypes)
+            }
+
+        val hasExplicitTypeParameters = path.typeArguments.isNotEmpty()
+
+        val argExprs = collectCallArgumentExprs(macroExpr).toMutableList()
+        val leadingEmptyArgs = countLeadingEmptyArgs(macroExpr.text)
+        if (leadingEmptyArgs > 0 && argExprs.size < paramTypes.size) {
+            val toInsert = minOf(leadingEmptyArgs, paramTypes.size - argExprs.size)
+            repeat(toInsert) { argExprs.add(0, null) }
+        }
+
+        val inferArgs =
+            if (receiverTy != null) {
+                listOf(InferArg.SelfType(receiverTy)) + argExprs.map { InferArg.ArgExpr(it) }
+            } else {
+                argExprs.map { InferArg.ArgExpr(it) }
+            }
+        inferArgumentTypes(
+            paramTypes,
+            expectedInputTys,
+            inferArgs,
+            hasExplicitTypeParameters
+        )
+
+        writeCallableType(macroExpr, funcTy, method = receiverTy != null)
+
+        if (receiverTy == null
+            && leadingEmptyArgs > 0
+            && macroExpr.argumentExprs.isNotEmpty()
+            && paramTypes.size > macroExpr.argumentExprs.size
+        ) {
+            val actualArgs = macroExpr.argumentExprs.filterNotNull()
+            actualArgs.forEachIndexed { index, expr ->
+                val paramIndex = index + leadingEmptyArgs
+                val expectedTy = paramTypes.getOrNull(paramIndex) ?: return@forEachIndexed
+                val argTy = if (ctx.isTypeInferred(expr)) {
+                    ctx.getExprType(expr)
+                } else {
+                    expr.inferType(expected = Expectation.maybeHasType(expectedTy))
+                }
+                if (!ctx.tryCoerce(argTy, expectedTy).isOk) {
+                    ctx.reportTypeError(TypeError.TypeMismatch(expr, expectedTy, argTy))
+                }
+            }
+        }
+
+        return funcTy.retType
+    }
+
+    private fun inferBuiltinMacroCallExprTy(macroExpr: MvMacroCallExpr): Ty {
         val pathText = macroExpr.path.text.removeSuffix("!")
         when (pathText) {
             "vector" -> {

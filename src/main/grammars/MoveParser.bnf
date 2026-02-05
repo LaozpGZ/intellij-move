@@ -1201,7 +1201,7 @@ StructDotField ::= IDENTIFIER !('(' | '::' | '!' | '{')
     implements = ["org.sui.lang.core.psi.ext.MvMethodOrField"]
     mixin = "org.sui.lang.core.psi.ext.MvStructDotFieldMixin"
 }
-MethodCall ::= IDENTIFIER ColonTypeArgumentList? ValueArgumentList
+MethodCall ::= IDENTIFIER '!'? ColonTypeArgumentList? ValueArgumentList
 {
     implements = [
         "org.sui.lang.core.psi.ext.MvMethodOrField"
@@ -1298,7 +1298,10 @@ NamedAddress ::= IDENTIFIER
 MacroCallExpr ::= PathImpl '!' (ValueArgumentList | VectorLitItems | StructLitFieldsBlock) {
     pin = 2
     extends = Expr
-    implements = [ "org.sui.lang.core.psi.ext.MvCallable" ]
+    implements = [
+        "org.sui.lang.core.psi.ext.MvCallable"
+        "org.sui.lang.core.resolve2.ref.InferenceCachedPathElement"
+    ]
 }
 
 AssertMacroExpr ::= <<assertIdent>> '!' ValueArgumentList {
