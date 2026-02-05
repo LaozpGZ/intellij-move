@@ -4,6 +4,7 @@ import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import java.util.*
 
 val publishingToken = System.getenv("JB_PUB_TOKEN") ?: null
@@ -110,13 +111,14 @@ allprojects {
             testFramework(TestFrameworkType.Platform)
             pluginVerifier(Constraints.LATEST_VERSION)
             bundledPlugin("org.toml.lang")
-            jetbrainsRuntime("17.0.11b1207.30")
+            jetbrainsRuntime()
         }
     }
 
     configure<JavaPluginExtension> {
         sourceCompatibility = javaVersion
         targetCompatibility = javaVersion
+        toolchain.languageVersion.set(JavaLanguageVersion.of(21))
     }
 
     sourceSets {
@@ -126,6 +128,7 @@ allprojects {
     }
 
     kotlin {
+        jvmToolchain(21)
         if (file("src/$shortPlatformVersion/main/kotlin").exists()) {
             sourceSets {
                 main {
