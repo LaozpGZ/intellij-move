@@ -59,6 +59,9 @@ fun MvModule.allNonTestFunctions(): List<MvFunction> =
 //    getProjectPsiDependentCache(this) {
 //    }
 
+fun MvModule.syntaxIndexFunctions(): List<MvFunction> =
+    this.allNonTestFunctions().filter { it.hasSyntaxIndex }
+
 fun MvModule.testFunctions(): List<MvFunction> =
     getProjectPsiDependentCache(this) {
         it.allFunctions().filter { f -> f.hasTestAttr }

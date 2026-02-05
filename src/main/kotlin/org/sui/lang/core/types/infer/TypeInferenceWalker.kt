@@ -12,6 +12,7 @@ import org.sui.ide.formatter.impl.location
 import org.sui.lang.MvElementTypes
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
+import org.sui.lang.moveProject
 import org.sui.lang.core.resolve.collectMethodOrPathResolveVariants
 import org.sui.lang.core.resolve.collectResolveVariantsAsScopeEntries
 import org.sui.lang.core.resolve.isVisibleFrom
@@ -29,6 +30,7 @@ import org.sui.lang.core.resolve2.ref.processPathResolveVariantsWithExpectedType
 import org.sui.lang.core.resolve2.ref.resolveAliases
 import org.sui.lang.core.resolve2.ref.resolvePathRaw
 import org.sui.lang.core.resolve2.resolveBindingForFieldShorthand
+import org.sui.lang.core.types.infer.deepFoldTyTypeParameterWith
 import org.sui.lang.core.types.ty.*
 import org.sui.lang.core.resolve2.PreImportedModuleService
 import org.sui.lang.core.types.ty.TyReference.Companion.autoborrow
@@ -1624,13 +1626,53 @@ class TypeInferenceWalker(
                 }
             }
             receiverTy is TyAdt -> {
-                coerce(indexExpr.argExpr, argTy, TyAddress)
-                receiverTy
+                val syntaxFunction = resolveIndexSyntaxFunction(indexExpr, receiverTy)
+                if (syntaxFunction == null) {
+                    ctx.reportTypeError(TypeError.IndexingIsNotAllowed(indexExpr.receiverExpr, receiverTy))
+                    return TyUnknown
+                }
+
+                val funcTy =
+                    syntaxFunction
+                        .declaredType(msl)
+                        .substitute(syntaxFunction.tyInfers) as TyFunction
+                val expectedInputTys =
+                    expectedInputsForExpectedOutput(Expectation.NoExpectation, funcTy.retType, funcTy.paramTypes)
+
+                inferArgumentTypes(
+                    funcTy.paramTypes,
+                    expectedInputTys,
+                    listOf(
+                        InferArg.SelfType(receiverTy),
+                        InferArg.ArgExpr(indexExpr.argExpr)
+                    )
+                )
+
+                val resolvedRetTy = ctx.resolveTypeVarsIfPossible(funcTy.retType)
+                return when (resolvedRetTy) {
+                    is TyReference -> resolvedRetTy.innerTy()
+                    else -> resolvedRetTy
+                }
             }
             else -> {
                 ctx.reportTypeError(TypeError.IndexingIsNotAllowed(indexExpr.receiverExpr, receiverTy))
                 TyUnknown
             }
+        }
+    }
+
+    private fun resolveIndexSyntaxFunction(
+        indexExpr: MvIndexExpr,
+        receiverTy: Ty
+    ): MvFunction? {
+        val moveProject = indexExpr.moveProject ?: return null
+        val itemModule = receiverTy.itemModule(moveProject) ?: return null
+        val candidates = itemModule.syntaxIndexFunctions()
+        return candidates.firstOrNull { function ->
+            val selfTy = function.selfParamTy(msl) ?: return@firstOrNull false
+            val selfTyWithTyVars =
+                selfTy.deepFoldTyTypeParameterWith { tp -> TyInfer.TyVar(tp) }
+            TyReference.isCompatibleWithAutoborrow(receiverTy, selfTyWithTyVars, msl)
         }
     }
 

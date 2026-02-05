@@ -410,7 +410,7 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
         val actualTy: Ty,
     ): TypeError(element) {
         override fun message(): String {
-            return "Indexing receiver type should be vector or resource, got '${actualTy.text(fq = false)}'"
+            return "Indexing receiver type should be vector or support #[syntax(index)], got '${actualTy.text(fq = false)}'"
         }
 
         override fun innerFoldWith(folder: TypeFolder): TypeError {

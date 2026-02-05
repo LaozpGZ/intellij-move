@@ -55,6 +55,14 @@ val QueryAttributes.isTest: Boolean get() = this.hasAttrItem("test")
 
 val QueryAttributes.isView: Boolean get() = this.hasAttrItem("view")
 
+val QueryAttributes.hasSyntaxIndex: Boolean
+    get() = this.getAttrItem("syntax")
+        ?.innerAttrItems
+        ?.any { it.referenceName == "index" } == true
+
+val MvFunction.hasSyntaxIndex: Boolean
+    get() = queryAttributes.hasSyntaxIndex
+
 val MvFunction.outerFileName: String
     get() =
         if (this.name in BUILTIN_FUNCTIONS) {

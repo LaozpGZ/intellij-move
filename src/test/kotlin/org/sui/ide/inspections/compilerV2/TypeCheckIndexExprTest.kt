@@ -25,7 +25,7 @@ class TypeCheckIndexExprTest : InspectionTestBase(MvTypeCheckInspection::class) 
         module 0x1::m {
             fun main() {
                 let b = false;
-                <error descr="Indexing receiver type should be vector or resource, got 'bool'">b</error>[0];
+                <error descr="Indexing receiver type should be vector or support #[syntax(index)], got 'bool'">b</error>[0];
             }
         }        
     """
@@ -36,7 +36,7 @@ class TypeCheckIndexExprTest : InspectionTestBase(MvTypeCheckInspection::class) 
         module 0x1::m {
             fun main() {
                 let b = false;
-                <error descr="Indexing receiver type should be vector or resource, got 'bool'">b</error>[@0x1];
+                <error descr="Indexing receiver type should be vector or support #[syntax(index)], got 'bool'">b</error>[@0x1];
             }
         }        
     """
@@ -69,6 +69,8 @@ class TypeCheckIndexExprTest : InspectionTestBase(MvTypeCheckInspection::class) 
         """
         module 0x1::m {
             struct S has key {}
+            #[syntax(index)]
+            native fun borrow(self: &S, addr: address): &S;
             fun main() {
                 S[<error descr="Incompatible type 'bool', expected 'address'">false</error>];
             }
