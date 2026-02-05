@@ -215,7 +215,7 @@ private ScriptItem_with_recover ::= !('}' | <<eof>>) ScriptItem
 private ScriptItem_recover ::= !('}' | ScriptItem_first | TopLevel_first)
 private ScriptItem_first ::= use | CONST_KW | fun | macro
 
-private ScriptItem ::= UseStmt | Const | FunctionInner
+private ScriptItem ::= UseStmt | UseFunStmt | Const | FunctionInner
 
 private address ::= <<addressKeyword>>
 private has ::= <<hasKeyword>>
@@ -275,7 +275,8 @@ private ModuleItem_first ::= use | public | native | fun | CONST_KW | STRUCT_KW 
                             | Attr_first | "friend"  | "entry" | "inline" | "enum"
 private TopLevel_first ::= MODULE_KW | SCRIPT_KW
 
-private ModuleItem ::=        PublicUseFun
+private ModuleItem ::=        PublicUseFunStmt
+                            | UseFunStmt
                             | UseStmt
                             | FriendDecl
                             | StructItem
@@ -459,9 +460,29 @@ private TupleFieldDecl_recover ::= !(')' | Type )
 TupleFieldDecl ::= Type
 
 
-UseFunFirst::= 'use fun'
-PublicUseFun ::= 'public'? UseFunFirst PathStart? 'as' IDENTIFIER'.'IDENTIFIER ';' {
-    pin=2
+UseFunStmt ::= Attr* UseFun ';'
+{
+    pin = 2
+    extends = Stmt
+    implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
+}
+
+PublicUseFunStmt ::= Attr* public UseFun ';'
+{
+    pin = 2
+    implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
+}
+
+UseFun ::= use fun PathImpl UseFunAlias
+{
+    pin = 1
+}
+
+UseFunAlias ::= as PathType '.' IDENTIFIER
+{
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MvNameIdentifierOwner" ]
+    mixin = "org.sui.lang.core.psi.ext.MvUseFunAliasMixin"
 }
 
 fake Function ::= Attr* native? VisibilityModifier? entry? inline? macro?
@@ -897,7 +918,7 @@ CodeBlock ::= '{' CodeBlock_items '}'
     mixin = "org.sui.lang.core.psi.ext.MvCodeBlockMixin"
 }
 
-private CodeBlock_items ::= UseStmt*
+private CodeBlock_items ::= (UseStmt | UseFunStmt)*
                             (StructItem | Enum | Const)*
                             (Stmt | ExprStmt_expr | ItemSpecBlockExpr)*
 {
@@ -1366,7 +1387,7 @@ private ModuleSpecBlock_item_with_recover ::= !('}' | <<eof>>) ModuleSpecBlock_i
     pin = 1
     recoverWhile = ModuleSpecBlock_item_recover
 }
-private ModuleSpecBlock_item ::= UseStmt | SpecFunctionItem | Schema | ModuleItemSpec | ItemSpec
+private ModuleSpecBlock_item ::= UseStmt | UseFunStmt | SpecFunctionItem | Schema | ModuleItemSpec | ItemSpec
 private ModuleSpecBlock_item_recover ::= !('}' | <<eof>> | spec | use)
 
 ModuleItemSpec ::= spec MODULE_KW <<msl SpecCodeBlock>>
@@ -1472,7 +1493,7 @@ private ItemSpecBlock_items ::= (SpecStmt | ExprStmt)* (SpecExprStmt_items | Exp
 }
 private ItemSpecBlock_items_recover ::= !('}' | <<eof>>)
 
-private SpecStmt ::= UseStmt
+private SpecStmt ::= UseStmt | UseFunStmt
                        | SchemaFieldStmtImpl
                        | GlobalVariableStmt
                        | SpecInlineFunctionStmt
