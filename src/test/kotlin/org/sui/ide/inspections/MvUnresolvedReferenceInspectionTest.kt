@@ -1,5 +1,8 @@
 package org.sui.ide.inspections
 
+import org.sui.ide.inspections.fixes.CompilerV2Feat.MACRO_FUNCTIONS
+import org.sui.ide.inspections.fixes.CompilerV2Feat.RECEIVER_STYLE_FUNCTIONS
+import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.DebugMode
 import org.sui.utils.tests.NamedAddress
 import org.sui.utils.tests.annotation.InspectionTestBase
@@ -72,6 +75,34 @@ class MvUnresolvedReferenceInspectionTest : InspectionTestBase(MvUnresolvedRefer
         module 0x1::M {
             fun main() {
                 <error descr="Unresolved function: `dbg`">dbg</error>!(1, true);
+            }
+        }
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS, MACRO_FUNCTIONS)
+    fun `test no unresolved for method macro call`() = checkByText(
+        """
+        module 0x1::M {
+            struct S has copy, drop {}
+
+            public macro fun call(self: &S, a: u8): u8 { a }
+
+            fun main(s: &S) {
+                s.call!(1);
+            }
+        }
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS, MACRO_FUNCTIONS)
+    fun `test unresolved unknown method macro call`() = checkByText(
+        """
+        module 0x1::M {
+            struct S has copy, drop {}
+
+            fun main(s: &S) {
+                s.<error descr="Unresolved reference: `missing`">missing</error>!(1);
             }
         }
     """
