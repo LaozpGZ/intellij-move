@@ -14,7 +14,11 @@ enum class CompilerV2Feat(val title: String) {
     INDEXING("Index notation"),
     RECEIVER_STYLE_FUNCTIONS("Receiver-Style functions"),
     RESOURCE_CONTROL("Resource access control"),
-    PUBLIC_PACKAGE("`public(package)` function visibility");
+    PUBLIC_PACKAGE("`public(package)` function visibility"),
+    MACRO_FUNCTIONS("Macro functions"),
+    TYPE_KEYWORD("`type` keyword"),
+    PUBLIC_STRUCT_REQUIRED("`public struct` requirement"),
+    LET_MUT_REQUIRED("`let mut` requirement");
 }
 
 class EnableCompilerV2FeatureFix(
@@ -35,6 +39,10 @@ class EnableCompilerV2FeatureFix(
                 RECEIVER_STYLE_FUNCTIONS -> it.enableReceiverStyleFunctions = true
                 RESOURCE_CONTROL -> it.enableResourceAccessControl = true
                 PUBLIC_PACKAGE -> it.enablePublicPackage = true
+                MACRO_FUNCTIONS -> it.enableMacroFunctions = true
+                TYPE_KEYWORD -> it.enableTypeKeyword = true
+                PUBLIC_STRUCT_REQUIRED -> it.requirePublicStruct = true
+                LET_MUT_REQUIRED -> it.requireLetMut = true
             }
         }
     }

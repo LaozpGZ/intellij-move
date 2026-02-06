@@ -57,6 +57,10 @@ fun UsefulTestCase.handleCompilerV2Annotations(project: Project) {
         it.enableReceiverStyleFunctions = false
         it.enableIndexExpr = false
         it.enablePublicPackage = false
+        it.enableMacroFunctions = false
+        it.enableTypeKeyword = false
+        it.requirePublicStruct = false
+        it.requireLetMut = false
 
         if (enabledCompilerV2 != null) {
             for (feature in enabledCompilerV2.features) {
@@ -65,6 +69,10 @@ fun UsefulTestCase.handleCompilerV2Annotations(project: Project) {
                     RECEIVER_STYLE_FUNCTIONS -> it.enableReceiverStyleFunctions = true
                     INDEXING -> it.enableIndexExpr = true
                     PUBLIC_PACKAGE -> it.enablePublicPackage = true
+                    MACRO_FUNCTIONS -> it.enableMacroFunctions = true
+                    TYPE_KEYWORD -> it.enableTypeKeyword = true
+                    PUBLIC_STRUCT_REQUIRED -> it.requirePublicStruct = true
+                    LET_MUT_REQUIRED -> it.requireLetMut = true
                 }
             }
         }

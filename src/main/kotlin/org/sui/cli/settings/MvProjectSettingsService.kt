@@ -91,6 +91,18 @@ class MvProjectSettingsService(
         @AffectsHighlighting
         var enablePublicPackage: Boolean by property(true)
 
+        @AffectsParseTree
+        var enableMacroFunctions: Boolean by property(true)
+
+        @AffectsHighlighting
+        var enableTypeKeyword: Boolean by property(true)
+
+        @AffectsHighlighting
+        var requirePublicStruct: Boolean by property(true)
+
+        @AffectsHighlighting
+        var requireLetMut: Boolean by property(true)
+
         var featureOverridesActive: Boolean by property(false)
 
         @AffectsMoveProjectsMetadata
@@ -123,6 +135,10 @@ class MvProjectSettingsService(
                 || oldEvent.enableIndexExpr != newEvent.enableIndexExpr
                 || oldEvent.enablePublicPackage != newEvent.enablePublicPackage
                 || oldEvent.enableResourceAccessControl != newEvent.enableResourceAccessControl
+                || oldEvent.enableMacroFunctions != newEvent.enableMacroFunctions
+                || oldEvent.enableTypeKeyword != newEvent.enableTypeKeyword
+                || oldEvent.requirePublicStruct != newEvent.requirePublicStruct
+                || oldEvent.requireLetMut != newEvent.requireLetMut
             ) {
                 newEvent.featureOverridesActive = true
             }
@@ -151,6 +167,10 @@ class MvProjectSettingsService(
             resourceAccessControl = state.enableResourceAccessControl,
             indexExpr = state.enableIndexExpr,
             publicPackageVisibility = publicPackageVisibility,
+            macroFunctions = state.enableMacroFunctions,
+            typeKeyword = state.enableTypeKeyword,
+            publicStructRequired = state.requirePublicStruct,
+            letMutRequired = state.requireLetMut,
             publicFriendDisabled = base.publicFriendDisabled || publicPackageVisibility,
         )
     }
@@ -164,6 +184,10 @@ class MvProjectSettingsService(
             || !isDefaultValue(MoveProjectSettings::enableIndexExpr)
             || !isDefaultValue(MoveProjectSettings::enablePublicPackage)
             || !isDefaultValue(MoveProjectSettings::enableResourceAccessControl)
+            || !isDefaultValue(MoveProjectSettings::enableMacroFunctions)
+            || !isDefaultValue(MoveProjectSettings::enableTypeKeyword)
+            || !isDefaultValue(MoveProjectSettings::requirePublicStruct)
+            || !isDefaultValue(MoveProjectSettings::requireLetMut)
     }
 
     private fun MoveProjectSettings.isDefaultValue(prop: kotlin.reflect.KProperty1<MoveProjectSettings, *>): Boolean {

@@ -372,7 +372,10 @@ object MoveParserUtil : GeneratedParserUtilBase() {
     fun enumKeyword(b: PsiBuilder, level: Int): Boolean = contextualKeyword(b, "enum", ENUM_KW)
 
     @JvmStatic
-    fun macroKeyword(b: PsiBuilder, level: Int): Boolean = contextualKeyword(b, "macro", MACRO)
+    fun macroKeyword(b: PsiBuilder, level: Int): Boolean {
+        if (!b.project.moveLanguageFeatures.macroFunctions) return false
+        return contextualKeyword(b, "macro", MACRO)
+    }
 
     @JvmStatic
     fun isNotMatchKeyword(b: PsiBuilder, level: Int): Boolean {

@@ -51,7 +51,10 @@ class KeywordCompletionContributor: CompletionContributor() {
                                 && (modifier != "public(friend)" || !features.publicFriendDisabled)
                     })
                     addAll(FUNCTION_MODIFIERS)
-                    addAll(listOf("native", "fun", "struct", "const", "use", "spec", "enum", "type", "match", "mut"))
+                    addAll(listOf("native", "fun", "struct", "const", "use", "spec", "enum", "match", "mut"))
+                    if (features.typeKeyword) {
+                        add("type")
+                    }
                     if (!features.publicFriendDisabled) {
                         add("friend")
                     }
