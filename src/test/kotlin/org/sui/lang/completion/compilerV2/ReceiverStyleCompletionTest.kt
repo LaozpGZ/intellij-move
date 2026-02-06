@@ -85,6 +85,34 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
     """
     )
 
+    fun `test use fun alias method completion from another module`() = doSingleCompletion(
+        """
+        module 0x1::m {
+            public struct S { field: u8 }
+            public fun receiver(self: &S): u8 {}
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            use fun 0x1::m::receiver as S.alias_receiver;
+            fun main(s: S) {
+                s.alias_rec/*caret*/
+            }
+        }
+    """, """
+        module 0x1::m {
+            public struct S { field: u8 }
+            public fun receiver(self: &S): u8 {}
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            use fun 0x1::m::receiver as S.alias_receiver;
+            fun main(s: S) {
+                s.alias_receiver()/*caret*/
+            }
+        }
+    """
+    )
+
     fun `test function completion type annotation required`() = doSingleCompletion(
         """
         module 0x1::main {

@@ -8,6 +8,7 @@ import org.sui.lang.core.types.infer.deepFoldTyTypeParameterWith
 import org.sui.lang.core.types.ty.Ty
 import org.sui.lang.core.types.ty.TyInfer
 import org.sui.lang.core.types.ty.TyReference
+import org.sui.lang.core.resolve2.util.forEachUseFun
 import org.sui.lang.moveProject
 import java.util.*
 
@@ -29,6 +30,10 @@ fun processMethodResolveVariants(
     msl: Boolean,
     processor: RsResolveProcessor
 ): Boolean {
+    if (processUseFunMethodResolveVariants(methodOrField, receiverTy, msl, processor)) {
+        return true
+    }
+
     val moveProject = methodOrField.moveProject ?: return false
     val itemModule = receiverTy.itemModule(moveProject) ?: return false
     return processor
@@ -41,6 +46,77 @@ fun processMethodResolveVariants(
             TyReference.isCompatibleWithAutoborrow(receiverTy, selfTyWithTyVars, msl)
         }
         .processAllItems(setOf(Namespace.FUNCTION), itemModule.allNonTestFunctions())
+}
+
+private fun processUseFunMethodResolveVariants(
+    methodOrField: MvMethodOrField,
+    receiverTy: Ty,
+    msl: Boolean,
+    processor: RsResolveProcessor
+): Boolean {
+    val baseProcessor = processor.wrapWithFilter { entry ->
+        val function = entry.element as? MvFunction ?: return@wrapWithFilter false
+        val selfTy = function.selfParamTy(msl) ?: return@wrapWithFilter false
+        val selfTyWithTyVars =
+            selfTy.deepFoldTyTypeParameterWith { tp -> TyInfer.TyVar(tp) }
+        TyReference.isCompatibleWithAutoborrow(receiverTy, selfTyWithTyVars, msl)
+    }
+
+    var scope: MvElement? = methodOrField
+    while (scope != null) {
+        val itemsOwner = scope as? MvItemsOwner
+        if (itemsOwner != null) {
+            for (useFunStmt in itemsOwner.useFunStmtList) {
+                if (processUseFunStmt(useFunStmt, baseProcessor)) {
+                    return true
+                }
+            }
+            for (publicUseFunStmt in itemsOwner.publicUseFunStmtList) {
+                if (processPublicUseFunStmt(publicUseFunStmt, baseProcessor)) {
+                    return true
+                }
+            }
+        }
+        if (scope is MvModule) {
+            break
+        }
+        scope = scope.context as? MvElement
+    }
+    return false
+}
+
+private fun processUseFunStmt(
+    useFunStmt: MvUseFunStmt,
+    processor: RsResolveProcessor
+): Boolean {
+    var matched = false
+    useFunStmt.forEachUseFun { path, alias ->
+        val function = path.reference?.resolveFollowingAliases() as? MvFunction ?: return@forEachUseFun false
+        val aliasName = alias?.name ?: return@forEachUseFun false
+        if (processor.process(aliasName, function, setOf(Namespace.FUNCTION))) {
+            matched = true
+            return@forEachUseFun true
+        }
+        false
+    }
+    return matched
+}
+
+private fun processPublicUseFunStmt(
+    publicUseFunStmt: MvPublicUseFunStmt,
+    processor: RsResolveProcessor
+): Boolean {
+    var matched = false
+    publicUseFunStmt.forEachUseFun { path, alias ->
+        val function = path.reference?.resolveFollowingAliases() as? MvFunction ?: return@forEachUseFun false
+        val aliasName = alias?.name ?: return@forEachUseFun false
+        if (processor.process(aliasName, function, setOf(Namespace.FUNCTION))) {
+            matched = true
+            return@forEachUseFun true
+        }
+        false
+    }
+    return matched
 }
 
 fun processItemDeclarations(

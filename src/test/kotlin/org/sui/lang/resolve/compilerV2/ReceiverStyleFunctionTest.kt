@@ -217,6 +217,42 @@ class ReceiverStyleFunctionTest : ResolveTestCase() {
     """
     )
 
+    fun `test resolve method via use fun alias`() = checkByCode(
+        """
+        module 0x1::m {
+            public struct S { x: u64 }
+            public fun receiver(self: &S): u64 { self.x }
+                             //X
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            use fun 0x1::m::receiver as S.alias_receiver;
+            fun main(s: S) {
+                s.alias_receiver();
+                  //^
+            }
+        }
+    """
+    )
+
+    fun `test resolve method via public use fun alias`() = checkByCode(
+        """
+        module 0x1::m {
+            public struct S { x: u64 }
+            public fun receiver(self: &S): u64 { self.x }
+                             //X
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            public use fun 0x1::m::receiver as S.alias_receiver;
+            fun main(s: S) {
+                s.alias_receiver();
+                  //^
+            }
+        }
+    """
+    )
+
     @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
     fun `test friend function method in compiler v1`() = checkByCode(
         """

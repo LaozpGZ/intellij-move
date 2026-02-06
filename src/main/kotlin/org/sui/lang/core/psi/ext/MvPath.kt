@@ -113,7 +113,7 @@ fun MvPath.allowedNamespaces(isCompletion: Boolean = false): Set<Namespace> {
         parent is MvUseSpeck -> ITEM_NAMESPACES
         // use fun 0x1::foo::bar as T.bar;
         //             ^
-        parent is MvUseFun -> FUNCTIONS
+        parent is MvUseFun || parent is MvPublicUseFun -> FUNCTIONS
         // a: bar
         //     ^
         parent is MvPathType && qualifier == null ->

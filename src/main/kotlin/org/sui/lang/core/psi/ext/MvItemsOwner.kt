@@ -8,6 +8,12 @@ import org.sui.stdext.buildList
 interface MvItemsOwner: MvElement {
     val useStmtList: List<MvUseStmt>
         get() = this.stubChildrenOfType()
+
+    val useFunStmtList: List<MvUseFunStmt>
+        get() = this.childrenOfType()
+
+    val publicUseFunStmtList: List<MvPublicUseFunStmt>
+        get() = this.childrenOfType()
 }
 
 fun MvItemsOwner.items(): Sequence<MvElement> {
@@ -52,6 +58,7 @@ val MvItemsOwner.firstItem: MvElement?
                         is MvAttr -> false
                         is MvUseStmt -> false
                         is MvUseFunStmt -> false
+                        is MvPublicUseFunStmt -> false
                         // Valid items: module items (functions, structs, consts, enums)
                         is MvFunction, is MvStruct, is MvConst, is MvEnum -> true
                         // Skip other elements
