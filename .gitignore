@@ -17,3 +17,4 @@ plugin/*
 .aider*
 debug_parse.kt
 test_output.txt
+.serena
