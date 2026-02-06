@@ -3,7 +3,7 @@ package org.sui.ide.annotator
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.ref.Visibility2
@@ -104,7 +104,7 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
     private fun checkIndexExpr(holder: MvAnnotationHolder, indexExpr: MvIndexExpr) {
         // always supported in specs
         if (indexExpr.isMsl()) return
-        if (!indexExpr.project.moveSettings.enableIndexExpr) {
+        if (!indexExpr.project.moveLanguageFeatures.indexExpr) {
             Diagnostic
                 .IndexExprIsNotSupportedInCompilerV1(indexExpr)
                 .addToHolder(holder)
@@ -118,7 +118,7 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
             Diagnostic.NativeStructNotSupported(struct, errorRange)
                 .addToHolder(holder)
         }
-        if (struct.project.moveSettings.requirePublicStruct && !struct.isPublic) {
+        if (struct.project.moveLanguageFeatures.publicStructRequired && !struct.isPublic) {
             Diagnostic.PublicStructIsRequired(struct.structKw)
                 .addToHolder(holder)
         }
@@ -128,7 +128,7 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
         holder: MvAnnotationHolder,
         module: MvModule
     ) {
-        if (!module.project.moveSettings.enablePublicPackage) {
+        if (!module.project.moveLanguageFeatures.publicPackageVisibility) {
             for (function in module.allFunctions()) {
                 val modifier = function.visibilityModifier ?: continue
                 if (modifier.hasPackage) {
@@ -136,6 +136,10 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
                         .addToHolder(holder)
                 }
             }
+            return
+        }
+
+        if (module.project.moveLanguageFeatures.publicFriendDisabled) {
             return
         }
 
@@ -154,13 +158,13 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
     }
 
     private fun checkFriendDecl(holder: MvAnnotationHolder, friendDecl: MvFriendDecl) {
-        if (!friendDecl.project.moveSettings.publicFriendDisabled) return
+        if (!friendDecl.project.moveLanguageFeatures.publicFriendDisabled) return
         Diagnostic.FriendDeclIsNotSupportedInMove2024(friendDecl)
             .addToHolder(holder)
     }
 
     private fun checkVisibilityModifier(holder: MvAnnotationHolder, modifier: MvVisibilityModifier) {
-        if (!modifier.project.moveSettings.publicFriendDisabled) return
+        if (!modifier.project.moveLanguageFeatures.publicFriendDisabled) return
         if (modifier.hasFriend) {
             Diagnostic.PublicFriendIsNotSupportedInMove2024(modifier)
                 .addToHolder(holder)
@@ -168,7 +172,7 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
     }
 
     private fun checkMethodCall(holder: MvAnnotationHolder, methodCall: MvMethodCall) {
-        if (!methodCall.project.moveSettings.enableReceiverStyleFunctions) {
+        if (!methodCall.project.moveLanguageFeatures.receiverStyleFunctions) {
             Diagnostic.ReceiverStyleFunctionsIsNotSupportedInCompilerV1(methodCall)
                 .addToHolder(holder)
         }

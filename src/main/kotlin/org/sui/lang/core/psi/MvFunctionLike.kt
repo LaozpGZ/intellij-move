@@ -2,7 +2,7 @@ package org.sui.lang.core.psi
 
 import com.intellij.ide.projectView.PresentationData
 import com.intellij.openapi.editor.colors.TextAttributesKey
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.MoveIcons
 import org.sui.lang.MvElementTypes
 import org.sui.lang.core.completion.CompletionContext
@@ -117,7 +117,7 @@ val MvFunctionLike.signatureText: String
     }
 
 val MvFunction.selfParam: MvFunctionParameter? get() {
-    if (!project.moveSettings.enableReceiverStyleFunctions) return null
+    if (!project.moveLanguageFeatures.receiverStyleFunctions) return null
     return this.parameters.firstOrNull()?.takeIf { it.name == "self" }
 }
 

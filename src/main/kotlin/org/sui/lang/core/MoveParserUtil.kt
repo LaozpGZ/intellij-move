@@ -9,7 +9,7 @@ import com.intellij.psi.TokenType.WHITE_SPACE
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.util.BitUtil
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.lang.MoveParserDefinition.Companion.EOL_COMMENT
 import org.sui.lang.MoveParserDefinition.Companion.EOL_DOC_COMMENT
 import org.sui.lang.MvElementTypes.*
@@ -201,7 +201,7 @@ object MoveParserUtil : GeneratedParserUtilBase() {
 
     @JvmStatic
     fun isResourceAccessEnabled(b: PsiBuilder, level: Int): Boolean =
-        b.project.moveSettings.enableResourceAccessControl
+        b.project.moveLanguageFeatures.resourceAccessControl
 
     @JvmStatic
     fun includeStmtMode(b: PsiBuilder, level: Int, parser: Parser): Boolean {

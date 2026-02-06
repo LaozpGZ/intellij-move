@@ -16,10 +16,10 @@ class PublicPackageTest : AnnotatorTestCase(MvSyntaxErrorAnnotator::class) {
     )
 
     @CompilerV2Features(PUBLIC_PACKAGE)
-    fun `test no error with compiler v2 public friend`() = checkWarnings(
+    fun `test public friend is not supported in compiler v2`() = checkWarnings(
         """
         module 0x1::m {
-            public(friend) fun call() {}
+            <error descr="public(friend) is not supported in Move 2024">public(friend)</error> fun call() {}
         }        
     """
     )
@@ -28,8 +28,8 @@ class PublicPackageTest : AnnotatorTestCase(MvSyntaxErrorAnnotator::class) {
     fun `test cannot use public package together with public friend`() = checkWarnings(
         """
         module 0x1::m {
-            <error descr="public(package) and public(friend) cannot be used together in the same module">public(friend)</error> fun call1() {}
-            <error descr="public(package) and public(friend) cannot be used together in the same module">public(package)</error> fun call2() {}
+            <error descr="public(friend) is not supported in Move 2024">public(friend)</error> fun call1() {}
+            public(package) fun call2() {}
                          
         }        
     """

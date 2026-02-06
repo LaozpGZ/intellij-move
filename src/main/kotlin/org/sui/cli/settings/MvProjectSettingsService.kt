@@ -145,11 +145,13 @@ class MvProjectSettingsService(
 
     private fun applyFeatureOverrides(base: MoveLanguageFeatures): MoveLanguageFeatures {
         if (!featureOverridesActive()) return base
+        val publicPackageVisibility = state.enablePublicPackage
         return base.copy(
             receiverStyleFunctions = state.enableReceiverStyleFunctions,
             resourceAccessControl = state.enableResourceAccessControl,
             indexExpr = state.enableIndexExpr,
-            publicPackageVisibility = state.enablePublicPackage,
+            publicPackageVisibility = publicPackageVisibility,
+            publicFriendDisabled = base.publicFriendDisabled || publicPackageVisibility,
         )
     }
 
@@ -186,6 +188,9 @@ class MvProjectSettingsService(
 }
 
 val Project.moveSettings: MvProjectSettingsService get() = service()
+
+val Project.moveLanguageFeatures: MoveLanguageFeatures
+    get() = this.moveSettings.effectiveLanguageFeatures()
 
 fun Project.getAptosCli(parentDisposable: Disposable? = null): Aptos? {
     val aptosExecPath =

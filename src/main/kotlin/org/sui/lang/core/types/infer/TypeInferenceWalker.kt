@@ -7,7 +7,7 @@ import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.PsiRecursiveElementWalkingVisitor
 import org.sui.cli.settings.debugErrorOrFallback
 import org.sui.cli.settings.isDebugModeEnabled
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.formatter.impl.location
 import org.sui.lang.MvElementTypes
 import org.sui.lang.core.psi.*
@@ -580,7 +580,7 @@ class TypeInferenceWalker(
             is MvGlobalVariableStmt -> item.type?.loweredType(true) ?: TyUnknown
             is MvNamedFieldDecl -> item.type?.loweredType(msl) ?: TyUnknown
             is MvStruct -> {
-                if (project.moveSettings.enableIndexExpr && pathExpr.parent is MvIndexExpr) {
+                if (project.moveLanguageFeatures.indexExpr && pathExpr.parent is MvIndexExpr) {
                     TyLowering.lowerPath(pathExpr.path, item, ctx.msl)
                 } else {
                     TyUnit
@@ -1607,7 +1607,7 @@ class TypeInferenceWalker(
         val argTy = indexExpr.argExpr.inferType()
 
         // compiler v2 only in non-msl
-        if (!ctx.msl && !project.moveSettings.enableIndexExpr) {
+        if (!ctx.msl && !project.moveLanguageFeatures.indexExpr) {
             return TyUnknown
         }
 

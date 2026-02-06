@@ -3,7 +3,7 @@ package org.sui.ide.inspections
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import org.sui.cli.settings.isDebugModeEnabled
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.inspections.imports.AutoImportFix
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
@@ -114,7 +114,7 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
         }
 
         override fun visitMethodCall(methodCall: MvMethodCall) {
-            if (!methodCall.project.moveSettings.enableReceiverStyleFunctions) return
+            if (!methodCall.project.moveLanguageFeatures.receiverStyleFunctions) return
 
             checkMethodOrField(methodCall)
         }

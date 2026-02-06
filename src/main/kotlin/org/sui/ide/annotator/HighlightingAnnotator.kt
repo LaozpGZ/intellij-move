@@ -4,7 +4,7 @@ import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.tree.LeafPsiElement
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.colors.MvColor
 import org.sui.lang.MvElementTypes.HEX_INTEGER_LITERAL
 import org.sui.lang.MvElementTypes.IDENTIFIER
@@ -79,13 +79,13 @@ class HighlightingAnnotator : MvAnnotatorBase() {
                 element.isInline -> MvColor.INLINE_FUNCTION
                 element.isView -> MvColor.VIEW_FUNCTION
                 element.isEntry -> MvColor.ENTRY_FUNCTION
-                element.selfParam != null && element.project.moveSettings.enableReceiverStyleFunctions -> MvColor.METHOD
+                element.selfParam != null && element.project.moveLanguageFeatures.receiverStyleFunctions -> MvColor.METHOD
                 else -> MvColor.FUNCTION
             }
         if (element is MvStruct) return MvColor.STRUCT
         if (element is MvNamedFieldDecl) return MvColor.FIELD
         if (element is MvStructDotField) return MvColor.FIELD
-        if (element is MvMethodCall && element.project.moveSettings.enableReceiverStyleFunctions) return MvColor.METHOD_CALL
+        if (element is MvMethodCall && element.project.moveLanguageFeatures.receiverStyleFunctions) return MvColor.METHOD_CALL
         if (element is MvPatFieldFull) return MvColor.FIELD
         if (element is MvPatField) return MvColor.FIELD
         if (element is MvStructLitField) return MvColor.FIELD
@@ -206,5 +206,5 @@ class HighlightingAnnotator : MvAnnotatorBase() {
 
     private val PsiElement.isReceiverStyleFunctionsEnabled
         get() =
-            project.moveSettings.enableReceiverStyleFunctions
+            project.moveLanguageFeatures.receiverStyleFunctions
 }

@@ -2,7 +2,7 @@ package org.sui.ide.inspections
 
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.inspections.fixes.AddAcquiresFix
 import org.sui.ide.presentation.fullnameNoArgs
 import org.sui.lang.core.psi.*
@@ -23,7 +23,7 @@ class MvMissingAcquiresInspection: MvLocalInspectionTool() {
             override fun visitCallExpr(o: MvCallExpr) = visitAcquiredTypesOwner(o)
             override fun visitMethodCall(o: MvMethodCall) = visitAcquiredTypesOwner(o)
             override fun visitIndexExpr(o: MvIndexExpr) {
-                if (!o.project.moveSettings.enableIndexExpr) return
+                if (!o.project.moveLanguageFeatures.indexExpr) return
                 visitAcquiredTypesOwner(o)
             }
 

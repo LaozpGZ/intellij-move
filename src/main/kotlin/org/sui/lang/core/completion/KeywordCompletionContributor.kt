@@ -6,8 +6,7 @@ import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PlatformPatterns.psiElement
-import com.jetbrains.rd.util.remove
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.lang.MvElementTypes.*
 import org.sui.lang.core.MvPsiPattern
 import org.sui.lang.core.MvPsiPattern.anySpecStart
@@ -46,11 +45,16 @@ class KeywordCompletionContributor: CompletionContributor() {
             module().and(identifierStatementBeginningPattern()),
             KeywordCompletionProvider {
                 buildList {
+                    val features = it.moveLanguageFeatures
                     addAll(VIS_MODIFIERS.filter { modifier ->
-                        (modifier == "public(script)" || modifier != "public(package)" || it.moveSettings.enablePublicPackage)
+                        (modifier != "public(package)" || features.publicPackageVisibility)
+                                && (modifier != "public(friend)" || !features.publicFriendDisabled)
                     })
                     addAll(FUNCTION_MODIFIERS)
-                    addAll(listOf("native", "fun", "struct", "const", "use", "spec", "friend", "enum", "type", "match", "mut"))
+                    addAll(listOf("native", "fun", "struct", "const", "use", "spec", "enum", "type", "match", "mut"))
+                    if (!features.publicFriendDisabled) {
+                        add("friend")
+                    }
                 }
             }
         )
@@ -77,8 +81,10 @@ class KeywordCompletionContributor: CompletionContributor() {
             module().and(identifierStatementBeginningPattern("native")),
             KeywordCompletionProvider {
                 buildList {
+                    val features = it.moveLanguageFeatures
                     addAll(VIS_MODIFIERS.filter { modifier ->
-                        modifier == "public(script)" || modifier != "public(package)" || it.moveSettings.enablePublicPackage
+                        (modifier != "public(package)" || features.publicPackageVisibility)
+                                && (modifier != "public(friend)" || !features.publicFriendDisabled)
                     })
                     addAll(listOf("fun", "entry", "struct"))
                 }
@@ -131,7 +137,7 @@ class KeywordCompletionContributor: CompletionContributor() {
             KeywordCompletionProvider {
                 buildList {
                     add("acquires")
-                    if (it.moveSettings.enableResourceAccessControl) {
+                    if (it.moveLanguageFeatures.resourceAccessControl) {
                         addAll(listOf("reads", "writes", "pure"))
                     }
                 }
@@ -165,4 +171,3 @@ private val VIS_MODIFIERS = arrayOf(
 )
 
 private val FUNCTION_MODIFIERS = arrayOf("entry", "inline")
-

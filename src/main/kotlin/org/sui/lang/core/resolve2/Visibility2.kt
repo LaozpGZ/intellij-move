@@ -1,7 +1,7 @@
 package org.sui.lang.core.resolve2
 
 import org.sui.cli.containingMovePackage
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.inspections.imports.usageScope
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.NamedItemScope.MAIN
@@ -91,7 +91,7 @@ fun ItemVisibilityInfo.createFilter(): VisibilityFilter {
                         Invisible
                     }
                     is Restricted.Package -> {
-                        if (!item.project.moveSettings.enablePublicPackage) {
+                        if (!item.project.moveLanguageFeatures.publicPackageVisibility) {
                             return@VisibilityFilter Invisible
                         }
                         val pathPackage =

@@ -217,7 +217,8 @@ class ReceiverStyleFunctionTest : ResolveTestCase() {
     """
     )
 
-    fun `test friend function method`() = checkByCode(
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test friend function method in compiler v1`() = checkByCode(
         """
         module 0x1::m {
             friend 0x1::main;
@@ -253,7 +254,8 @@ class ReceiverStyleFunctionTest : ResolveTestCase() {
     """
     )
 
-    fun `test friend function method unresolved`() = checkByCode(
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS, PUBLIC_PACKAGE)
+    fun `test friend function method unresolved in compiler v2`() = checkByCode(
         """
         module 0x1::m {
             struct S { x: u64 }

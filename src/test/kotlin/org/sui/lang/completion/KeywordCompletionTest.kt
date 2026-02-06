@@ -179,7 +179,7 @@ class KeywordCompletionTest : CompletionTestCase() {
         module 0x1::M {
             pub/*caret*/
         }
-    """, listOf("public", "public(script)", "public(friend)", "public(package)")
+    """, listOf("public", "public(script)", "public(package)")
     )
 
     fun `test public with other function`() = checkContainsCompletion(
@@ -301,7 +301,8 @@ class KeywordCompletionTest : CompletionTestCase() {
     """
     )
 
-    fun `test entry after public friend`() = doSingleCompletion(
+    @CompilerV2Features()
+    fun `test entry after public friend in compiler v1`() = doSingleCompletion(
         """
         module 0x1::M {
             public(friend) ent/*caret*/
@@ -460,7 +461,7 @@ class KeywordCompletionTest : CompletionTestCase() {
        module 0x1::M {
         pub/*caret*/ fun main() {}
        }    
-    """, listOf("public", "public(script)", "public(friend)", "public(package)")
+    """, listOf("public", "public(script)", "public(package)")
     )
 
 //    fun `test public(script) without leading fun adds fun`() = doSingleCompletion("""

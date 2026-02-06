@@ -2,7 +2,7 @@ package org.sui.ide.annotator
 
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.psi.PsiElement
-import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.presentation.declaringModule
 import org.sui.ide.presentation.fullname
 import org.sui.ide.utils.functionSignature
@@ -168,7 +168,7 @@ class MvErrorAnnotator: MvAnnotatorBase() {
 
     private fun checkAssignmentMutability(holder: MvAnnotationHolder, assignmentExpr: MvAssignmentExpr) {
         if (assignmentExpr.isMsl()) return
-        if (!assignmentExpr.project.moveSettings.requireLetMut) return
+        if (!assignmentExpr.project.moveLanguageFeatures.letMutRequired) return
         val binding = resolveBindingFromExpr(assignmentExpr.expr) ?: return
         if (binding.isDeclaredMutable) return
         val pathExpr = assignmentExpr.expr as? MvPathExpr
@@ -180,7 +180,7 @@ class MvErrorAnnotator: MvAnnotatorBase() {
     private fun checkBorrowMutability(holder: MvAnnotationHolder, borrowExpr: MvBorrowExpr) {
         if (!borrowExpr.isMut) return
         if (borrowExpr.isMsl()) return
-        if (!borrowExpr.project.moveSettings.requireLetMut) return
+        if (!borrowExpr.project.moveLanguageFeatures.letMutRequired) return
         val binding = resolveBindingFromExpr(borrowExpr.expr) ?: return
         if (binding.isDeclaredMutable) return
         val pathExpr = borrowExpr.expr as? MvPathExpr
