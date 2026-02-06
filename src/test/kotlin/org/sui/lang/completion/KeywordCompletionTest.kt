@@ -2,6 +2,7 @@ package org.sui.lang.completion
 
 import org.sui.ide.inspections.fixes.CompilerV2Feat.PUBLIC_PACKAGE
 import org.sui.ide.inspections.fixes.CompilerV2Feat.RESOURCE_CONTROL
+import org.sui.ide.inspections.fixes.CompilerV2Feat.TYPE_KEYWORD
 import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.completion.CompletionTestCase
 
@@ -66,6 +67,29 @@ class KeywordCompletionTest : CompletionTestCase() {
     fun `test top level module declarations`() = completionFixture.checkContainsCompletion(
         """module 0x1::M { /*caret*/ }""",
         listOf("struct", "public", "fun", "const", "use", "friend", "native", "spec")
+    )
+
+    @CompilerV2Features()
+    fun `test no type keyword completion in compiler v1`() = completionFixture.checkNotContainsCompletion(
+        """
+        module 0x1::M {
+            ty/*caret*/
+        }
+    """,
+        listOf("type")
+    )
+
+    @CompilerV2Features(TYPE_KEYWORD)
+    fun `test type keyword completion in move 2024`() = doSingleCompletion(
+        """
+        module 0x1::M {
+            ty/*caret*/
+        }
+    """, """
+        module 0x1::M {
+            type /*caret*/
+        }
+    """
     )
 
     fun `test space after declaration`() = doSingleCompletion(

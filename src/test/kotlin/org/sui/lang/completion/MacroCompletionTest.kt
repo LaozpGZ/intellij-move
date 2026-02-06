@@ -1,7 +1,10 @@
 package org.sui.lang.completion
 
+import org.sui.ide.inspections.fixes.CompilerV2Feat.MACRO_FUNCTIONS
+import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.completion.CompletionTestCase
 
+@CompilerV2Features(MACRO_FUNCTIONS)
 class MacroCompletionTest : CompletionTestCase() {
     fun `test stdlib macros are not suggested outside macro call`() = checkNotContainsCompletion(
         "all!",
