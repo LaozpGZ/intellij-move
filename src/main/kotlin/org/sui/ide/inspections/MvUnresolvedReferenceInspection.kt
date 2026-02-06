@@ -6,16 +6,17 @@ import org.sui.cli.settings.isDebugModeEnabled
 import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.inspections.imports.AutoImportFix
 import org.sui.ide.inspections.imports.AutoImportUseFunFix
+import org.sui.lang.core.macros.DefaultMacroSemanticService
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.psi.impl.MvPathImpl
-import org.sui.lang.core.macros.MvMacroRegistry
 import org.sui.lang.core.resolve.ref.MvReferenceElement
 import org.sui.lang.core.resolve2.PathKind.*
 import org.sui.lang.core.resolve2.pathKind
 import org.sui.lang.core.types.ty.TyUnknown
 
 class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
+    private val macroSemanticService = DefaultMacroSemanticService
 
     var ignoreWithoutQuickFix: Boolean = false
 
@@ -34,7 +35,7 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
             // builtin macro call callee (debug!, transfer!, etc.)
             if (path.parent is MvMacroCallExpr) {
                 val macroName = path.referenceName
-                if (macroName != null && MvMacroRegistry.isBuiltin(macroName)) return
+                if (macroName != null && macroSemanticService.isBuiltin(macroName)) return
             }
             // assert macro
             if (path.text == "assert") return
@@ -172,6 +173,7 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
         val itemType = when {
             parent is MvPathType -> "type"
             parent is MvCallExpr -> "function"
+            parent is MvMacroCallExpr -> "function"
             parent is MvPatField -> "field"
             referenceElement is MvStructDotField -> "field"
             referenceElement is MvStructLitField -> "field"

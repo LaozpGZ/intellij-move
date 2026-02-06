@@ -34,4 +34,19 @@ class OptionResultMacroTypeTest : TypificationTestCase() {
         }
         """
     )
+
+    @Test
+    fun `test bcs macro type inference`() = testExpr(
+        """
+        module 0x1::test {
+            use std::bcs;
+
+            fun main() {
+                let bytes = bcs!(1);
+                bytes;
+              //^ vector<u8>
+            }
+        }
+        """
+    )
 }

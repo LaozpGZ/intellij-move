@@ -10,6 +10,8 @@ import org.sui.cli.settings.isDebugModeEnabled
 import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.formatter.impl.location
 import org.sui.lang.MvElementTypes
+import org.sui.lang.core.macros.DefaultMacroSemanticService
+import org.sui.lang.core.macros.MacroSemanticService
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.moveProject
@@ -32,7 +34,6 @@ import org.sui.lang.core.resolve2.ref.resolvePathRaw
 import org.sui.lang.core.resolve2.resolveBindingForFieldShorthand
 import org.sui.lang.core.types.infer.deepFoldTyTypeParameterWith
 import org.sui.lang.core.types.ty.*
-import org.sui.lang.core.resolve2.PreImportedModuleService
 import org.sui.lang.core.types.ty.TyReference.Companion.autoborrow
 import org.sui.stdext.RsResult
 import org.sui.stdext.chain
@@ -43,6 +44,7 @@ class TypeInferenceWalker(
     private val returnTy: Ty
 ) {
     private val specBindingNamesCache = mutableMapOf<MvCodeBlock, Set<String>>()
+    private val macroSemanticService: MacroSemanticService = DefaultMacroSemanticService
 
     val msl: Boolean get() = ctx.msl
 
@@ -1146,6 +1148,7 @@ class TypeInferenceWalker(
         if (resolvedMacro != null) {
             return inferMacroCallFromFunction(macroExpr, resolvedMacro, expected, receiverTy)
         }
+        macroSemanticService.inferReturnType(macroExpr, this)?.let { return it }
         return inferBuiltinMacroCallExprTy(macroExpr)
     }
 
@@ -1156,10 +1159,8 @@ class TypeInferenceWalker(
             processNestedScopesUpwards(macroExpr, FUNCTIONS, resolutionCtx, it)
         }
         val path = macroExpr.path
-        if (entries.isNotEmpty()) {
-            val resolvedItems = entries.map { ResolvedItem.from(it, path) }
-            ctx.writePath(path, resolvedItems)
-        }
+        val resolvedItems = entries.map { ResolvedItem.from(it, path) }
+        ctx.writePath(path, resolvedItems)
         return entries.asSequence()
             .filter { it.isVisibleFrom(path) }
             .mapNotNull { resolveAliases(it.element) as? MvFunction }
@@ -1236,134 +1237,11 @@ class TypeInferenceWalker(
 
     private fun inferBuiltinMacroCallExprTy(macroExpr: MvMacroCallExpr): Ty {
         val pathText = macroExpr.path.text.removeSuffix("!")
-        when (pathText) {
-            "vector" -> {
-                // vector! already has a dedicated handling method inferVectorLitExpr
-                if (macroExpr.vectorLitItems != null) {
-                    return TyUnknown // will be handled by dedicated method
-                }
-            }
-            "option" -> {
-                // option! accepts one argument
-                if (macroExpr.valueArguments.size == 1) {
-                    val argTy = macroExpr.valueArguments.first().expr?.inferType() ?: TyUnknown
-
-                    // Try to resolve Option and build a TyAdt.
-                    try {
-                        val optionType = getOptionType()
-                        if (optionType != null && argTy != TyUnknown) {
-                            val typeArguments = listOf(argTy)
-                            val substitution = Substitution(
-                                optionType.typeParameters.withIndex().associate { (index, param) ->
-                                    TyTypeParameter(param) to typeArguments.getOrElse(index) { TyUnknown }
-                                }
-                            )
-                            return TyAdt(optionType, substitution, typeArguments)
-                        }
-                    } catch (e: Exception) {
-                        // If Option cannot be resolved, fall back to TyUnknown.
-                    }
-                }
-                return TyUnknown // specific type needs to be inferred from argument
-            }
-            "result" -> {
-                // result! accepts two arguments
-                if (macroExpr.valueArguments.size == 2) {
-                    val arg1Ty = macroExpr.valueArguments[0].expr?.inferType() ?: TyUnknown
-                    val arg2Ty = macroExpr.valueArguments[1].expr?.inferType() ?: TyUnknown
-
-                    // Try to resolve Result and build a TyAdt.
-                    try {
-                        val resultType = getResultType()
-                        if (resultType != null && arg1Ty != TyUnknown && arg2Ty != TyUnknown) {
-                            val typeArguments = listOf(arg1Ty, arg2Ty)
-                            val substitution = Substitution(
-                                resultType.typeParameters.withIndex().associate { (index, param) ->
-                                    TyTypeParameter(param) to typeArguments.getOrElse(index) { TyUnknown }
-                                }
-                            )
-                            return TyAdt(resultType, substitution, typeArguments)
-                        }
-                    } catch (e: Exception) {
-                        // If Result cannot be resolved, fall back to TyUnknown.
-                    }
-                }
-                return TyUnknown // specific type needs to be inferred from arguments
-            }
-            "bcs" -> {
-                // bcs! accepts one argument and returns byte vector
-                if (macroExpr.valueArguments.size == 1) {
-                    macroExpr.valueArguments.first().expr?.inferType()
-                }
-                return TyByteString(ctx.msl)
-            }
-            "object" -> {
-                // object! is used for creating objects
-                macroExpr.valueArguments.forEach { it.expr?.inferType() }
-                return TyUnknown
-            }
-            "table" -> {
-                // table! is used for creating tables
-                macroExpr.valueArguments.forEach { it.expr?.inferType() }
-                return TyUnknown
-            }
-            "system" -> {
-                // system! system operations
-                macroExpr.valueArguments.forEach { it.expr?.inferType() }
-                return TyUnit
-            }
-            "vote" -> {
-                // vote! voting operations
-                macroExpr.valueArguments.forEach { it.expr?.inferType() }
-                return TyUnit
-            }
-            "debug" -> {
-                // debug! accepts any number and type of arguments
-                macroExpr.valueArguments.forEach { it.expr?.inferType() }
-                return TyUnit
-            }
+        if (pathText == "vector" && macroExpr.vectorLitItems != null) {
+            // vector! already has a dedicated handling method inferVectorLitExpr
+            return TyUnknown
         }
         return TyUnknown
-    }
-
-    private fun getOptionType(): MvStructOrEnumItemElement? {
-        // Try to resolve Option from pre-imported modules.
-        val service = PreImportedModuleService.getInstance(project)
-        val preImportedModules = service.getPreImportedModules()
-        val optionModule = preImportedModules.find { it.name == "option" }
-        val optionStruct = optionModule?.structs()?.firstOrNull { it.name == "Option" }
-        if (optionStruct != null) {
-            return optionStruct
-        }
-
-        // In tests the stdlib may be missing; create a dummy Option type.
-        val psiFactory = project.psiFactory
-        val dummyModule = psiFactory.inlineModule("std", "option", """
-            struct Option<T> has copy, drop {
-                vec: vector<u8>
-            }
-        """)
-        return dummyModule.structs().firstOrNull()
-    }
-
-    private fun getResultType(): MvStructOrEnumItemElement? {
-        // Try to resolve Result from pre-imported modules.
-        val service = PreImportedModuleService.getInstance(project)
-        val preImportedModules = service.getPreImportedModules()
-        val resultModule = preImportedModules.find { it.name == "result" }
-        val resultStruct = resultModule?.structs()?.firstOrNull { it.name == "Result" }
-        if (resultStruct != null) {
-            return resultStruct
-        }
-
-        // In tests the stdlib may be missing; create a dummy Result type.
-        val psiFactory = project.psiFactory
-        val dummyModule = psiFactory.inlineModule("std", "result", """
-            struct Result<T, E> has copy, drop {
-                vec: vector<u8>
-            }
-        """)
-        return dummyModule.structs().firstOrNull()
     }
 
     /**

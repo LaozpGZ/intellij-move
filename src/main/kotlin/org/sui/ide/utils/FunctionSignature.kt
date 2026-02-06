@@ -8,10 +8,10 @@ package org.sui.ide.utils
 import com.intellij.openapi.util.Key
 import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValueProvider
+import org.sui.lang.core.macros.DefaultMacroSemanticService
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.types.ty.Ability
-import org.sui.lang.core.macros.MvMacroRegistry
 import org.sui.utils.cache
 import org.sui.utils.cacheManager
 
@@ -42,6 +42,8 @@ data class FunctionSignature(
     }
 
     companion object {
+        private val macroSemanticService = DefaultMacroSemanticService
+
         fun resolve(callable: MvCallable): FunctionSignature? {
             return when (callable) {
                 is MvCallExpr -> {
@@ -60,12 +62,12 @@ data class FunctionSignature(
                         function.getSignature()
                     } else {
                         val name = callable.path.referenceName ?: return null
-                        fromMacroSpec(MvMacroRegistry.specOf(name))
+                        fromMacroSpec(macroSemanticService.specOf(name))
                     }
                 }
 
                 is MvAssertMacroExpr -> {
-                    fromMacroSpec(MvMacroRegistry.builtinSpecOf("assert"))
+                    fromMacroSpec(macroSemanticService.specOf("assert"))
                 }
 
                 else -> null

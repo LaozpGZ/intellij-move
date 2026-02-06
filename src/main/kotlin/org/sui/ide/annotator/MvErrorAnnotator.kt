@@ -8,7 +8,7 @@ import org.sui.ide.presentation.fullname
 import org.sui.ide.utils.functionSignature
 import org.sui.ide.utils.getSignature
 import org.sui.lang.MvElementTypes.R_PAREN
-import org.sui.lang.core.macros.MvMacroRegistry
+import org.sui.lang.core.macros.DefaultMacroSemanticService
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.types.address
@@ -22,6 +22,8 @@ import org.sui.lang.utils.Diagnostic
 import org.sui.lang.utils.addToHolder
 
 class MvErrorAnnotator: MvAnnotatorBase() {
+    private val macroSemanticService = DefaultMacroSemanticService
+
     override fun annotateInternal(element: PsiElement, holder: AnnotationHolder) {
         val moveHolder = MvAnnotationHolder(holder)
         val visitor = object: MvVisitor() {
@@ -112,7 +114,7 @@ class MvErrorAnnotator: MvAnnotatorBase() {
                             callTy.paramTypes.size - 1
                         }
                         is MvAssertMacroExpr -> {
-                            MvMacroRegistry.specOf("assert")?.fixedArgsCountOrNull() ?: return
+                            macroSemanticService.specOf("assert")?.fixedArgsCountOrNull() ?: return
                         }
                         is MvMacroCallExpr -> {
                             expectedArgsCountForMacro(parentCallable) ?: return
@@ -196,8 +198,7 @@ class MvErrorAnnotator: MvAnnotatorBase() {
     }
 
     private fun expectedArgsCountForMacro(call: MvMacroCallExpr): Int? {
-        val name = call.path.referenceName ?: return null
-        MvMacroRegistry.specOf(name)?.fixedArgsCountOrNull()?.let { return it }
+        macroSemanticService.expectedArgsCount(call)?.let { return it }
 
         val resolved = call.path.reference?.resolve()
         val function = resolved as? MvFunctionLike ?: return null

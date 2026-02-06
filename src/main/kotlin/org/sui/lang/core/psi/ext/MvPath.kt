@@ -122,6 +122,7 @@ fun MvPath.allowedNamespaces(isCompletion: Boolean = false): Set<Namespace> {
         //         ^
         parent is MvPathType && qualifier != null -> TYPES_N_ENUMS
         parent is MvCallExpr -> FUNCTIONS
+        parent is MvMacroCallExpr -> FUNCTIONS
         parent is MvPathExpr
                 && this.hasAncestor<MvAttrItemInitializer>() -> ALL_NAMESPACES
 

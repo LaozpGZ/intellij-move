@@ -13,10 +13,10 @@ import org.sui.ide.utils.getSignature
 import org.sui.lang.MvElementTypes
 import org.sui.lang.core.MvPsiPattern
 import org.sui.lang.core.completion.MACRO_PRIORITY
-import org.sui.lang.core.macros.MvMacroRegistry
+import org.sui.lang.core.macros.DefaultMacroSemanticService
 import org.sui.lang.core.psi.MvFunction
-import org.sui.lang.core.psi.MvPath
 import org.sui.lang.core.psi.MvMacroCallExpr
+import org.sui.lang.core.psi.MvPath
 import org.sui.lang.core.psi.ext.isMacro
 import org.sui.lang.core.resolve.createProcessor
 import org.sui.lang.core.resolve.isVisibleFrom
@@ -26,6 +26,8 @@ import org.sui.lang.core.resolve2.ref.ResolutionContext
 import org.sui.lang.core.resolve2.ref.resolveAliases
 
 object MacrosCompletionProvider : MvCompletionProvider() {
+    private val macroSemanticService = DefaultMacroSemanticService
+
     override val elementPattern: ElementPattern<out PsiElement>
         get() = MvPsiPattern.path()
             .andNot(MvPsiPattern.pathType())
@@ -65,14 +67,7 @@ object MacrosCompletionProvider : MvCompletionProvider() {
         }
 
         val includeStdlib = path.parent is MvMacroCallExpr
-        val alwaysVisibleStdlib = setOf("assert_eq", "assert_ref_eq")
-        val macros = if (includeStdlib) {
-            MvMacroRegistry.completionSpecs()
-        } else {
-            MvMacroRegistry.completionSpecs().filter {
-                MvMacroRegistry.isBuiltin(it.name) || it.name in alwaysVisibleStdlib
-            }
-        }
+        val macros = macroSemanticService.completionSpecs(includeStdlib)
 
         macros.forEach { macro ->
             if (!seenNames.add(macro.name)) return@forEach

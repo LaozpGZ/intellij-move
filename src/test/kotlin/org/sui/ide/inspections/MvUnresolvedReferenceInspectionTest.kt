@@ -57,6 +57,26 @@ class MvUnresolvedReferenceInspectionTest : InspectionTestBase(MvUnresolvedRefer
     """
     )
 
+    fun `test no unresolved reference for builtin macro call`() = checkByText(
+        """
+        module 0x1::M {
+            fun main() {
+                debug!(1, true);
+            }
+        }
+    """
+    )
+
+    fun `test unresolved unknown macro call`() = checkByText(
+        """
+        module 0x1::M {
+            fun main() {
+                <error descr="Unresolved function: `dbg`">dbg</error>!(1, true);
+            }
+        }
+    """
+    )
+
     fun `test test no unresolved reference for primitive type`() = checkByText(
         """
         script {

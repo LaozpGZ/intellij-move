@@ -107,4 +107,27 @@ class ValueArgumentsNumberErrorTest : AnnotatorTestCase(MvErrorAnnotator::class)
         }        
     """
     )
+
+    fun `test result macro expects two parameters`() = checkErrors(
+        """
+        module 0x1::m {
+            fun call() {
+                result!(1<error descr="This function takes 2 parameters but 1 parameter was supplied">)</error>;
+                result!(1, <error descr="This function takes 2 parameters but 1 parameter was supplied">)</error>;
+                result!(<error descr="This function takes 2 parameters but 0 parameters were supplied">)</error>;
+            }
+        }
+        """
+    )
+
+    fun `test bcs macro expects one parameter`() = checkErrors(
+        """
+        module 0x1::m {
+            fun call() {
+                bcs!(<error descr="This function takes 1 parameter but 0 parameters were supplied">)</error>;
+                bcs!(1, <error descr="This function takes 1 parameter but 2 parameters were supplied">2</error>);
+            }
+        }
+        """
+    )
 }
