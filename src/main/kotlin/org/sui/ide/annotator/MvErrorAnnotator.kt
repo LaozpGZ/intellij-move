@@ -41,6 +41,7 @@ class MvErrorAnnotator: MvAnnotatorBase() {
             override fun visitMethodCall(o: MvMethodCall) = checkMethodOrPath(o, moveHolder)
             override fun visitAssignmentExpr(o: MvAssignmentExpr) = checkAssignmentMutability(moveHolder, o)
             override fun visitBorrowExpr(o: MvBorrowExpr) = checkBorrowMutability(moveHolder, o)
+            override fun visitMatchExpr(o: MvMatchExpr) = checkDuplicateMatchArms(moveHolder, o)
 
             override fun visitCallExpr(callExpr: MvCallExpr) {
                 val msl = callExpr.path.isMslScope
@@ -195,6 +196,31 @@ class MvErrorAnnotator: MvAnnotatorBase() {
         val pathExpr = expr as? MvPathExpr ?: return null
         val resolved = pathExpr.path.reference?.resolve() ?: return null
         return resolved as? MvPatBinding
+    }
+
+    private fun checkDuplicateMatchArms(holder: MvAnnotationHolder, matchExpr: MvMatchExpr) {
+        fun extractVariantPattern(arm: MvMatchArm): Pair<PsiElement, String>? {
+            if (arm.matchArmGuard != null) return null
+            val pattern = arm.pat
+            val patternInfo = when (pattern) {
+                is MvPatStruct -> pattern.path to pattern.path.text
+                is MvPatTupleStruct -> pattern.path to pattern.path.text
+                is MvPatConst -> {
+                    val pathExpr = pattern.expr as? MvPathExpr ?: return null
+                    pathExpr.path to pathExpr.path.text
+                }
+                else -> null
+            } ?: return null
+            return patternInfo.takeIf { (_, variantName) -> "::" in variantName }
+        }
+
+        val seenVariants = hashSetOf<String>()
+        for (arm in matchExpr.arms) {
+            val (anchor, variantName) = extractVariantPattern(arm) ?: continue
+            if (!seenVariants.add(variantName)) {
+                holder.createErrorAnnotation(anchor, "Duplicate match arm for `$variantName`")
+            }
+        }
     }
 
     private fun expectedArgsCountForMacro(call: MvMacroCallExpr): Int? {
