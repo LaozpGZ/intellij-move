@@ -37,7 +37,7 @@ object ImportCandidateCollector {
             }
         }
 
-        return candidates
+        return candidates.distinctBy { it.qualName.editorText() }
     }
 
     fun getCompletionCandidates(
@@ -57,7 +57,7 @@ object ImportCandidateCollector {
         return prefixMatcher.sortMatching(keys)
             .flatMap { targetName ->
                 ProgressManager.checkCanceled()
-                getImportCandidates(importContext, targetName).distinctBy { it.element }
+                getImportCandidates(importContext, targetName).distinctBy { it.qualName.editorText() }
             }
     }
 }

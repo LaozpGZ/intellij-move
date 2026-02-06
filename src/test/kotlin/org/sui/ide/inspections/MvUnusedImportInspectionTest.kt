@@ -375,25 +375,26 @@ module 0x1::main {
     """
     )
 
-    // TODO: test
-//    fun `test unused test_only import`() = checkWarnings("""
-//    module 0x1::string {
-//        public fun call() {}
-//    }
-//    module 0x1::main {
-//        use 0x1::string::call;
-//        <warning descr="Unused use item">#[test_only]
-//        use 0x1::string::call;</warning>
-//
-//        fun main() {
-//            call();
-//        }
-//        #[test]
-//        fun test_main() {
-//            call();
-//        }
-//    }
-//    """)
+    fun `test no unused test_only import when both scopes use it`() = checkWarnings(
+        """
+    module 0x1::string {
+        public fun call() {}
+    }
+    module 0x1::main {
+        use 0x1::string::call;
+        #[test_only]
+        use 0x1::string::call;
+
+        fun main() {
+            call();
+        }
+        #[test]
+        fun test_main() {
+            call();
+        }
+    }
+    """
+    )
 
     fun `test unused main import in presence of test_only usage`() = checkWarnings(
         """
@@ -573,19 +574,20 @@ module 0x1::main {
     """
     )
 
-    // TODO: test
-//    fun `test unused top import with local present`() = checkWarnings("""
-//        module 0x1::string {
-//            public fun call() {}
-//        }
-//        module 0x1::main {
-//            <warning descr="Unused use item">use 0x1::string;</warning>
-//            fun main() {
-//                use 0x1::string;
-//                string::call();
-//            }
-//        }
-//    """)
+    fun `test unused top import with local present`() = checkWarnings(
+        """
+        module 0x1::string {
+            public fun call() {}
+        }
+        module 0x1::main {
+            <warning descr="Unused use item">use 0x1::string;</warning>
+            fun main() {
+                use 0x1::string;
+                string::call();
+            }
+        }
+    """
+    )
 
     fun `test unused local import`() = checkWarnings(
         """
