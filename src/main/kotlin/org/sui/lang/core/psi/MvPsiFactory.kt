@@ -103,6 +103,13 @@ class MvPsiFactory(val project: Project) {
             ?: error("Failed to create an item import from text: `$speckText`")
     }
 
+    fun useFunStmt(usePathText: String, targetTypeText: String, aliasName: String, testOnly: Boolean): MvUseFunStmt {
+        val attrs = if (testOnly) "#[test_only]\n" else ""
+        return createFromText(
+            "module 0x1::_DummyModule { ${attrs}use fun $usePathText as $targetTypeText.$aliasName; }"
+        ) ?: error("Failed to create a use fun import from text: `$usePathText as $targetTypeText.$aliasName`")
+    }
+
     fun useSpeckWithEmptyUseGroup(): MvUseSpeck {
         return createFromText("module 0x1::_DummyModule { use 0x1::dummy::{}; }")
             ?: error("Failed to create a use speck")

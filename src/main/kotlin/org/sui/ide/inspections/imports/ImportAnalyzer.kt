@@ -5,6 +5,8 @@ import com.intellij.codeInspection.ProblemsHolder
 import org.sui.ide.inspections.imports.UseItemType.*
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
+import org.sui.lang.core.resolve2.util.isMethodCompatibleWithReceiver
+import org.sui.lang.core.types.ty.TyUnknown
 import org.sui.stdext.chain
 
 class ImportAnalyzer2(val holder: ProblemsHolder) : MvVisitor() {
@@ -20,15 +22,23 @@ class ImportAnalyzer2(val holder: ProblemsHolder) : MvVisitor() {
 
     private fun analyzeUseStmtsForScope(rootItemsOwner: MvItemsOwner, itemScope: NamedItemScope) {
         val allUseItemsHit = mutableSetOf<UseItem>()
+        val allUseFunItemsHit = mutableSetOf<UseFunItem>()
         val rootItemOwnerWithSiblings = rootItemsOwner.itemsOwnerWithSiblings
 
         val allFiles = rootItemOwnerWithSiblings.mapNotNull { it.containingMoveFile }.distinct()
-        val fileItemOwners = allFiles
+        val fileUseItems = allFiles
             // collect every possible MvItemOwner
             .flatMap { it.descendantsOfType<MvItemsOwner>().flatMap { i -> i.itemsOwnerWithSiblings } }
             .distinct()
             .associateWith { itemOwner ->
                 itemOwner.useItems.filter { it.scope == itemScope }
+            }
+        val fileUseFunItems = allFiles
+            // collect every possible MvItemOwner
+            .flatMap { it.descendantsOfType<MvItemsOwner>().flatMap { i -> i.itemsOwnerWithSiblings } }
+            .distinct()
+            .associateWith { itemOwner ->
+                itemOwner.useFunItems.filter { it.scope == itemScope }
             }
 
         val reachablePaths =
@@ -42,7 +52,7 @@ class ImportAnalyzer2(val holder: ProblemsHolder) : MvVisitor() {
             val basePathType = path.basePathType()
             for (itemsOwner in path.ancestorsOfType<MvItemsOwner>()) {
                 val reachableUseItems =
-                    itemsOwner.itemsOwnerWithSiblings.flatMap { fileItemOwners[it]!! }
+                    itemsOwner.itemsOwnerWithSiblings.flatMap { fileUseItems[it]!! }
                 val useItemHit =
                     when (basePathType) {
                         is BasePathType.Item -> {
@@ -66,6 +76,31 @@ class ImportAnalyzer2(val holder: ProblemsHolder) : MvVisitor() {
             }
         }
 
+        val reachableMethodCalls =
+            rootItemOwnerWithSiblings
+                .flatMap { it.descendantsOfType<MvMethodCall>() }
+                .filter { it.usageScope == itemScope }
+
+        for (methodCall in reachableMethodCalls) {
+            val methodName = methodCall.referenceName ?: continue
+            val msl = methodCall.isMsl()
+            val receiverTy = methodCall.inferReceiverTy(msl)
+            for (itemsOwner in methodCall.ancestorsOfType<MvItemsOwner>()) {
+                val reachableUseFunItems =
+                    itemsOwner.itemsOwnerWithSiblings.flatMap { fileUseFunItems[it]!! }
+                val useFunItemHit =
+                    reachableUseFunItems.firstOrNull {
+                        if (it.aliasName != methodName) return@firstOrNull false
+                        if (receiverTy is TyUnknown || it.function == null) return@firstOrNull true
+                        it.function.isMethodCompatibleWithReceiver(receiverTy, msl)
+                    }
+                if (useFunItemHit != null) {
+                    allUseFunItemsHit.add(useFunItemHit)
+                    break
+                }
+            }
+        }
+
         // includes self
         val reachableItemsOwners = rootItemsOwner.descendantsOfTypeOrSelf<MvItemsOwner>()
         for (itemsOwner in reachableItemsOwners) {
@@ -73,6 +108,18 @@ class ImportAnalyzer2(val holder: ProblemsHolder) : MvVisitor() {
             for (useStmt in scopeUseStmts) {
                 val unusedUseItems = useStmt.useItems.toSet() - allUseItemsHit
                 holder.registerStmtSpeckError2(useStmt, unusedUseItems)
+            }
+
+            val scopeUseFunStmts = itemsOwner.useFunStmtList.filter { it.usageScope == itemScope }
+            for (useFunStmt in scopeUseFunStmts) {
+                val unusedUseFunItems = useFunStmt.useFunItems.toSet() - allUseFunItemsHit
+                holder.registerUseFunStmtError(useFunStmt, unusedUseFunItems)
+            }
+
+            val scopePublicUseFunStmts = itemsOwner.publicUseFunStmtList.filter { it.usageScope == itemScope }
+            for (useFunStmt in scopePublicUseFunStmts) {
+                val unusedUseFunItems = useFunStmt.useFunItems.toSet() - allUseFunItemsHit
+                holder.registerUseFunStmtError(useFunStmt, unusedUseFunItems)
             }
         }
     }
@@ -107,6 +154,16 @@ fun ProblemsHolder.registerStmtSpeckError2(useStmt: MvUseStmt, useItems: Set<Use
     }
 }
 
+fun ProblemsHolder.registerUseFunStmtError(useFunStmt: MvStmt, useFunItems: Set<UseFunItem>) {
+    if (useFunItems.isEmpty()) return
+
+    this.registerProblem(
+        useFunStmt,
+        "Unused use item",
+        ProblemHighlightType.LIKE_UNUSED_SYMBOL
+    )
+}
+
 val MvItemsOwner.itemsOwnerWithSiblings: List<MvItemsOwner>
     get() {
         return when (this) {
@@ -128,4 +185,3 @@ val MvItemsOwner.itemsOwnerWithSiblings: List<MvItemsOwner>
             else -> listOf(this)
         }
     }
-

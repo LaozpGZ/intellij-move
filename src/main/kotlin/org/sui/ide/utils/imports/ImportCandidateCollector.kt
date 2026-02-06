@@ -14,8 +14,8 @@ import org.sui.lang.index.MvNamedElementIndex
 object ImportCandidateCollector {
 
     fun getImportCandidates(context: ImportContext, targetName: String): List<ImportCandidate> {
-        val (path, ns, indexSearchScope) = context
-        val project = path.project
+        val (contextElement, ns, indexSearchScope) = context
+        val project = contextElement.project
 
         val candidates = mutableListOf<ImportCandidate>()
         val elementsFromIndex = MvNamedElementIndex.getElementsByName(project, targetName, indexSearchScope)
@@ -25,7 +25,7 @@ object ImportCandidateCollector {
             if (elementFromIndex.namespace !in ns) continue
 
             val visFilter = elementFromIndex.visInfo().createFilter()
-            val visibilityStatus = visFilter.filter(path, ns)
+            val visibilityStatus = visFilter.filter(contextElement, ns)
             if (visibilityStatus != Visible) continue
 
             // double check in case of match

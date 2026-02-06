@@ -4,11 +4,9 @@ import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.*
 import org.sui.lang.core.resolve.ref.Namespace
-import org.sui.lang.core.types.infer.deepFoldTyTypeParameterWith
-import org.sui.lang.core.types.ty.Ty
-import org.sui.lang.core.types.ty.TyInfer
-import org.sui.lang.core.types.ty.TyReference
 import org.sui.lang.core.resolve2.util.forEachUseFun
+import org.sui.lang.core.resolve2.util.isMethodCompatibleWithReceiver
+import org.sui.lang.core.types.ty.Ty
 import org.sui.lang.moveProject
 import java.util.*
 
@@ -37,13 +35,9 @@ fun processMethodResolveVariants(
     val moveProject = methodOrField.moveProject ?: return false
     val itemModule = receiverTy.itemModule(moveProject) ?: return false
     return processor
-        .wrapWithFilter { e ->
-            val function = e.element as? MvFunction ?: return@wrapWithFilter false
-            val selfTy = function.selfParamTy(msl) ?: return@wrapWithFilter false
-            // need to use TyVar here, loweredType() erases them
-            val selfTyWithTyVars =
-                selfTy.deepFoldTyTypeParameterWith { tp -> TyInfer.TyVar(tp) }
-            TyReference.isCompatibleWithAutoborrow(receiverTy, selfTyWithTyVars, msl)
+        .wrapWithFilter { entry ->
+            val function = entry.element as? MvFunction ?: return@wrapWithFilter false
+            function.isMethodCompatibleWithReceiver(receiverTy, msl)
         }
         .processAllItems(setOf(Namespace.FUNCTION), itemModule.allNonTestFunctions())
 }
@@ -56,10 +50,7 @@ private fun processUseFunMethodResolveVariants(
 ): Boolean {
     val baseProcessor = processor.wrapWithFilter { entry ->
         val function = entry.element as? MvFunction ?: return@wrapWithFilter false
-        val selfTy = function.selfParamTy(msl) ?: return@wrapWithFilter false
-        val selfTyWithTyVars =
-            selfTy.deepFoldTyTypeParameterWith { tp -> TyInfer.TyVar(tp) }
-        TyReference.isCompatibleWithAutoborrow(receiverTy, selfTyWithTyVars, msl)
+        function.isMethodCompatibleWithReceiver(receiverTy, msl)
     }
 
     var scope: MvElement? = methodOrField

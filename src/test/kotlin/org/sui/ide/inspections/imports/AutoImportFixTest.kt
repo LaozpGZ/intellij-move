@@ -1,8 +1,10 @@
 package org.sui.ide.inspections.imports
 
 import org.intellij.lang.annotations.Language
+import org.sui.ide.inspections.fixes.CompilerV2Feat.RECEIVER_STYLE_FUNCTIONS
 import org.sui.ide.inspections.MvUnresolvedReferenceInspection
 import org.sui.ide.utils.imports.ImportCandidate
+import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.annotation.InspectionTestBase
 
 class AutoImportFixTest : InspectionTestBase(MvUnresolvedReferenceInspection::class) {
@@ -513,6 +515,74 @@ module 0x1::Main {
                 test_call();
             }
         }
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test auto import use fun for unresolved method call`() = checkAutoImportFixByText(
+        """
+module 0x1::M {
+    public struct S has copy, drop {}
+    public fun call(self: &S) {}
+}
+module 0x1::Main {
+    fun main(s: &0x1::M::S) {
+        s.<error descr="Unresolved reference: `alias_call`">/*caret*/alias_call</error>();
+    }
+}
+    """,
+        """
+module 0x1::M {
+    public struct S has copy, drop {}
+    public fun call(self: &S) {}
+}
+module 0x1::Main {
+    use fun 0x1::M::call as 0x1::M::S.alias_call;
+
+    fun main(s: &0x1::M::S) {
+        s.alias_call();
+    }
+}
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test auto import use fun multiple candidates`() = checkAutoImportFixByTextWithMultipleChoice(
+        """
+module 0x1::Data {
+    public struct S has copy, drop {}
+}
+module 0x1::M1 {
+    public fun call(self: &0x1::Data::S) {}
+}
+module 0x1::M2 {
+    public fun call(self: &0x1::Data::S) {}
+}
+module 0x1::Main {
+    fun main(s: &0x1::Data::S) {
+        s.<error descr="Unresolved reference: `alias_call`">/*caret*/alias_call</error>();
+    }
+}
+    """,
+        setOf("0x1::M1::call", "0x1::M2::call"),
+        "0x1::M1::call",
+        """
+module 0x1::Data {
+    public struct S has copy, drop {}
+}
+module 0x1::M1 {
+    public fun call(self: &0x1::Data::S) {}
+}
+module 0x1::M2 {
+    public fun call(self: &0x1::Data::S) {}
+}
+module 0x1::Main {
+    use fun 0x1::M1::call as 0x1::Data::S.alias_call;
+
+    fun main(s: &0x1::Data::S) {
+        s.alias_call();
+    }
+}
     """
     )
 

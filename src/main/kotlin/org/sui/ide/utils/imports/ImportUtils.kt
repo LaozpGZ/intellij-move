@@ -1,10 +1,15 @@
 package org.sui.ide.utils.imports
 
 import org.sui.ide.inspections.imports.usageScope
+import org.sui.ide.presentation.text
 import org.sui.lang.MvElementTypes
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
+import org.sui.lang.core.resolve2.util.isMethodCompatibleWithReceiver
 import org.sui.lang.core.types.ItemQualName
+import org.sui.lang.core.types.ty.Ty
+import org.sui.lang.core.types.ty.TyAdt
+import org.sui.lang.core.types.ty.TyVector
 import org.sui.openapiext.checkWriteAccessAllowed
 
 /**
@@ -18,6 +23,34 @@ fun ImportCandidate.import(context: MvElement) {
         insertionScope.usageScope == NamedItemScope.MAIN
                 && context.usageScope == NamedItemScope.TEST
     insertionScope.insertUseItem(qualName, insertTestOnly)
+}
+
+fun ImportCandidate.importAsUseFun(context: MvMethodCall): Boolean {
+    checkWriteAccessAllowed()
+
+    val function = this.element as? MvFunction ?: return false
+    val aliasName = context.referenceName ?: return false
+    val msl = context.isMsl()
+    val receiverTy = context.inferReceiverTy(msl)
+    if (!function.isMethodCompatibleWithReceiver(receiverTy, msl)) return false
+
+    val targetTypeText = receiverTy.useFunTargetTypeText() ?: return false
+    val insertionScope = context.containingModule ?: context.containingScript ?: return false
+    val insertTestOnly =
+        insertionScope.usageScope == NamedItemScope.MAIN
+                && context.usageScope == NamedItemScope.TEST
+
+    insertionScope.insertUseFunItem(qualName, targetTypeText, aliasName, insertTestOnly)
+    return true
+}
+
+private fun Ty.useFunTargetTypeText(): String? {
+    val baseTy = this.derefIfNeeded()
+    return when (baseTy) {
+        is TyAdt -> baseTy.text(fq = true)
+        is TyVector -> baseTy.text(fq = true)
+        else -> null
+    }
 }
 
 private fun MvItemsOwner.insertUseItem(usePath: ItemQualName, testOnly: Boolean) {
@@ -36,6 +69,48 @@ private fun MvItemsOwner.insertUseItem(usePath: ItemQualName, testOnly: Boolean)
 //        addBefore(newUseStmt, firstItem)
 //        addBefore(psiFactory.createNewline(), firstItem)
 //    }
+}
+
+private fun MvItemsOwner.insertUseFunItem(
+    usePath: ItemQualName,
+    targetTypeText: String,
+    aliasName: String,
+    testOnly: Boolean,
+) {
+    if (this.containsUseFunItem(usePath, targetTypeText, aliasName, testOnly)) return
+
+    val newUseFunStmt =
+        this.project.psiFactory.useFunStmt(usePath.editorText(), targetTypeText, aliasName, testOnly)
+    insertUseFunStmtAtTheCorrectLocation(this, newUseFunStmt)
+}
+
+private fun MvItemsOwner.containsUseFunItem(
+    usePath: ItemQualName,
+    targetTypeText: String,
+    aliasName: String,
+    testOnly: Boolean,
+): Boolean {
+    return this.useFunStmtList.any {
+        it.matchesUseFunItem(usePath, targetTypeText, aliasName, testOnly)
+    }
+}
+
+private fun MvUseFunStmt.matchesUseFunItem(
+    usePath: ItemQualName,
+    targetTypeText: String,
+    aliasName: String,
+    testOnly: Boolean,
+): Boolean {
+    if (this.hasTestOnlyAttr != testOnly) return false
+
+    val useFun = this.useFunItem
+    val pathText = useFun.pathOrNull?.text ?: return false
+    if (pathText != usePath.editorText()) return false
+
+    val alias = useFun.aliasOrNull ?: return false
+    if (alias.name != aliasName) return false
+
+    return alias.targetTypeOrNull?.text == targetTypeText
 }
 
 private fun tryInsertingIntoExistingUseStmt(
@@ -186,4 +261,27 @@ private fun insertUseStmtAtTheCorrectLocation(mod: MvItemsOwner, useStmt: MvUseS
         else -> error("unreachable")
     }
     return true
+}
+
+private fun insertUseFunStmtAtTheCorrectLocation(mod: MvItemsOwner, useFunStmt: MvUseFunStmt) {
+    val psiFactory = MvPsiFactory(mod.project)
+    val newline = psiFactory.createNewline()
+
+    val importStmts = buildList<MvStmt> {
+        addAll(mod.useStmtList)
+        addAll(mod.useFunStmtList)
+        addAll(mod.publicUseFunStmtList)
+    }
+    val lastImportStmt = importStmts.lastElement
+    if (lastImportStmt != null) {
+        val addedStmt = mod.addAfter(useFunStmt, lastImportStmt)
+        mod.addBefore(newline, addedStmt)
+        return
+    }
+
+    val moduleDecl = mod.findFirstChildByType(MvElementTypes.L_BRACE)
+        ?: mod.findFirstChildByType(MvElementTypes.SEMICOLON)
+        ?: mod.firstItem
+    mod.addAfter(useFunStmt, moduleDecl)
+    mod.addAfter(newline, moduleDecl)
 }

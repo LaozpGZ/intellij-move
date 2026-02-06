@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.SearchScope
 import org.sui.ide.inspections.DiagnosticFix
 import org.sui.ide.utils.imports.ImportCandidate
 import org.sui.ide.utils.imports.ImportCandidateCollector
@@ -15,6 +14,7 @@ import org.sui.lang.core.psi.MvElement
 import org.sui.lang.core.psi.MvPath
 import org.sui.lang.core.psi.MvUseSpeck
 import org.sui.lang.core.psi.MvUseStmt
+import org.sui.lang.core.psi.ext.MvMethodOrPath
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.ref.Namespace
 import org.sui.lang.moveProject
@@ -99,7 +99,7 @@ class AutoImportFix(element: MvPath): DiagnosticFix<MvPath>(element),
 
 @Suppress("DataClassPrivateConstructor")
 data class ImportContext private constructor(
-    val pathElement: MvPath,
+    val contextElement: MvMethodOrPath,
     val ns: Set<Namespace>,
     val indexSearchScope: GlobalSearchScope,
 ) {
@@ -109,8 +109,15 @@ data class ImportContext private constructor(
             isCompletion: Boolean,
             ns: Set<Namespace> = path.allowedNamespaces(isCompletion),
         ): ImportContext? {
-            val searchScope = path.moveProject?.searchScope() ?: return null
-            return ImportContext(path, ns, searchScope)
+            return from(path as MvMethodOrPath, ns)
+        }
+
+        fun from(
+            contextElement: MvMethodOrPath,
+            ns: Set<Namespace>,
+        ): ImportContext? {
+            val searchScope = contextElement.moveProject?.searchScope() ?: return null
+            return ImportContext(contextElement, ns, searchScope)
         }
     }
 }

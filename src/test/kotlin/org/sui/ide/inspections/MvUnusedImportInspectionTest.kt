@@ -1,5 +1,7 @@
 package org.sui.ide.inspections
 
+import org.sui.ide.inspections.fixes.CompilerV2Feat.RECEIVER_STYLE_FUNCTIONS
+import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.annotation.InspectionTestBase
 
 class MvUnusedImportInspectionTest : InspectionTestBase(MvUnusedImportInspection::class) {
@@ -749,6 +751,53 @@ spec 0x1::main {
         spec 0x1::m {
             use 0x1::mm::spec_sip_hash;
         }        
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test no unused use fun import if alias method is used`() = checkWarnings(
+        """
+module 0x1::M {
+    public struct S has copy, drop {}
+    public fun call(self: &S) {}
+}
+module 0x1::Main {
+    use fun 0x1::M::call as 0x1::M::S.alias_call;
+
+    fun main(s: &0x1::M::S) {
+        s.alias_call();
+    }
+}
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test unused use fun import if alias method is not used`() = checkWarnings(
+        """
+module 0x1::M {
+    public struct S has copy, drop {}
+    public fun call(self: &S) {}
+}
+module 0x1::Main {
+    <warning descr="Unused use item">use fun 0x1::M::call as 0x1::M::S.alias_call;</warning>
+
+    fun main() {}
+}
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test unused public use fun import if alias method is not used`() = checkWarnings(
+        """
+module 0x1::M {
+    public struct S has copy, drop {}
+    public fun call(self: &S) {}
+}
+module 0x1::Main {
+    <warning descr="Unused use item">public use fun 0x1::M::call as 0x1::M::S.alias_call;</warning>
+
+    fun main() {}
+}
     """
     )
 }

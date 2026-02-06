@@ -1,5 +1,8 @@
 package org.sui.ide.refactoring.optimizeImports
 
+import org.sui.ide.inspections.fixes.CompilerV2Feat.RECEIVER_STYLE_FUNCTIONS
+import org.sui.utils.tests.CompilerV2Features
+
 class OptimizeImportsTest : OptimizeImportsTestBase() {
     fun `test remove unused struct import`() = doTest(
         """
@@ -368,6 +371,140 @@ module 0x1::main {
                 pool::create_pool<X1>();
             }
         }        
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test remove unused use fun import`() = doTest(
+        """
+        module 0x1::M {
+            public struct S has copy, drop {}
+            public fun call(self: &S) {}
+        }
+        module 0x1::Main {
+            use fun 0x1::M::call as 0x1::M::S.alias_call;
+
+            fun main() {}
+        }
+    """,
+        """
+        module 0x1::M {
+            public struct S has copy, drop {}
+            public fun call(self: &S) {}
+        }
+        module 0x1::Main {
+            fun main() {}
+        }
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test remove unused public use fun import`() = doTest(
+        """
+        module 0x1::M {
+            public struct S has copy, drop {}
+            public fun call(self: &S) {}
+        }
+        module 0x1::Main {
+            public use fun 0x1::M::call as 0x1::M::S.alias_call;
+
+            fun main() {}
+        }
+    """,
+        """
+        module 0x1::M {
+            public struct S has copy, drop {}
+            public fun call(self: &S) {}
+        }
+        module 0x1::Main {
+            fun main() {}
+        }
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test keep used use fun import`() = doTest(
+        """
+        module 0x1::M {
+            public struct S has copy, drop {}
+            public fun call(self: &S) {}
+        }
+        module 0x1::Main {
+            use fun 0x1::M::call as 0x1::M::S.alias_call;
+
+            fun main(s: &0x1::M::S) {
+                s.alias_call();
+            }
+        }
+    """,
+        """
+        module 0x1::M {
+            public struct S has copy, drop {}
+            public fun call(self: &S) {}
+        }
+        module 0x1::Main {
+            use fun 0x1::M::call as 0x1::M::S.alias_call;
+
+            fun main(s: &0x1::M::S) {
+                s.alias_call();
+            }
+        }
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test sort use and use fun imports`() = doTest(
+        """
+        module 0x1::A {
+            public struct S has copy, drop {}
+            public fun call(self: &S) {}
+            public fun f() {}
+        }
+        module 0x1::B {
+            public struct T has copy, drop {}
+            public fun call(self: &T) {}
+            public fun g() {}
+        }
+        module 0x1::Main {
+            public use fun 0x1::B::call as 0x1::B::T.b_call;
+            use 0x1::B::g;
+            use fun 0x1::A::call as 0x1::A::S.a_call;
+            use 0x1::A::f;
+
+            fun main(a: &0x1::A::S, b: &0x1::B::T) {
+                f();
+                g();
+                a.a_call();
+                b.b_call();
+            }
+        }
+    """,
+        """
+        module 0x1::A {
+            public struct S has copy, drop {}
+            public fun call(self: &S) {}
+            public fun f() {}
+        }
+        module 0x1::B {
+            public struct T has copy, drop {}
+            public fun call(self: &T) {}
+            public fun g() {}
+        }
+        module 0x1::Main {
+            use 0x1::A::f;
+            use 0x1::B::g;
+
+            use fun 0x1::A::call as 0x1::A::S.a_call;
+
+            public use fun 0x1::B::call as 0x1::B::T.b_call;
+
+            fun main(a: &0x1::A::S, b: &0x1::B::T) {
+                f();
+                g();
+                a.a_call();
+                b.b_call();
+            }
+        }
     """
     )
 

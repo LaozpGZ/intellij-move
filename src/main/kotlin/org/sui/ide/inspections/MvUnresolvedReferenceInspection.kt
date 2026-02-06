@@ -5,6 +5,7 @@ import com.intellij.codeInspection.ProblemsHolder
 import org.sui.cli.settings.isDebugModeEnabled
 import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.inspections.imports.AutoImportFix
+import org.sui.ide.inspections.imports.AutoImportUseFunFix
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.psi.impl.MvPathImpl
@@ -180,9 +181,16 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
 
         val description = "Unresolved $itemType: `$referenceName`"
         if (resolveVariants.isEmpty()) {
-            val fix = (referenceElement as? MvPath)?.let {
-                val candidates = AutoImportFix.findApplicableContext(referenceElement)?.candidates.orEmpty()
-                if (candidates.isNotEmpty()) AutoImportFix(referenceElement) else null
+            val fix = when (referenceElement) {
+                is MvPath -> {
+                    val candidates = AutoImportFix.findApplicableContext(referenceElement)?.candidates.orEmpty()
+                    if (candidates.isNotEmpty()) AutoImportFix(referenceElement) else null
+                }
+                is MvMethodCall -> {
+                    val candidates = AutoImportUseFunFix.findApplicableContext(referenceElement)?.candidates.orEmpty()
+                    if (candidates.isNotEmpty()) AutoImportUseFunFix(referenceElement) else null
+                }
+                else -> null
             }
 
             // Respect the setting that skips unresolved references without quick-fixes.
