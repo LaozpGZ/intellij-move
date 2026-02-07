@@ -1,6 +1,7 @@
 package org.sui.lang.resolve
 
 import org.sui.ide.inspections.fixes.CompilerV2Feat.INDEXING
+import org.sui.ide.inspections.fixes.CompilerV2Feat.TYPE_KEYWORD
 import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.resolve.ResolveTestCase
 
@@ -12,6 +13,19 @@ class ResolveTypesTest : ResolveTestCase() {
                  //X
             
             fun call(s: MyStruct) {}
+                      //^
+        }
+    """
+    )
+
+    @CompilerV2Features(TYPE_KEYWORD)
+    fun `test resolve type alias declaration in type position`() = checkByCode(
+        """
+        module M {
+            type MyType = u8;
+              //X
+
+            fun call(v: MyType) {}
                       //^
         }
     """

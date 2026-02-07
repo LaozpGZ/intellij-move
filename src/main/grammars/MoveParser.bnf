@@ -222,6 +222,7 @@ private has ::= <<hasKeyword>>
 private entry ::= <<entryKeyword>>
 private inline ::= <<inlineKeyword>>
 private macro ::= <<macroKeyword>>
+private typeKw ::= <<typeKeyword>>
 private schema ::= <<schemaKeyword>>
 
 private reads ::= <<readsKeyword>>
@@ -271,7 +272,7 @@ private ModuleItem_with_recover ::= !('}' | <<eof>>) ModuleItem
 }
 private ModuleItem_recover ::= !('}' | ModuleItem_first | TopLevel_first)
 // top-level recovery
-private ModuleItem_first ::= use | public | native | fun | CONST_KW | STRUCT_KW | spec | macro
+private ModuleItem_first ::= use | public | native | fun | CONST_KW | STRUCT_KW | spec | macro | typeKw
                             | Attr_first | "friend"  | "entry" | "inline" | "enum"
 private TopLevel_first ::= MODULE_KW | SCRIPT_KW
 
@@ -281,6 +282,7 @@ private ModuleItem ::=        PublicUseFunStmt
                             | FriendDecl
                             | StructItem
                             | Enum
+                            | TypeAliasItem
                             | FunctionItem
                             | SpecFunctionItem
                             | Const
@@ -431,6 +433,26 @@ Enum ::= Attr* VisibilityModifier? enum IDENTIFIER TypeParameterList? AbilitiesL
      elementTypeFactory = "org.sui.lang.core.stubs.StubsKt.factory"
     hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
  }
+
+fake TypeAlias ::= Attr* VisibilityModifier? typeKw IDENTIFIER TypeParameterList? '=' Type ';'
+{
+    implements = [
+        "org.sui.lang.core.psi.MvQualNamedElement"
+        "org.sui.lang.core.psi.ext.MvItemElement"
+        "org.sui.lang.core.psi.MvTypeParametersOwner"
+    ]
+    mixin = "org.sui.lang.core.psi.ext.MvTypeAliasMixin"
+    hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
+}
+
+TypeAliasInner ::= Attr* VisibilityModifier? typeKw IDENTIFIER TypeParameterList? '=' Type ';'
+{
+    pin = 3
+    elementType = TypeAlias
+}
+
+private TypeAliasItem ::= TypeAliasInner
+
 EnumBody ::= '{' (EnumVariant ','?)* '}'
 {
    pin = 1

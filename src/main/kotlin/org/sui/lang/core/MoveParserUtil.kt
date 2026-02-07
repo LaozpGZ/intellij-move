@@ -378,6 +378,12 @@ object MoveParserUtil : GeneratedParserUtilBase() {
     }
 
     @JvmStatic
+    fun typeKeyword(b: PsiBuilder, level: Int): Boolean {
+        if (!b.project.moveLanguageFeatures.typeKeyword) return false
+        return contextualKeyword(b, "type", TYPE_KW)
+    }
+
+    @JvmStatic
     fun isNotMatchKeyword(b: PsiBuilder, level: Int): Boolean {
         return b.tokenType == IDENTIFIER && b.tokenText != "match"
     }

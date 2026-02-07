@@ -60,7 +60,7 @@ val MvItemsOwner.firstItem: MvElement?
                         is MvUseFunStmt -> false
                         is MvPublicUseFunStmt -> false
                         // Valid items: module items (functions, structs, consts, enums)
-                        is MvFunction, is MvStruct, is MvConst, is MvEnum -> true
+                        is MvFunction, is MvStruct, is MvConst, is MvEnum, is MvTypeAlias -> true
                         // Skip other elements
                         else -> false
                     }

@@ -215,6 +215,7 @@ fun processItemsInScope(
                         processor.processAllItems(
                             TYPES,
                             scope.structs(),
+                            scope.typeAliases(),
                         )
                     }
                     is MvApplySchemaStmt -> {

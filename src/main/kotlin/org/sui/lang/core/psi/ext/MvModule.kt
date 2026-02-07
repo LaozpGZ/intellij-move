@@ -168,6 +168,8 @@ fun MvModule.specFunctions(): List<MvSpecFunction> = specFunctionList.orEmpty()
 
 fun MvModule.consts(): List<MvConst> = this.constList
 
+fun MvModule.typeAliases(): List<MvTypeAlias> = this.childrenOfType()
+
 fun MvModule.enumVariants(): List<MvEnumVariant> = this.enumList.flatMap { it.variants }
 
 //fun MvModuleBlock.moduleItemSpecs() = this.moduleItemSpecList
