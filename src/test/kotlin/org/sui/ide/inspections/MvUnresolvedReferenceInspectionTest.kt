@@ -74,7 +74,7 @@ class MvUnresolvedReferenceInspectionTest : InspectionTestBase(MvUnresolvedRefer
         """
         module 0x1::M {
             fun main() {
-                <error descr="Unresolved function: `dbg`">dbg</error>!(1, true);
+                <error descr="Unresolved macro: `dbg`">dbg</error>!(1, true);
             }
         }
     """

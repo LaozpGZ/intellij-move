@@ -77,6 +77,26 @@ class PerProjectAptosConfigurable(val project: Project) : BoundConfigurable("Apt
                                 )
                                 .bindSelected(state::enablePublicPackage)
                         }
+                        row {
+                            checkBox("Macro functions")
+                                .comment("Enables parsing and semantic analysis for <code>macro fun</code> declarations and calls.")
+                                .bindSelected(state::enableMacroFunctions)
+                        }
+                        row {
+                            checkBox("type keyword declarations")
+                                .comment("Enables <code>type</code> alias declarations in module scope.")
+                                .bindSelected(state::enableTypeKeyword)
+                        }
+                        row {
+                            checkBox("Require public struct")
+                                .comment("Move 2024 rule: top-level structs must declare explicit visibility.")
+                                .bindSelected(state::requirePublicStruct)
+                        }
+                        row {
+                            checkBox("Require let mut")
+                                .comment("Move 2024 rule: mutation and <code>&mut</code> borrow require mutable bindings.")
+                                .bindSelected(state::requireLetMut)
+                        }
                     }
                 }
                 group("Command Line Options") {
@@ -132,6 +152,10 @@ class PerProjectAptosConfigurable(val project: Project) : BoundConfigurable("Apt
                     it.enableResourceAccessControl = state.enableResourceAccessControl
                     it.enableIndexExpr = state.enableIndexExpr
                     it.enablePublicPackage = state.enablePublicPackage
+                    it.enableMacroFunctions = state.enableMacroFunctions
+                    it.enableTypeKeyword = state.enableTypeKeyword
+                    it.requirePublicStruct = state.requirePublicStruct
+                    it.requireLetMut = state.requireLetMut
                     it.addCompilerV2CLIFlags = state.addCompilerV2CLIFlags
                     it.fetchAptosDeps = state.fetchAptosDeps
                 }
@@ -148,6 +172,19 @@ class PerProjectAptosConfigurable(val project: Project) : BoundConfigurable("Apt
                 val aptosPanelData = chooseAptosCliPanel.data
                 aptosPanelData.aptosExecType != settings.aptosExecType
                         || aptosPanelData.localAptosPath != settings.localAptosPath
+                        || state.fetchAptosDeps != settings.fetchAptosDeps
+                        || state.addCompilerV2CLIFlags != settings.addCompilerV2CLIFlags
+                        || state.enableReceiverStyleFunctions != settings.enableReceiverStyleFunctions
+                        || state.enableResourceAccessControl != settings.enableResourceAccessControl
+                        || state.enableIndexExpr != settings.enableIndexExpr
+                        || state.enablePublicPackage != settings.enablePublicPackage
+                        || state.enableMacroFunctions != settings.enableMacroFunctions
+                        || state.enableTypeKeyword != settings.enableTypeKeyword
+                        || state.requirePublicStruct != settings.requirePublicStruct
+                        || state.requireLetMut != settings.requireLetMut
+                        || state.disableTelemetry != settings.disableTelemetry
+                        || state.skipFetchLatestGitDeps != settings.skipFetchLatestGitDeps
+                        || state.dumpStateOnTestFailure != settings.dumpStateOnTestFailure
             }
         }
     }

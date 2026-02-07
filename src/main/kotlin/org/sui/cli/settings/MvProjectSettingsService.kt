@@ -52,6 +52,8 @@ class MvProjectSettingsService(
     val enableResourceAccessControl: Boolean get() = effectiveLanguageFeatures().resourceAccessControl
     val enableIndexExpr: Boolean get() = effectiveLanguageFeatures().indexExpr
     val enablePublicPackage: Boolean get() = effectiveLanguageFeatures().publicPackageVisibility
+    val enableMacroFunctions: Boolean get() = effectiveLanguageFeatures().macroFunctions
+    val enableTypeKeyword: Boolean get() = effectiveLanguageFeatures().typeKeyword
     val requirePublicStruct: Boolean get() = effectiveLanguageFeatures().publicStructRequired
     val requireLetMut: Boolean get() = effectiveLanguageFeatures().letMutRequired
     val publicFriendDisabled: Boolean get() = effectiveLanguageFeatures().publicFriendDisabled

@@ -2,6 +2,8 @@ package org.sui.lang.completion
 
 import org.intellij.lang.annotations.Language
 import org.sui.ide.annotator.BUILTIN_FUNCTIONS
+import org.sui.ide.inspections.fixes.CompilerV2Feat.MACRO_FUNCTIONS
+import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.completion.CompletionTestCase
 
 class BuiltInsCompletionTest : CompletionTestCase() {
@@ -91,6 +93,7 @@ class BuiltInsCompletionTest : CompletionTestCase() {
     """
     )
 
+    @CompilerV2Features(MACRO_FUNCTIONS)
     fun `test autocomplete assert! in module`() = doFirstCompletion(
         """
     module 0x1::M {
@@ -107,6 +110,7 @@ class BuiltInsCompletionTest : CompletionTestCase() {
     """
     )
 
+    @CompilerV2Features(MACRO_FUNCTIONS)
     fun `test autocomplete assert! in script`() = doFirstCompletion(
         """
     script {

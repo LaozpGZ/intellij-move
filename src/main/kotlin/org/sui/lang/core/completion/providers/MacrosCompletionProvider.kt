@@ -9,6 +9,7 @@ import com.intellij.patterns.ElementPattern
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiElement
 import com.intellij.util.ProcessingContext
+import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.utils.getSignature
 import org.sui.lang.MvElementTypes
 import org.sui.lang.core.MvPsiPattern
@@ -46,6 +47,8 @@ object MacrosCompletionProvider : MvCompletionProvider() {
         val path = maybePath as? MvPath ?: maybePath.parent as MvPath
 
         if (parameters.position !== path.referenceNameElement) return
+
+        if (!path.project.moveLanguageFeatures.macroFunctions) return
 
         val seenNames = mutableSetOf<String>()
         val userMacros = collectUserMacroCandidates(path)

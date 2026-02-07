@@ -1,6 +1,7 @@
 package org.sui.lang.completion
 
 import org.intellij.lang.annotations.Language
+import org.sui.ide.inspections.fixes.CompilerV2Feat.MACRO_FUNCTIONS
 import org.sui.ide.inspections.fixes.CompilerV2Feat.RECEIVER_STYLE_FUNCTIONS
 import org.sui.lang.core.psi.MvQualNamedElement
 import org.sui.utils.tests.CompilerV2Features
@@ -22,6 +23,7 @@ module 0x1::Main {
     """
     )
 
+    @CompilerV2Features(MACRO_FUNCTIONS)
     fun `test assert! before unimported assert`() = checkCompletionsOrder(
         listOf("assert!", "assert_eq!", "assert_ref_eq!", "assert_true"),
         """

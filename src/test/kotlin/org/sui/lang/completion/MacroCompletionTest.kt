@@ -1,6 +1,7 @@
 package org.sui.lang.completion
 
 import org.sui.ide.inspections.fixes.CompilerV2Feat.MACRO_FUNCTIONS
+import org.sui.ide.inspections.fixes.CompilerV2Feat.TYPE_KEYWORD
 import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.completion.CompletionTestCase
 
@@ -45,6 +46,18 @@ class MacroCompletionTest : CompletionTestCase() {
         module 0x1::M {
             macro fun assert(a: bool, b: u64): bool { true }
 
+            fun main() {
+                ass/*caret*/
+            }
+        }
+        """
+    )
+
+    @CompilerV2Features(TYPE_KEYWORD)
+    fun `test no macro completion when macro feature is disabled`() = checkNotContainsCompletion(
+        "assert!",
+        """
+        module 0x1::M {
             fun main() {
                 ass/*caret*/
             }
