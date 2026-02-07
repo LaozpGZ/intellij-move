@@ -41,7 +41,11 @@ class MvErrorAnnotator: MvAnnotatorBase() {
             override fun visitMethodCall(o: MvMethodCall) = checkMethodOrPath(o, moveHolder)
             override fun visitAssignmentExpr(o: MvAssignmentExpr) = checkAssignmentMutability(moveHolder, o)
             override fun visitBorrowExpr(o: MvBorrowExpr) = checkBorrowMutability(moveHolder, o)
-            override fun visitMatchExpr(o: MvMatchExpr) = checkDuplicateMatchArms(moveHolder, o)
+            override fun visitMatchExpr(o: MvMatchExpr) {
+                checkDuplicateMatchArms(moveHolder, o)
+                checkUnreachableMatchArms(moveHolder, o)
+                checkMatchExhaustiveness(moveHolder, o)
+            }
 
             override fun visitCallExpr(callExpr: MvCallExpr) {
                 val msl = callExpr.path.isMslScope
@@ -198,29 +202,131 @@ class MvErrorAnnotator: MvAnnotatorBase() {
         return resolved as? MvPatBinding
     }
 
-    private fun checkDuplicateMatchArms(holder: MvAnnotationHolder, matchExpr: MvMatchExpr) {
-        fun extractVariantPattern(arm: MvMatchArm): Pair<PsiElement, String>? {
-            if (arm.matchArmGuard != null) return null
-            val pattern = arm.pat
-            val patternInfo = when (pattern) {
-                is MvPatStruct -> pattern.path to pattern.path.text
-                is MvPatTupleStruct -> pattern.path to pattern.path.text
-                is MvPatConst -> {
-                    val pathExpr = pattern.expr as? MvPathExpr ?: return null
-                    pathExpr.path to pathExpr.path.text
-                }
-                else -> null
-            } ?: return null
-            return patternInfo.takeIf { (_, variantName) -> "::" in variantName }
-        }
+    private data class MatchArmVariant(
+        val anchor: PsiElement,
+        val variant: MvEnumVariant,
+    )
 
-        val seenVariants = hashSetOf<String>()
+    private fun extractMatchArmVariant(arm: MvMatchArm): MatchArmVariant? {
+        if (arm.matchArmGuard != null) return null
+        val pattern = arm.pat
+        val path = when (pattern) {
+            is MvPatStruct -> pattern.path
+            is MvPatTupleStruct -> pattern.path
+            is MvPatConst -> {
+                val pathExpr = pattern.expr as? MvPathExpr ?: return null
+                pathExpr.path
+            }
+            else -> null
+        } ?: return null
+        val variant = path.reference?.resolveFollowingAliases() as? MvEnumVariant ?: return null
+        return MatchArmVariant(path, variant)
+    }
+
+    private fun isCatchAllMatchArm(arm: MvMatchArm): Boolean {
+        if (arm.matchArmGuard != null) return false
+        return when (arm.pat) {
+            is MvPatWild, is MvPatBinding -> true
+            else -> false
+        }
+    }
+
+    private fun checkDuplicateMatchArms(holder: MvAnnotationHolder, matchExpr: MvMatchExpr) {
+        val seenVariants = hashSetOf<MvEnumVariant>()
         for (arm in matchExpr.arms) {
-            val (anchor, variantName) = extractVariantPattern(arm) ?: continue
-            if (!seenVariants.add(variantName)) {
-                holder.createErrorAnnotation(anchor, "Duplicate match arm for `$variantName`")
+            val armVariant = extractMatchArmVariant(arm) ?: continue
+            if (!seenVariants.add(armVariant.variant)) {
+                val enumName = armVariant.variant.enumItem.name
+                val variantNamePart = armVariant.variant.name
+                val variantName =
+                    if (enumName != null && variantNamePart != null) "$enumName::$variantNamePart"
+                    else armVariant.anchor.text
+                holder.createErrorAnnotation(armVariant.anchor, "Duplicate match arm for `$variantName`")
             }
         }
+    }
+
+    private fun checkUnreachableMatchArms(holder: MvAnnotationHolder, matchExpr: MvMatchExpr) {
+        val arms = matchExpr.arms
+        if (arms.size < 2) return
+
+        val firstCatchAllIndex = arms.indexOfFirst(::isCatchAllMatchArm)
+        if (firstCatchAllIndex >= 0) {
+            for (arm in arms.subList(firstCatchAllIndex + 1, arms.size)) {
+                holder.createErrorAnnotation(arm.pat, "Unreachable match arm")
+            }
+            val enumItem = resolveMatchedEnum(matchExpr)
+            if (enumItem != null && firstCatchAllIndex > 0) {
+                val armsBeforeCatchAll = arms.subList(0, firstCatchAllIndex)
+                if (collectCoveredVariants(armsBeforeCatchAll, enumItem).size == enumItem.variants.size) {
+                    holder.createErrorAnnotation(arms[firstCatchAllIndex].pat, "Unreachable match arm")
+                }
+            }
+            return
+        }
+
+        val enumItem = resolveMatchedEnum(matchExpr) ?: return
+        val coveredVariants = mutableSetOf<MvEnumVariant>()
+
+        for ((index, arm) in arms.withIndex()) {
+            val variant = extractMatchArmVariant(arm)?.variant ?: continue
+            if (variant.enumItem != enumItem) continue
+
+            coveredVariants.add(variant)
+            if (coveredVariants.size < enumItem.variants.size) continue
+
+            if (index == arms.lastIndex) return
+            for (unreachableArm in arms.subList(index + 1, arms.size)) {
+                holder.createErrorAnnotation(unreachableArm.pat, "Unreachable match arm")
+            }
+            return
+        }
+    }
+
+    private fun collectCoveredVariants(arms: List<MvMatchArm>, enumItem: MvEnum): Set<MvEnumVariant> {
+        val coveredVariants = mutableSetOf<MvEnumVariant>()
+        for (arm in arms) {
+            val variant = extractMatchArmVariant(arm)?.variant ?: continue
+            if (variant.enumItem == enumItem) {
+                coveredVariants.add(variant)
+            }
+        }
+        return coveredVariants
+    }
+
+    private fun resolveMatchedEnum(matchExpr: MvMatchExpr): MvEnum? {
+        val msl = matchExpr.isMsl()
+        val matchArgExpr = matchExpr.matchArgument.expr ?: return null
+        val matchArgTy = matchExpr.inference(msl)?.getExprTypeOrUnknown(matchArgExpr) as? TyAdt ?: return null
+        return matchArgTy.enumItem
+    }
+
+    private fun checkMatchExhaustiveness(holder: MvAnnotationHolder, matchExpr: MvMatchExpr) {
+        if (matchExpr.arms.isEmpty()) return
+        if (matchExpr.arms.any { isCatchAllMatchArm(it) }) return
+
+        val enumItem = resolveMatchedEnum(matchExpr) ?: return
+
+        val coveredVariants = collectCoveredVariants(matchExpr.arms, enumItem)
+        val missingVariants = enumItem.variants.filter { it !in coveredVariants }
+        if (missingVariants.isEmpty()) return
+
+        val missingVariantsText = missingVariants
+            .mapNotNull { variant ->
+                val enumName = variant.enumItem.name
+                val variantName = variant.name
+                when {
+                    enumName != null && variantName != null -> "$enumName::$variantName"
+                    variantName != null -> variantName
+                    else -> null
+                }
+            }
+            .joinToString(", ")
+
+        holder.createErrorAnnotation(
+            matchExpr.matchBody,
+            "Non-exhaustive match. Missing arms: $missingVariantsText"
+        )
     }
 
     private fun expectedArgsCountForMacro(call: MvMacroCallExpr): Int? {
@@ -294,6 +400,25 @@ class MvErrorAnnotator: MvAnnotatorBase() {
             qualItem is MvStruct && parent is MvPathType -> {
                 if (parent.ancestorStrict<MvAcquiresType>() != null) return
 
+                if (realCount != 0) {
+                    val typeArgumentList =
+                        methodOrPath.typeArgumentList ?: error("cannot be null if realCount != 0")
+                    checkTypeArgumentList(typeArgumentList, qualItem, holder)
+                } else {
+                    val expectedCount = qualItem.typeParameters.size
+                    if (expectedCount != 0) {
+                        Diagnostic
+                            .TypeArgumentsNumberMismatch(
+                                methodOrPath,
+                                qualName.editorText(),
+                                expectedCount,
+                                realCount
+                            )
+                            .addToHolder(holder)
+                    }
+                }
+            }
+            qualItem is MvTypeAlias && parent is MvPathType -> {
                 if (realCount != 0) {
                     val typeArgumentList =
                         methodOrPath.typeArgumentList ?: error("cannot be null if realCount != 0")
