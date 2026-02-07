@@ -167,7 +167,15 @@ allprojects {
 
         pluginVerification {
             ides {
-                recommended()
+                val verifierIdeVersion = propOrNull("verifierIdeVersion")?.trim()
+                if (!verifierIdeVersion.isNullOrEmpty()) {
+                    val (type, version) = verifierIdeVersion.split('-', limit = 2)
+                    create(type, version) {
+                        useInstaller.set(true)
+                    }
+                } else {
+                    recommended()
+                }
             }
             //if("SNAPSHOT"!inshortPlatformVersion){
             //ides{
@@ -181,6 +189,7 @@ allprojects {
                         VerifyPluginTask.FailureLevel.DEPRECATED_API_USAGES,
                         VerifyPluginTask.FailureLevel.EXPERIMENTAL_API_USAGES,
                         VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+                        VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES,
                     )
                 )
             )
