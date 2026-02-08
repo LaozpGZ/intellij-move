@@ -22,8 +22,11 @@ import org.sui.lang.core.resolve.processAll
 import org.sui.lang.core.resolve.ref.FUNCTIONS
 import org.sui.lang.core.resolve.ref.ITEM_NAMESPACES
 import org.sui.lang.core.resolve.ref.NONE
+import org.sui.lang.core.resolve.ref.Namespace
+import org.sui.lang.core.resolve.ref.TYPES_N_ENUMS
 import org.sui.lang.core.resolve.resolveSingleResolveVariant
 import org.sui.lang.core.resolve2.PathKind
+import org.sui.lang.core.resolve2.pathKind
 import org.sui.lang.core.resolve2.processMethodResolveVariants
 import org.sui.lang.core.resolve2.processNestedScopesUpwards
 import org.sui.lang.core.resolve2.ref.InferenceCachedPathElement
@@ -581,6 +584,7 @@ class TypeInferenceWalker(
             is MvConst -> item.type?.loweredType(msl) ?: TyUnknown
             is MvGlobalVariableStmt -> item.type?.loweredType(true) ?: TyUnknown
             is MvNamedFieldDecl -> item.type?.loweredType(msl) ?: TyUnknown
+            is MvTupleFieldDecl -> item.type.loweredType(msl)
             is MvStruct -> {
                 if (project.moveLanguageFeatures.indexExpr && pathExpr.parent is MvIndexExpr) {
                     TyLowering.lowerPath(pathExpr.path, item, ctx.msl)
@@ -749,6 +753,14 @@ class TypeInferenceWalker(
     private fun inferCallExprTy(callExpr: MvCallExpr, expected: Expectation): Ty {
         val path = callExpr.path
         val namedItem = resolvePathElement(callExpr, expectedType = null)
+        val constructorItem = when {
+            namedItem is MvFieldsOwner -> namedItem
+            else -> resolveCallPathElementAsType(path) as? MvFieldsOwner
+        }
+        if (constructorItem != null && constructorItem.positionalFields.isNotEmpty()) {
+            return inferTupleFieldsConstructorCallTy(callExpr, path, constructorItem)
+        }
+
         val baseTy =
             when (namedItem) {
                 is MvFunctionLike -> {
@@ -812,6 +824,71 @@ class TypeInferenceWalker(
         return funcTy.retType
     }
 
+    private fun inferTupleFieldsConstructorCallTy(
+        callExpr: MvCallExpr,
+        path: MvPath,
+        fieldsOwner: MvFieldsOwner,
+    ): Ty {
+        val genericItem = when (fieldsOwner) {
+            is MvEnumVariant -> fieldsOwner.enumItem
+            is MvStruct -> fieldsOwner
+            else -> return TyUnknown
+        }
+        val (adtTy, _) = ctx.instantiateMethodOrPath<TyAdt>(path, genericItem) ?: return TyUnknown
+
+        val paramTypes = fieldsOwner.positionalFields
+            .map { it.fieldTy(msl).substituteOrUnknown(adtTy.substitution) }
+        val argExprs = collectCallArgumentExprs(callExpr).toMutableList()
+        val leadingEmptyArgs = countLeadingEmptyArgs(callExpr.text)
+        if (leadingEmptyArgs > 0 && argExprs.size < paramTypes.size) {
+            val toInsert = minOf(leadingEmptyArgs, paramTypes.size - argExprs.size)
+            repeat(toInsert) { argExprs.add(0, null) }
+        }
+
+        inferArgumentTypes(
+            paramTypes,
+            emptyList(),
+            argExprs.map { InferArg.ArgExpr(it) },
+            hasExplicitTypeParameters = path.typeArguments.isNotEmpty(),
+        )
+
+        writeCallableType(callExpr, TyLambda(paramTypes, adtTy), method = false)
+        return adtTy
+    }
+
+    private fun resolveCallPathElementAsType(path: MvPath): MvNamedElement? {
+        val referenceName = path.referenceName ?: return null
+        val pathKind = path.pathKind().withNamespaces(TYPES_N_ENUMS)
+        val resolutionCtx = ResolutionContext(path, isCompletion = false)
+        val resolvedItems =
+            collectResolveVariantsAsScopeEntries(referenceName) {
+                processPathResolveVariantsWithExpectedType(
+                    resolutionCtx,
+                    pathKind,
+                    expectedType = null,
+                    it,
+                )
+            }.map { ResolvedItem.from(it, path) }
+
+        if (resolvedItems.isEmpty()) return null
+        ctx.writePath(path, resolvedItems)
+        return resolvedItems.singleOrNull { it.isVisible }
+            ?.element
+            ?.let { resolveAliases(it) }
+    }
+
+    private fun PathKind.withNamespaces(ns: Set<Namespace>): PathKind = when (this) {
+        is PathKind.UnqualifiedPath -> PathKind.UnqualifiedPath(ns)
+        is PathKind.QualifiedPath.Module -> this
+        is PathKind.QualifiedPath.ModuleItem ->
+            PathKind.QualifiedPath.ModuleItem(this.path, this.qualifier, ns)
+        is PathKind.QualifiedPath.FQModuleItem ->
+            PathKind.QualifiedPath.FQModuleItem(this.path, this.qualifier, ns)
+        is PathKind.QualifiedPath.UseGroupItem ->
+            PathKind.QualifiedPath.UseGroupItem(this.path, this.qualifier, ns)
+        is PathKind.NamedAddress, is PathKind.ValueAddress -> this
+    }
+
     private fun writeCallableType(callable: MvCallable, funcTy: TyCallable, method: Boolean) {
         // callableType TyVar are meaningful mostly for "needs type annotation" error.
         // if value parameter is missing, we don't want to show that error, so we cover
@@ -842,13 +919,16 @@ class TypeInferenceWalker(
         val tyAdt =
             receiverTy.derefIfNeeded() as? TyAdt ?: return TyUnknown
 
+        val fieldName = dotField.fieldDeclName() ?: return TyUnknown
         val field =
-            resolveSingleResolveVariant(dotField.referenceName) {
+            resolveSingleResolveVariant(fieldName) {
                 processNamedFieldVariants(dotField, tyAdt, msl, it)
-            } as? MvNamedFieldDecl
+            }
         ctx.resolvedFields[dotField] = field
 
-        val fieldTy = field?.type?.loweredType(msl)?.substitute(tyAdt.typeParameterValues)
+        val fieldTy = field
+            ?.fieldTy(msl)
+            ?.substitute(tyAdt.typeParameterValues)
         return fieldTy ?: TyUnknown
     }
 
@@ -1339,12 +1419,14 @@ class TypeInferenceWalker(
         }
 
         litExpr.fields.forEach { field ->
+            val fieldName = field.fieldDeclName() ?: return@forEach
             // todo: can be cached, change field reference impl
-            val namedField =
-                resolveSingleResolveVariant(field.referenceName) { it.processAll(NONE, item.namedFields) }
-                        as? MvNamedFieldDecl
-            val rawFieldTy = namedField?.type?.loweredType(msl)
-            val fieldTy = rawFieldTy?.substitute(tyAdt.substitution) ?: TyUnknown
+            val resolvedField =
+                resolveSingleResolveVariant(fieldName) { it.processAll(NONE, item.allFields) }
+            val fieldTy = resolvedField
+                ?.fieldTy(msl)
+                ?.substitute(tyAdt.substitution)
+                ?: TyUnknown
 //            val fieldTy = field.type(msl)?.substitute(tyAdt.substitution) ?: TyUnknown
             val expr = field.expr
             if (expr != null) {

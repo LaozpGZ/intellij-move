@@ -342,6 +342,11 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
                     "Assigned expr of type '${assignedTy.text(fq = false)}' " +
                             "cannot be unpacked with tuple pattern"
                 }
+                element is MvPatTupleStruct &&
+                        (assignedTy !is TyAdt && assignedTy !is TyTuple) -> {
+                    "Assigned expr of type '${assignedTy.text(fq = false)}' " +
+                            "cannot be unpacked with tuple struct pattern"
+                }
                 else -> "Invalid unpacking. Expected ${assignedTy.assignedTyFormText()}"
             }
         }

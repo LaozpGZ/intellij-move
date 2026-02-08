@@ -16,7 +16,7 @@
     tokenTypeClass="org.sui.lang.core.MvTokenType"
 
     extends(".*Expr")=Expr
-    extends("Pat(Struct|Binding|Tuple|Wild|Const)")=Pat
+    extends("Pat(Struct|Binding|Tuple|TupleStruct|Wild|Const)")=Pat
     extends("(Lambda|Ref|Path|Tuple|Unit|Parens)Type")=Type
 
     elementType(".+BinExpr")=BinaryExpr
@@ -401,7 +401,7 @@ fake Struct ::= Attr* PublicKeyword native? STRUCT_KW IDENTIFIER TypeParameterLi
 
 private StructBlock ::= AbilitiesList  (';' | BlockFields | TupleFields)?
 
-private StructTupleBlock ::= TupleFields (AbilitiesList';')?
+private StructTupleBlock ::= TupleFields (AbilitiesList?';')?
 
 private StructBlockFields ::= BlockFields (AbilitiesList';')?
 
@@ -480,6 +480,10 @@ private TupleFieldDecl_with_recover ::= !')' TupleFieldDecl (',' | &')') {
 }
 private TupleFieldDecl_recover ::= !(')' | Type )
 TupleFieldDecl ::= Type
+{
+    implements = ["org.sui.lang.core.psi.MvNamedElement"]
+    mixin = "org.sui.lang.core.psi.ext.MvTupleFieldDeclMixin"
+}
 
 
 UseFunStmt ::= Attr* UseFun ';'
@@ -834,9 +838,9 @@ private PatField_with_recover ::= !'}' PatField (',' | &'}')
     recoverWhile = PatField_recover
 
 }
-private PatField_recover ::= !('}' |mut? IDENTIFIER)
+private PatField_recover ::= !('}' |mut? (IDENTIFIER | INTEGER_LITERAL))
 
-PatFieldFull ::=mut? IDENTIFIER ':' Pat
+PatFieldFull ::=mut? StructFieldName ':' Pat
 {
     implements = [
 //        "org.sui.lang.core.resolve.ref.MvStructPatFieldReferenceElement"
@@ -844,7 +848,7 @@ PatFieldFull ::=mut? IDENTIFIER ':' Pat
     ]
     mixin = "org.sui.lang.core.psi.ext.MvPatFieldFullMixin"
 }
-FieldPatFull ::=mut? IDENTIFIER ':' Pat
+FieldPatFull ::=mut? StructFieldName ':' Pat
 
 PatField ::= PatFieldFull | PatBinding
 FieldPat ::= PatFieldFull | PatBinding
@@ -1119,9 +1123,11 @@ private StructLitField_with_recover ::= !'}' StructLitField (',' | &'}')
     pin = 1
     recoverWhile = StructLitField_recover
 }
-private StructLitField_recover ::= !('}' | IDENTIFIER)
+private StructLitField_recover ::= !('}' | IDENTIFIER | INTEGER_LITERAL)
 
-StructLitField ::= IDENTIFIER StructLitFieldInit?
+private StructFieldName ::= IDENTIFIER | INTEGER_LITERAL
+
+StructLitField ::= StructFieldName StructLitFieldInit?
 {
     implements = [
         "org.sui.lang.core.resolve.ref.MvMandatoryReferenceElement"
@@ -1246,7 +1252,7 @@ private DotExpr_inner ::= '.' !('.' | VectorStart) (MethodCall | StructDotField)
 
 private VectorStart ::= (<<vectorIdent>> ('[' | '<'))
 
-StructDotField ::= IDENTIFIER !('(' | '::' | '!' | '{')
+StructDotField ::= StructFieldName !('(' | '::' | '!' | '{')
 {
     implements = ["org.sui.lang.core.psi.ext.MvMethodOrField"]
     mixin = "org.sui.lang.core.psi.ext.MvStructDotFieldMixin"

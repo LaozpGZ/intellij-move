@@ -6,6 +6,13 @@ interface MvFieldsOwner: MvNameIdentifierOwner {
     val blockFields: MvBlockFields?
 }
 
+val MvFieldsOwner.tupleFields: MvTupleFields?
+    get() = when (this) {
+        is MvStruct -> this.tupleFields
+        is MvEnumVariant -> this.tupleFields
+        else -> null
+    }
+
 val MvFieldsOwner.itemElement: MvStructOrEnumItemElement
     get() = when (this) {
         is MvStruct -> this
@@ -22,10 +29,16 @@ val MvFieldsOwner.itemElement: MvStructOrEnumItemElement
 //}
 
 val MvFieldsOwner.fields: List<MvNamedFieldDecl>
-    get() = namedFields //+ positionalFields
+    get() = namedFields
+
+val MvFieldsOwner.allFields: List<MvNamedElement>
+    get() = namedFields + positionalFields
 
 val MvFieldsOwner.namedFields: List<MvNamedFieldDecl>
     get() = blockFields?.namedFieldDeclList.orEmpty()
+
+val MvFieldsOwner.positionalFields: List<MvTupleFieldDecl>
+    get() = tupleFields?.tupleFieldDeclList.orEmpty()
 
 
 /**
@@ -41,4 +54,4 @@ val MvFieldsOwner.namedFields: List<MvNamedFieldDecl>
  * ```
  */
 val MvFieldsOwner.isFieldless: Boolean
-    get() = blockFields == null //&& tupleFields == null
+    get() = blockFields == null && tupleFields == null

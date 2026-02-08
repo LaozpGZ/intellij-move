@@ -83,6 +83,53 @@ class ResolveStructFieldsTest : ResolveTestCase() {
     """
     )
 
+    fun `test resolve positional field from numeric struct literal`() = checkByCode(
+        """
+        module 0x1::M {
+            struct S(u8, bool);
+                   //X
+
+            fun main() {
+                let _ = S { 0: 1, 1: true };
+                          //^
+            }
+        }
+    """
+    )
+
+    fun `test resolve positional field in numeric struct pattern`() = checkByCode(
+        """
+        module 0x1::M {
+            struct S(u8, bool);
+                   //X
+
+            fun main() {
+                let S { 0: a, 1: _b } = make_s();
+                      //^
+                a;
+            }
+
+            fun make_s(): S {
+                S(1, true)
+            }
+        }
+    """
+    )
+
+    fun `test resolve positional field from dot access`() = checkByCode(
+        """
+        module 0x1::M {
+            struct S(u8, bool);
+                   //X
+
+            fun main(s: &S) {
+                s.0;
+                //^
+            }
+        }
+    """
+    )
+
     fun `test resolve field for borrow_global_mut`() = checkByCode(
         """
         module 0x1::M {

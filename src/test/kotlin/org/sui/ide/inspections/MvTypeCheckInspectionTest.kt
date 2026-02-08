@@ -1193,6 +1193,19 @@ module 0x1::pool {
     """
     )
 
+    fun `test no invalid unpacking for tuple struct pat`() = checkByText(
+        """
+        module 0x1::m {
+            struct S<phantom CoinType>(u8, bool);
+            fun call<CallCoinType>(s: S<CallCoinType>) {
+                let S(amount, flag) = s;
+                amount;
+                flag;
+            }
+        }
+    """
+    )
+
     fun `test no invalid unpacking for variable in parens`() = checkByText(
         """
         module 0x1::m {

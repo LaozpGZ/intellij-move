@@ -37,6 +37,16 @@ interface MvFieldReferenceElement: MvMandatoryReferenceElement
 abstract class MvStructLitFieldMixin(node: ASTNode): MvElementImpl(node),
                                                      MvStructLitField {
 
+    override val identifier
+        get() = findStructFieldNameElement() ?: error("Field name is missing")
+
+    override val referenceNameElement
+        get() = findStructFieldNameElement() ?: error("Field name is missing")
+
+    override val referenceName: String
+        get() = fieldDeclName()
+            ?: (findStructFieldNameElement()?.text ?: error("Field name is missing"))
+
     override fun getReference(): MvPolyVariantReference = MvStructLitFieldReferenceImpl(this)
 }
 
@@ -81,6 +91,3 @@ abstract class MvStructLitFieldMixin(node: ASTNode): MvElementImpl(node),
 //            else -> null
 //        }
 //    }
-
-
-

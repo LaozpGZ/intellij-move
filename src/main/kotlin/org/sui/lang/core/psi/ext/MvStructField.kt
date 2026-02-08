@@ -5,8 +5,14 @@ import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
 import org.sui.ide.MoveIcons
 import org.sui.lang.core.psi.MvBlockFields
+import org.sui.lang.core.psi.MvNamedElement
 import org.sui.lang.core.psi.MvNamedFieldDecl
+import org.sui.lang.core.psi.MvTupleFieldDecl
 import org.sui.lang.core.psi.impl.MvMandatoryNameIdentifierOwnerImpl
+import org.sui.lang.core.psi.type
+import org.sui.lang.core.types.infer.loweredType
+import org.sui.lang.core.types.ty.Ty
+import org.sui.lang.core.types.ty.TyUnknown
 import javax.swing.Icon
 
 val MvNamedFieldDecl.blockFields: MvBlockFields?
@@ -32,3 +38,12 @@ abstract class MvNamedFieldDeclMixin(node: ASTNode) : MvMandatoryNameIdentifierO
         )
     }
 }
+
+fun MvNamedElement.fieldTy(msl: Boolean): Ty = when (this) {
+    is MvNamedFieldDecl -> this.type?.loweredType(msl) ?: TyUnknown
+    is MvTupleFieldDecl -> this.type.loweredType(msl)
+    else -> TyUnknown
+}
+
+val MvNamedElement.fieldTy: Ty
+    get() = fieldTy(this.isMsl())

@@ -103,6 +103,43 @@ fun MvPat.extractBindings(fcx: TypeInferenceWalker, ty: Ty, defBm: RsBindingMode
                 p.extractBindings(fcx, patType)
             }
         }
+        is MvPatTupleStruct -> {
+            val (expected, patBm) = ty.stripReferences(defBm)
+            fcx.ctx.writePatTy(this, expected)
+
+            val item =
+                fcx.resolvePathElement(this, expected) as? MvFieldsOwner
+                    ?: (expected as? TyAdt)?.item as? MvFieldsOwner
+
+            if (item == null) {
+                this.patList.forEach { it.extractBindings(fcx, TyUnknown, patBm) }
+                return
+            }
+
+            val patTy = if (item is MvTypeParametersOwner) {
+                fcx.ctx.instantiateMethodOrPath<TyAdt>(this.path, item)?.first
+            } else {
+                null
+            }
+            if (item is MvTypeParametersOwner && patTy != null && !isCompatible(expected, patTy, fcx.msl)) {
+                fcx.reportTypeError(TypeError.InvalidUnpacking(this, ty))
+            }
+
+            val substitution = when {
+                patTy != null -> patTy.substitution
+                expected is TyAdt -> expected.substitution
+                else -> emptySubstitution
+            }
+
+            val tupleFields = item.positionalFields
+            for ((idx, pat) in this.patList.withIndex()) {
+                val fieldType = tupleFields.getOrNull(idx)
+                    ?.fieldTy(fcx.msl)
+                    ?.substituteOrUnknown(substitution)
+                    ?: TyUnknown
+                pat.extractBindings(fcx, fieldType, patBm)
+            }
+        }
     }
 }
 

@@ -48,10 +48,19 @@ class MvPath2ReferenceImpl(element: MvPath): MvPolyVariantReferenceBase<MvPath>(
     private fun rawMultiResolveUsingInferenceCache(): List<RsPathResolveResult<MvElement>>? {
         val pathElement = element.parent as? InferenceCachedPathElement ?: return null
         val msl = pathElement.isMsl()
-        return pathElement.inference(msl)?.getResolvedPath(pathElement.path)
-            ?.map {
-                RsPathResolveResult(it.element, it.isVisible)
+        val cachedPath = try {
+            pathElement.inference(msl)?.getResolvedPath(pathElement.path)
+        } catch (e: IllegalStateException) {
+            if (e.message?.contains("Cannot run nested type inference") == true) {
+                null
+            } else {
+                throw e
             }
+        } ?: return null
+        if (cachedPath.isEmpty()) return null
+        return cachedPath.map {
+            RsPathResolveResult(it.element, it.isVisible)
+        }
     }
 
     private fun rawCachedMultiResolve(): List<RsPathResolveResult<MvElement>> {

@@ -204,6 +204,19 @@ class ExpressionTypesTest : TypificationTestCase() {
     """
     )
 
+    fun `test dot access to tuple struct field`() = testExpr(
+        """
+    module 0x1::M {
+        struct S(u8, bool);
+        fun main() {
+            let s = S(1u8, true);
+            ((&s).0);
+          //^ u8
+        }
+    }
+    """
+    )
+
     fun `test dot access to field with struct type`() = testExpr(
         """
     module 0x1::M {

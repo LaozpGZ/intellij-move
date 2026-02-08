@@ -3,6 +3,7 @@ package org.sui.lang.core.psi.ext
 import com.intellij.lang.ASTNode
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.resolve.RsResolveProcessor
+import org.sui.lang.core.resolve.collectResolveVariants
 import org.sui.lang.core.resolve.process
 import org.sui.lang.core.resolve.processAll
 import org.sui.lang.core.resolve.ref.MvPolyVariantReference
@@ -22,15 +23,15 @@ fun processNamedFieldVariants(
     if (!isFieldsAccessible(element, receiverItem, msl)) return false
 
     return when (receiverItem) {
-        is MvStruct -> processor.processAll(NONE, receiverItem.namedFields)
+        is MvStruct -> processor.processAll(NONE, receiverItem.allFields)
         is MvEnum -> {
             val visitedFields = mutableSetOf<String>()
             for (variant in receiverItem.variants) {
                 val visitedVariantFields = mutableSetOf<String>()
-                for (namedField in variant.namedFields) {
-                    val fieldName = namedField.name
+                for (field in variant.allFields) {
+                    val fieldName = field.name ?: continue
                     if (fieldName in visitedFields) continue
-                    if (processor.process(NONE, namedField)) return true
+                    if (processor.process(NONE, field)) return true
                     // collect all names for the variant
                     visitedVariantFields.add(fieldName)
                 }
@@ -65,12 +66,29 @@ class MvStructDotFieldReferenceImpl(
         val msl = element.isMsl()
         val receiverExpr = element.receiverExpr
         val inference = receiverExpr.inference(msl) ?: return emptyList()
-        return inference.getResolvedField(element).wrapWithList()
+        val resolvedField = inference.getResolvedField(element)
+        if (resolvedField != null) return resolvedField.wrapWithList()
+
+        val fieldName = element.fieldDeclName() ?: return emptyList()
+        return collectResolveVariants(fieldName) {
+            val receiverTy = inference.getExprType(receiverExpr) as? TyAdt ?: return@collectResolveVariants
+            processNamedFieldVariants(element, receiverTy, msl, it)
+        }
     }
 }
 
 abstract class MvStructDotFieldMixin(node: ASTNode): MvElementImpl(node),
                                                      MvStructDotField {
+    override val identifier
+        get() = findStructFieldNameElement() ?: error("Field name is missing")
+
+    override val referenceNameElement
+        get() = findStructFieldNameElement() ?: error("Field name is missing")
+
+    override val referenceName: String
+        get() = fieldDeclName()
+            ?: (findStructFieldNameElement()?.text ?: error("Field name is missing"))
+
     override fun getReference(): MvPolyVariantReference {
         return MvStructDotFieldReferenceImpl(this)
     }

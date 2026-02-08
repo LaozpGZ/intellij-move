@@ -49,7 +49,7 @@ FILE
               MvPathImpl(PATH)
                 PsiElement(IDENTIFIER)('bin')
             PsiElement(.)('.')
-            PsiErrorElement:IDENTIFIER expected, got 'S'
+            PsiErrorElement:<struct dot field>, IDENTIFIER or INTEGER_LITERAL expected, got 'S'
               <empty list>
         PsiWhiteSpace(' ')
         MvExprStmtImpl(EXPR_STMT)
@@ -114,7 +114,7 @@ FILE
               MvPathImpl(PATH)
                 PsiElement(IDENTIFIER)('bin')
             PsiElement(.)('.')
-            PsiErrorElement:IDENTIFIER expected, got 'aptos_token'
+            PsiErrorElement:<struct dot field>, IDENTIFIER or INTEGER_LITERAL expected, got 'aptos_token'
               <empty list>
         PsiWhiteSpace(' ')
         MvExprStmtImpl(EXPR_STMT)
@@ -135,7 +135,7 @@ FILE
               MvPathImpl(PATH)
                 PsiElement(IDENTIFIER)('bin')
             PsiElement(.)('.')
-            PsiErrorElement:IDENTIFIER expected, got 'b"'
+            PsiErrorElement:<struct dot field> or IDENTIFIER expected, got 'b"'
               <empty list>
         PsiWhiteSpace(' ')
         MvExprStmtImpl(EXPR_STMT)
@@ -150,7 +150,7 @@ FILE
               MvPathImpl(PATH)
                 PsiElement(IDENTIFIER)('bin')
             PsiElement(.)('.')
-            PsiErrorElement:IDENTIFIER expected, got 'x"'
+            PsiErrorElement:<struct dot field> or IDENTIFIER expected, got 'x"'
               <empty list>
         PsiWhiteSpace(' ')
         MvExprStmtImpl(EXPR_STMT)
@@ -165,7 +165,7 @@ FILE
               MvPathImpl(PATH)
                 PsiElement(IDENTIFIER)('bin')
             PsiElement(.)('.')
-            PsiErrorElement:IDENTIFIER expected, got 'return'
+            PsiErrorElement:<struct dot field> or IDENTIFIER expected, got 'return'
               <empty list>
         PsiWhiteSpace(' ')
         MvReturnExprImpl(RETURN_EXPR)

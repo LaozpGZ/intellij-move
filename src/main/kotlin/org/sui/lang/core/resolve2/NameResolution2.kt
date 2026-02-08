@@ -51,6 +51,18 @@ fun processPatBindingResolveVariants(
             if (isCompletion) return false
         }
     }
+    if (binding.parent is MvPatTupleStruct) {
+        val parentPat = binding.parent as MvPatTupleStruct
+        val structItem = parentPat.path.reference?.resolveFollowingAliases() as? MvFieldsOwner
+        if (structItem != null) {
+            val bindingIndex = parentPat.patList.indexOf(binding)
+            val positionalField = structItem.positionalFields.getOrNull(bindingIndex)
+            val fieldName = positionalField?.name
+            if (fieldName != null && originalProcessor.process(fieldName, NAMES, positionalField)) {
+                return true
+            }
+        }
+    }
     // copied as is from the intellij-rust, handles all items that can be matched in match arms
     val processor = originalProcessor.wrapWithFilter { entry ->
         if (originalProcessor.acceptsName(entry.name)) {
@@ -219,8 +231,8 @@ fun walkUpThroughScopes(
 }
 
 private fun processFieldDeclarations(struct: MvFieldsOwner, processor: RsResolveProcessor): Boolean =
-    struct.fields.any { field ->
-        val name = field.name
+    struct.allFields.any { field ->
+        val name = field.name ?: return@any false
         processor.process(name, NAMES, field)
     }
 

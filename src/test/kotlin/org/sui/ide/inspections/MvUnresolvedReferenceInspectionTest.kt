@@ -396,6 +396,17 @@ class MvUnresolvedReferenceInspectionTest : InspectionTestBase(MvUnresolvedRefer
     """
     )
 
+    fun `test unresolved positional field for dot expression out of range`() = checkByText(
+        """
+    module 0x1::M {
+        struct S(u8, bool);
+        fun call(s: &S) {
+            s.<error descr="Unresolved field: `2` (tuple index out of range)">2</error>;
+        }
+    }
+    """
+    )
+
     fun `test unresolved module import`() = checkByText(
         """
     module 0x1::Main {

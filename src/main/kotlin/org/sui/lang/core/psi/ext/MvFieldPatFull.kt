@@ -17,7 +17,15 @@ val MvPatFieldFull.parentPatStruct: MvPatStruct get() = ancestorStrict()!!
 abstract class MvPatFieldFullMixin(node: ASTNode): MvElementImpl(node),
                                                    MvPatFieldFull {
 
-    override val referenceNameElement: PsiElement get() = this.identifier
+    override val identifier: PsiElement
+        get() = findStructFieldNameElement() ?: error("Field name is missing")
+
+    override val referenceNameElement: PsiElement
+        get() = findStructFieldNameElement() ?: error("Field name is missing")
+
+    override val referenceName: String
+        get() = fieldDeclName()
+            ?: (findStructFieldNameElement()?.text ?: error("Field name is missing"))
 
     override fun getReference(): MvPolyVariantReference =
         object: MvPolyVariantReferenceCached<MvPatFieldFull>(this@MvPatFieldFullMixin) {

@@ -2,6 +2,7 @@ package org.sui.ide.inspections
 
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
+import com.intellij.psi.util.PsiTreeUtil
 import org.sui.cli.settings.isDebugModeEnabled
 import org.sui.cli.settings.moveLanguageFeatures
 import org.sui.ide.inspections.imports.AutoImportFix
@@ -13,6 +14,7 @@ import org.sui.lang.core.psi.impl.MvPathImpl
 import org.sui.lang.core.resolve.ref.MvReferenceElement
 import org.sui.lang.core.resolve2.PathKind.*
 import org.sui.lang.core.resolve2.pathKind
+import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.ty.TyUnknown
 
 class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
@@ -183,6 +185,18 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
 
         val description = "Unresolved $itemType: `$referenceName`"
         if (resolveVariants.isEmpty()) {
+            if (referenceElement is MvStructDotField
+                && referenceName.all { it.isDigit() }
+                && isTupleFieldOutOfRange(referenceElement, referenceName)
+            ) {
+                holder.registerProblem(
+                    highlightedElement,
+                    "Unresolved field: `$referenceName` (tuple index out of range)",
+                    ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
+                )
+                return
+            }
+
             val fix = when (referenceElement) {
                 is MvPath -> {
                     val candidates = AutoImportFix.findApplicableContext(referenceElement)?.candidates.orEmpty()
@@ -215,5 +229,23 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
                 ProblemHighlightType.LIKE_UNKNOWN_SYMBOL,
             )
         }
+    }
+
+    private fun isTupleFieldOutOfRange(dotField: MvStructDotField, fieldName: String): Boolean {
+        val dotExpr = PsiTreeUtil.getParentOfType(dotField, MvDotExpr::class.java) ?: return false
+        val receiverExpr = dotExpr.expr
+        val receiverTy = dotField.inferReceiverTy(dotField.isMsl())
+            .derefIfNeeded() as? org.sui.lang.core.types.ty.TyAdt
+            ?: return false
+
+        val owner = receiverTy.item as? MvFieldsOwner ?: return false
+        if (owner.positionalFields.isEmpty()) return false
+
+        val index = fieldName.toIntOrNull() ?: return false
+        if (index < 0) return false
+
+        // ensure receiver expression is typed to avoid stale completion snapshots
+        receiverExpr.inference(dotField.isMsl())?.getExprTypeOrNull(receiverExpr)
+        return index >= owner.positionalFields.size
     }
 }

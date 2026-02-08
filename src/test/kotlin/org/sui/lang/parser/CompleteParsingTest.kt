@@ -50,6 +50,7 @@ class CompleteParsingTest : MvParsingTestCase("complete") {
     // structs
     fun `test struct declarations`() = doTest()
     fun `test struct literals`() = doTest()
+    fun `test tuple struct fields`() = doTest()
 
     // misc
     fun `test while loop inline assignment`() = doTest()
