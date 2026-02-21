@@ -46,8 +46,14 @@ class TypeInferenceWalker(
     val project: Project,
     private val returnTy: Ty
 ) {
+    private data class LoopContext(
+        val label: String?,
+        val breakValues: MutableList<Pair<MvBreakExpr, Ty>> = mutableListOf()
+    )
+
     private val specBindingNamesCache = mutableMapOf<MvCodeBlock, Set<String>>()
     private val macroSemanticService: MacroSemanticService = DefaultMacroSemanticService
+    private val loopContexts = mutableListOf<LoopContext>()
 
     val msl: Boolean get() = ctx.msl
 
@@ -480,6 +486,8 @@ class TypeInferenceWalker(
                 ty
             }
             is MvBreakExpr -> {
+                val breakValueTy = expr.expr?.inferType() ?: TyUnit
+                resolveBreakLoopContext(expr)?.breakValues?.add(expr to breakValueTy)
                 val ty = TyNever
                 ctx.writeExprTy(expr, ty)
                 ty
@@ -2332,11 +2340,6 @@ class TypeInferenceWalker(
                 ctx.writeExprTy(conditionExpr, ty)
             }
         }
-
-        // Ensure the while expression itself is typed.
-        if (!ctx.isTypeInferred(whileExpr)) {
-            ctx.writeExprTy(whileExpr, TyNever)
-        }
         return inferLoopLikeBlock(whileExpr)
     }
 
@@ -2367,55 +2370,55 @@ class TypeInferenceWalker(
     }
 
     private fun inferLoopLikeBlock(loopLike: MvLoopLike): Ty {
-        // Infer loop condition types.
-        when (loopLike) {
-            is MvWhileExpr -> {
-                val condition = loopLike.condition
-                val expr = condition?.expr
-                if (expr != null) {
-                    if (!ctx.isTypeInferred(expr)) {
-                        val ty = expr.inferTypeCoercableTo(TyBool)
-                        ctx.writeExprTy(expr, ty)
-                    }
-                }
-
-                // Type the while expression itself.
-                if (!ctx.isTypeInferred(loopLike)) {
-                    ctx.writeExprTy(loopLike, TyNever)
-                }
+        val loopContext = LoopContext(loopLike.labelDecl?.quoteIdentifier?.text)
+        loopContexts.add(loopContext)
+        try {
+            val codeBlock = loopLike.codeBlock
+            val inlineBlockExpr = loopLike.inlineBlock?.expr
+            val expected = Expectation.maybeHasType(TyUnit)
+            when {
+                codeBlock != null -> codeBlock.inferBlockType(expected)
+                inlineBlockExpr != null -> inlineBlockExpr.inferType(expected)
             }
-            is MvForExpr -> {
-                val forIterCondition = loopLike.forIterCondition
-                val expr = forIterCondition?.expr
-                if (expr != null) {
-                    if (!ctx.isTypeInferred(expr)) {
-                        val ty = expr.inferType()
-                        ctx.writeExprTy(expr, ty)
-                    }
-                }
-
-                // Type the for expression itself.
-                if (!ctx.isTypeInferred(loopLike)) {
-                    ctx.writeExprTy(loopLike, TyNever)
-                }
-            }
-            is MvLoopExpr -> {
-                // Type the loop expression itself.
-                if (!ctx.isTypeInferred(loopLike)) {
-                    ctx.writeExprTy(loopLike, TyNever)
-                }
-            }
+        } finally {
+            loopContexts.removeAt(loopContexts.lastIndex)
         }
 
-        val codeBlock = loopLike.codeBlock
-        val inlineBlockExpr = loopLike.inlineBlock?.expr
-        val expected = Expectation.maybeHasType(TyUnit)
-        when {
-            codeBlock != null -> codeBlock.inferBlockType(expected)
-            inlineBlockExpr != null -> inlineBlockExpr.inferType(expected)
-        }
+        return inferLoopBreakType(loopContext)
+    }
 
-        return TyNever
+    private fun resolveBreakLoopContext(breakExpr: MvBreakExpr): LoopContext? {
+        val targetLabel = breakExpr.quoteIdentifier?.text
+        return if (targetLabel == null) {
+            loopContexts.lastOrNull()
+        } else {
+            loopContexts.lastOrNull { it.label == targetLabel }
+        }
+    }
+
+    private fun inferLoopBreakType(loopContext: LoopContext): Ty {
+        if (loopContext.breakValues.isEmpty()) return TyNever
+
+        var resultTy: Ty? = null
+        for ((breakExpr, breakValueTy) in loopContext.breakValues) {
+            val currentTy = resultTy
+            if (currentTy == null) {
+                resultTy = breakValueTy
+                continue
+            }
+
+            if (ctx.tryCoerce(breakValueTy, currentTy).isOk) {
+                continue
+            }
+            if (ctx.tryCoerce(currentTy, breakValueTy).isOk) {
+                resultTy = breakValueTy
+                continue
+            }
+
+            ctx.reportTypeError(TypeError.TypeMismatch(breakExpr.expr ?: breakExpr, currentTy, breakValueTy))
+            resultTy = TyUnknown
+        }
+        return resultTy ?: TyNever
     }
 
     private fun inferMatchExprTy(matchExpr: MvMatchExpr): Ty {

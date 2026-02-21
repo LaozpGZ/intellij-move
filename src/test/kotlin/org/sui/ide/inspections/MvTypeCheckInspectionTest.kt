@@ -894,6 +894,36 @@ module 0x1::main {
     """
     )
 
+    fun `test loop break values must have compatible types`() = checkErrors(
+        """
+module 0x1::main {
+    fun main() {
+        let _ = loop {
+            if (true) {
+                break 1u8;
+            };
+            break <error descr="Incompatible type 'bool', expected 'u8'">false</error>;
+        };
+    }
+}
+    """
+    )
+
+    fun `test labelled break value participates in outer loop type merge`() = checkErrors(
+        """
+module 0x1::main {
+    fun main() {
+        let _ = 'outer: loop {
+            loop {
+                break 'outer 1u8;
+            };
+            break <error descr="Incompatible type 'bool', expected 'u8'">false</error>;
+        };
+    }
+}
+    """
+    )
+
     fun `test integer arguments of the same type support ordering`() = checkByText(
         """
 module 0x1::main {

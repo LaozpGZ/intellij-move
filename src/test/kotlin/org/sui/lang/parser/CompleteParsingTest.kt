@@ -60,6 +60,7 @@ class CompleteParsingTest : MvParsingTestCase("complete") {
 
     fun `test macros`() = doTest()
     fun `test loops`() = doTest()
+    fun `test break values`() = doTest()
 
     fun `test paths`() = doTest()
 

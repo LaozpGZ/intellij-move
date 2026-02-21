@@ -913,6 +913,7 @@ private Expr_first ::= let
                         | if
                         | while
                         | loop
+                        | QUOTE_IDENTIFIER
                         | continue
                         | break
                         | return
@@ -1103,7 +1104,7 @@ MoveExpr ::= move Expr
 ReturnExpr ::= return Expr?
 
 AbortExpr ::= abort Expr
-BreakExpr ::= break (QUOTE_IDENTIFIER)?
+BreakExpr ::= break (QUOTE_IDENTIFIER)? Expr?
 ContinueExpr ::= continue (QUOTE_IDENTIFIER)?
 
 VectorLitExpr ::= <<vectorIdent>> ('<' TypeArgument '>')? VectorLitItems

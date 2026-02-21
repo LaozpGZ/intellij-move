@@ -1117,6 +1117,36 @@ module 0x1::main {
     """
     )
 
+    fun `test loop expr type from break value`() = testExpr(
+        """
+        module 0x1::m {
+            fun main() {
+                let value = loop {
+                    break 1u8;
+                };
+                value;
+              //^ u8
+            }
+        }
+    """
+    )
+
+    fun `test labelled break value infers outer loop type`() = testExpr(
+        """
+        module 0x1::m {
+            fun main() {
+                let value = 'outer: loop {
+                    loop {
+                        break 'outer 1u8;
+                    };
+                };
+                value;
+              //^ u8
+            }
+        }
+    """
+    )
+
     fun `test abort expr never type`() = testExpr(
         """
         module 0x1::m {

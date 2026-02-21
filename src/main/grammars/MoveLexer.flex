@@ -119,6 +119,7 @@ IDENTIFIER=[$]?[_a-zA-Z][_a-zA-Z0-9]* | `type`
       "|"        { return OR; }
       "@"        { return AT; }
       "#"        { return HASH; }
+      "'"        { yybegin(IN_LIFETIME_OR_CHAR); yypushback(1); }
       "=>"       { return FAT_ARROW; }
       "`"        { return BACKTICK;}
 
