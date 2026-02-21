@@ -11,9 +11,7 @@ import org.sui.lang.core.psi.MvStructLitField
 import org.sui.lang.core.psi.MvStructLitFieldsBlock
 import org.sui.lang.core.psi.MvValueArgumentList
 import org.sui.lang.core.psi.ext.*
-import org.sui.lang.core.psi.type
-import org.sui.lang.core.types.infer.loweredType
-import org.sui.lang.core.types.ty.TyUnknown
+import org.sui.lang.core.psi.ext.fieldTy
 import org.sui.utils.AsyncParameterInfoHandlerBase
 
 class StructLitFieldsInfoHandler :
@@ -102,7 +100,7 @@ class FieldsDescription(val fields: Array<String>) {
 //            val itemContext = struct.outerItemContext(msl)
             val fieldParams =
                 struct.fieldsMap.entries.map { (name, field) ->
-                    val type = field.type?.loweredType(msl) ?: TyUnknown
+                    val type = field.fieldTy
 //                    val type = itemContext.getStructFieldItemTy(field).fullname()
                     "$name: $type"
                 }.toTypedArray()

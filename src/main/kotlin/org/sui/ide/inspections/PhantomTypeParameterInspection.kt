@@ -4,7 +4,7 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.util.descendantsOfType
 import org.sui.ide.inspections.fixes.PhantomFix
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.psi.ext.fields
+import org.sui.lang.core.psi.ext.fieldDecls
 import org.sui.lang.core.psi.ext.isPhantom
 import org.sui.lang.core.psi.ext.moveReference
 import org.sui.lang.core.psi.ext.typeArguments
@@ -15,10 +15,14 @@ class PhantomTypeParameterInspection : MvLocalInspectionTool() {
             override fun visitStruct(o: MvStruct) {
                 val usedTypeParams = mutableSetOf<MvTypeParameter>()
 
-                for (structField in o.fields) {
+                for (structField in o.fieldDecls) {
                     val fieldUsedTypeParams = mutableSetOf<MvTypeParameter>()
 
-                    val fieldType = structField.typeAnnotation?.type ?: continue
+                    val fieldType = when (structField) {
+                        is MvNamedFieldDecl -> structField.typeAnnotation?.type
+                        is MvTupleFieldDecl -> structField.type
+                        else -> null
+                    } ?: continue
                     for (path in fieldType.descendantsOfType<MvPath>()) {
                         if (path.typeArguments.isNotEmpty()) continue
                         val typeParam = path.reference?.resolve() as? MvTypeParameter ?: continue

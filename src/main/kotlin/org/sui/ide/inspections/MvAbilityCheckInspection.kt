@@ -7,12 +7,12 @@ import org.sui.ide.presentation.name
 import org.sui.ide.presentation.text
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.abilities
-import org.sui.lang.core.psi.ext.fields
+import org.sui.lang.core.psi.ext.fieldDecls
+import org.sui.lang.core.psi.ext.fieldTy
 import org.sui.lang.core.psi.ext.isMsl
 import org.sui.lang.core.psi.ext.fieldOwner
 import org.sui.lang.core.types.infer.inferExpectedTypeArgumentTy
 import org.sui.lang.core.types.infer.inference
-import org.sui.lang.core.types.infer.loweredType
 import org.sui.lang.core.types.ty.GenericTy
 import org.sui.lang.core.types.ty.TyUnknown
 
@@ -69,16 +69,22 @@ class MvAbilityCheckInspection: MvLocalInspectionTool() {
             override fun visitStruct(o: MvStruct) {
                 val structAbilities = o.abilities
                 if (structAbilities.isEmpty()) return
-                for (field in o.fields) {
-                    val fieldTy = field.type?.loweredType(false) ?: continue
+                for (field in o.fieldDecls) {
+                    val fieldTy = field.fieldTy
+                    if (fieldTy is TyUnknown) continue
                     val fieldAbilities = fieldTy.abilities()
                     for (ability in structAbilities) {
                         val requiredAbility = ability.requires()
                         if (requiredAbility !in fieldAbilities) {
+                            val fieldOwnerName = when (field) {
+                                is MvNamedFieldDecl -> field.fieldOwner.name
+                                is MvTupleFieldDecl -> field.fieldOwner?.name
+                                else -> null
+                            }
                             val message =
                                 "The type '${fieldTy.name()}' does not have the ability '${requiredAbility.label()}' " +
                                         "required by the declared ability '${ability.label()}' " +
-                                        "of the struct '${field.fieldOwner.name}'"
+                                        "of the struct '${fieldOwnerName}'"
                             holder.registerProblem(field, message, ProblemHighlightType.GENERIC_ERROR)
                         }
                     }

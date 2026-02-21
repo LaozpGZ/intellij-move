@@ -6,7 +6,7 @@ import com.intellij.navigation.ItemPresentation
 import com.intellij.psi.stubs.IStubElementType
 import org.sui.ide.MoveIcons
 import org.sui.lang.MvElementTypes
-import org.sui.lang.core.psi.MvNamedFieldDecl
+import org.sui.lang.core.psi.MvNamedElement
 import org.sui.lang.core.psi.MvStruct
 import org.sui.lang.core.psi.psiFactory
 import org.sui.lang.core.psi.typeParameters
@@ -17,15 +17,15 @@ import org.sui.lang.core.types.ty.Ability
 import org.sui.stdext.withAdded
 import javax.swing.Icon
 
-val MvStruct.fields: List<MvNamedFieldDecl>
-    get() = blockFields?.namedFieldDeclList.orEmpty()
+val MvStruct.fieldDecls: List<MvNamedElement>
+    get() = this.allFields
 
-val MvStruct.fieldsMap: Map<String, MvNamedFieldDecl>
+val MvStruct.fieldsMap: Map<String, MvNamedElement>
     get() {
-        return fields.associateBy { it.name }
+        return fieldDecls.associateBy { it.name ?: "" }.filterKeys { it.isNotEmpty() }
     }
 
-val MvStruct.fieldNames: List<String> get() = fields.map { it.name }
+val MvStruct.fieldNames: List<String> get() = fieldDecls.mapNotNull { it.name }
 
 val MvStruct.isPublic: Boolean
     get() = this.node.findChildByType(MvElementTypes.PUBLIC) != null
