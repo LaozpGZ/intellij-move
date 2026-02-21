@@ -11,7 +11,7 @@ jobs:
         strategy:
             matrix:
                 os: [ ubuntu-latest ]
-                gradle-properties-version: [ 223, 231, 232 ]
+                gradle-properties-version: [ 253 ]
 
         runs-on: ${{ matrix.os }}
         env:
@@ -20,11 +20,11 @@ jobs:
         steps:
             -   uses: actions/checkout@v3
 
-            -   name: Set up JDK 17
+            -   name: Set up JDK 21
                 uses: actions/setup-java@v3
                 with:
                     distribution: 'corretto'
-                    java-version: 17
+                    java-version: 21
 
             -   name: Setup Gradle and dependencies
                 uses: gradle/gradle-build-action@v2.7.0
@@ -61,7 +61,7 @@ jobs:
                 uses: gradle/gradle-build-action@v2.7.0
                 with:
                     gradle-version: wrapper
-                    arguments: ":plugin:verifyPluginConfiguration -Pkotlin.incremental=false --no-daemon"
+                    arguments: "verifyPluginProjectConfiguration -Pkotlin.incremental=false --no-daemon"
                     gradle-home-cache-excludes: |
                         caches/modules-2/files-2.1/com.jetbrains.intellij.pycharm
                         caches/modules-2/files-2.1/com.jetbrains.intellij.idea
@@ -71,7 +71,63 @@ jobs:
                 uses: gradle/gradle-build-action@v2.7.0
                 with:
                     gradle-version: wrapper
-                    arguments: ":plugin:runPluginVerifier -Pkotlin.incremental=false --no-daemon"
+                    arguments: "verifyPlugin -Pkotlin.incremental=false --no-daemon"
+                    gradle-home-cache-excludes: |
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.pycharm
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.idea
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.clion
+
+    eap-preverify:
+        runs-on: ubuntu-latest
+        continue-on-error: true
+        env:
+            ORG_GRADLE_PROJECT_shortPlatformVersion: 261
+
+        steps:
+            -   uses: actions/checkout@v3
+
+            -   name: Set up JDK 21
+                uses: actions/setup-java@v3
+                with:
+                    distribution: 'corretto'
+                    java-version: 21
+
+            -   name: Setup Gradle and dependencies
+                uses: gradle/gradle-build-action@v2.7.0
+                with:
+                    gradle-version: wrapper
+                    cache-read-only: false
+                    arguments: ":resolveDependencies -Pkotlin.incremental=false --no-daemon"
+                    gradle-home-cache-excludes: |
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.pycharm
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.idea
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.clion
+
+            -   name: Build
+                uses: gradle/gradle-build-action@v2.7.0
+                with:
+                    gradle-version: wrapper
+                    arguments: "assemble testClasses -Pkotlin.incremental=false --no-daemon --stacktrace"
+                    gradle-home-cache-excludes: |
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.pycharm
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.idea
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.clion
+
+            -   name: Verify plugin.xml
+                uses: gradle/gradle-build-action@v2.7.0
+                with:
+                    gradle-version: wrapper
+                    arguments: "verifyPluginProjectConfiguration -Pkotlin.incremental=false --no-daemon"
+                    gradle-home-cache-excludes: |
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.pycharm
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.idea
+                        caches/modules-2/files-2.1/com.jetbrains.intellij.clion
+
+            -   name: Verify plugin
+                uses: gradle/gradle-build-action@v2.7.0
+                with:
+                    gradle-version: wrapper
+                    arguments: "verifyPlugin -Pkotlin.incremental=false --no-daemon"
                     gradle-home-cache-excludes: |
                         caches/modules-2/files-2.1/com.jetbrains.intellij.pycharm
                         caches/modules-2/files-2.1/com.jetbrains.intellij.idea

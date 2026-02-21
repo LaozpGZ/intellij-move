@@ -37,6 +37,7 @@ fun gitTimestamp(): String =
 
 val psiViewerPlugin: String by project
 val shortPlatformVersion = prop("shortPlatformVersion")
+val shortPlatformVersionInt = shortPlatformVersion.toIntOrNull() ?: 0
 val useInstallerFlag = prop("useInstaller").toBooleanStrict()
 val codeVersion = "1.6.2"
 var pluginVersion = "$codeVersion.$shortPlatformVersion"
@@ -50,7 +51,7 @@ if (publishingChannel != "default") {
 val pluginGroup = "org.sui"
 val pluginName = "intellij-sui-move"
 val pluginJarName = "intellij-sui-move-$pluginVersion"
-val javaVersion = JavaVersion.VERSION_17
+val targetBytecodeVersion = if (shortPlatformVersionInt >= 253) JavaVersion.VERSION_21 else JavaVersion.VERSION_17
 
 val kotlinReflectVersion = "2.2.20"
 
@@ -61,7 +62,7 @@ plugins {
     id("java")
     kotlin("jvm") version "2.2.20"
     id("org.jetbrains.intellij.platform") version "2.11.0"
-    id("org.jetbrains.grammarkit") version "2023.3.0.1"
+    id("org.jetbrains.grammarkit") version "2023.3.0.2"
     id("net.saliman.properties") version "1.5.2"
     id("org.gradle.idea")
     id("de.undercouch.download") version "5.5.0"
@@ -98,7 +99,6 @@ allprojects {
 //            plugins(listOf(psiViewerPlugin))
             val platformType = prop("platformType")
             val platformVersion = prop("platformVersion")
-            val shortPlatformVersionInt = shortPlatformVersion.toIntOrNull() ?: 0
             if (platformType == "IC" && shortPlatformVersionInt >= 253) {
                 intellijIdea(platformVersion) {
                     useInstaller.set(useInstallerFlag)
@@ -116,8 +116,8 @@ allprojects {
     }
 
     configure<JavaPluginExtension> {
-        sourceCompatibility = javaVersion
-        targetCompatibility = javaVersion
+        sourceCompatibility = targetBytecodeVersion
+        targetCompatibility = targetBytecodeVersion
         toolchain.languageVersion.set(JavaLanguageVersion.of(21))
     }
 
@@ -143,7 +143,10 @@ allprojects {
             version.set(pluginVersion)
             ideaVersion {
                 sinceBuild.set(prop("pluginSinceBuild"))
-                untilBuild.set(prop("pluginUntilBuild"))
+                val untilBuildValue = propOrNull("pluginUntilBuild")?.trim().orEmpty()
+                if (untilBuildValue.isNotEmpty()) {
+                    untilBuild.set(untilBuildValue)
+                }
             }
             val codeVersionForUrl = codeVersion.replace('.', '-')
             changeNotes.set(
@@ -217,7 +220,7 @@ allprojects {
         withType<KotlinCompile> {
             dependsOn(generateLexer, generateParser)
             compilerOptions {
-                jvmTarget.set(JvmTarget.JVM_17)
+                jvmTarget.set(if (shortPlatformVersionInt >= 253) JvmTarget.JVM_21 else JvmTarget.JVM_17)
                 languageVersion.set(KotlinVersion.KOTLIN_2_2)
                 apiVersion.set(KotlinVersion.KOTLIN_2_2)
                 freeCompilerArgs.add("-Xjvm-default=all")
