@@ -16,6 +16,10 @@ jobs:
         runs-on: ${{ matrix.os }}
         env:
             ORG_GRADLE_PROJECT_shortPlatformVersion: ${{ matrix.gradle-properties-version }}
+            PLUGIN_VERIFIER_MAX_INTERNAL_API_USAGES: 0
+            PLUGIN_VERIFIER_MAX_SCHEDULED_FOR_REMOVAL_API_USAGES: 12
+            PLUGIN_VERIFIER_MAX_DEPRECATED_API_USAGES: 28
+            PLUGIN_VERIFIER_BUDGET_ENFORCEMENT: strict
 
         steps:
             -   uses: actions/checkout@v3
@@ -77,11 +81,27 @@ jobs:
                         caches/modules-2/files-2.1/com.jetbrains.intellij.idea
                         caches/modules-2/files-2.1/com.jetbrains.intellij.clion
 
+            -   name: Summarize Plugin Verifier report
+                if: always()
+                run: bash ".github/scripts/plugin-verifier-summary.sh"
+
+            -   name: Upload Plugin Verifier report
+                if: always()
+                uses: actions/upload-artifact@v4
+                with:
+                    name: pluginVerifier-${{ matrix.gradle-properties-version }}
+                    path: build/reports/pluginVerifier/
+                    if-no-files-found: ignore
+
     eap-preverify:
         runs-on: ubuntu-latest
         continue-on-error: true
         env:
             ORG_GRADLE_PROJECT_shortPlatformVersion: 261
+            PLUGIN_VERIFIER_MAX_INTERNAL_API_USAGES: 0
+            PLUGIN_VERIFIER_MAX_SCHEDULED_FOR_REMOVAL_API_USAGES: 12
+            PLUGIN_VERIFIER_MAX_DEPRECATED_API_USAGES: 38
+            PLUGIN_VERIFIER_BUDGET_ENFORCEMENT: warn
 
         steps:
             -   uses: actions/checkout@v3
@@ -132,3 +152,15 @@ jobs:
                         caches/modules-2/files-2.1/com.jetbrains.intellij.pycharm
                         caches/modules-2/files-2.1/com.jetbrains.intellij.idea
                         caches/modules-2/files-2.1/com.jetbrains.intellij.clion
+
+            -   name: Summarize Plugin Verifier report
+                if: always()
+                run: bash ".github/scripts/plugin-verifier-summary.sh"
+
+            -   name: Upload Plugin Verifier report
+                if: always()
+                uses: actions/upload-artifact@v4
+                with:
+                    name: pluginVerifier-261
+                    path: build/reports/pluginVerifier/
+                    if-no-files-found: ignore
