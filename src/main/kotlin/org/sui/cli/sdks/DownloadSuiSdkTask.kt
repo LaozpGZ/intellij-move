@@ -70,9 +70,9 @@ class DownloadSuiSdkTask(
                         gis.copyTo(bos)
                     }
                 }
-                Decompressor.Tar(tarFile)
+                Decompressor.Tar(tarFile.toPath())
                     .entryFilter { indicator.checkCanceled(); true }
-                    .extract(tmpExtractionDir)
+                    .extract(tmpExtractionDir.toPath())
             } catch (t: Throwable) {
                 if (t is ControlFlowException) throw t
                 throw RuntimeException(

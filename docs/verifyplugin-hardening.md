@@ -106,3 +106,19 @@
 - 与基线对比（2026-02-22 基线）：
   - `253 deprecated`：`28 -> 20`（下降 8）
   - `261 deprecated`：`38 -> 21`（下降 17）
+
+### 阶段 C 批次 2 完成记录（2026-02-22）
+
+- 已替换：
+  - `Decompressor.Zip(File)` -> `Decompressor.Zip(Path)`
+  - `Decompressor.Tar(File)` -> `Decompressor.Tar(Path)`
+  - `extract(File)` -> `extract(Path)`
+- 变更位置：
+  - `src/main/kotlin/org/sui/cli/sdks/DownloadAptosSdkTask.kt`
+  - `src/main/kotlin/org/sui/cli/sdks/DownloadSuiSdkTask.kt`
+- 验证结果：
+  - `./gradlew verifyPlugin --no-daemon`（253）：`scheduled=12, deprecated=16, experimental=119`
+  - `ORG_GRADLE_PROJECT_shortPlatformVersion=261 ./gradlew verifyPlugin --no-daemon`（261）：`scheduled=12, deprecated=17, experimental=119`
+- 与批次 1 对比：
+  - `253 deprecated`：`20 -> 16`（再下降 4）
+  - `261 deprecated`：`21 -> 17`（再下降 4）

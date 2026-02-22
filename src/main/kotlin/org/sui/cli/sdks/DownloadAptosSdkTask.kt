@@ -58,9 +58,9 @@ class DownloadAptosSdkTask(
             indicator.text2 = "Unpacking $archiveFileName"
             try {
                 tmpExtractionDir.mkdir()
-                Decompressor.Zip(tmpDownloadFile).withZipExtensions()
+                Decompressor.Zip(tmpDownloadFile.toPath()).withZipExtensions()
                     .entryFilter { indicator.checkCanceled(); true }
-                    .extract(tmpExtractionDir)
+                    .extract(tmpExtractionDir.toPath())
             } catch (t: Throwable) {
                 if (t is ControlFlowException) throw t
                 throw RuntimeException(
