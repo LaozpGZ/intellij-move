@@ -12,8 +12,8 @@ import com.intellij.codeInspection.ex.GlobalInspectionContextUtil
 import com.intellij.codeInspection.reference.RefElement
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.profile.codeInspection.InspectionProjectProfileManager
@@ -77,9 +77,9 @@ class MvExternalLinterInspection : GlobalSimpleInspectionTool() {
                 if (allProjects.size == 1) {
                     setOf(allProjects.first())
                 } else {
-                    runReadAction {
+                    ApplicationManager.getApplication().runReadAction(Computable {
                         analyzedFiles.mapNotNull { it.moveProject }.toSet()
-                    }
+                    })
                 }
             }
             val futures = moveProjects.map {
@@ -89,17 +89,17 @@ class MvExternalLinterInspection : GlobalSimpleInspectionTool() {
             }
             val annotationResults = futures.mapNotNull { it.get() }
 
-            val exit = runReadAction {
+            val exit = ApplicationManager.getApplication().runReadAction(Computable {
                 ProgressManager.checkCanceled()
-                if (anyPsiChangeDisposable.isDisposed) return@runReadAction false
-                if (annotationResults.size < moveProjects.size) return@runReadAction true
+                if (anyPsiChangeDisposable.isDisposed) return@Computable false
+                if (annotationResults.size < moveProjects.size) return@Computable true
                 for (annotationResult in annotationResults) {
                     val problemDescriptors = getProblemDescriptors(analyzedFiles, annotationResult)
                     val presentation = globalContext.getPresentation(toolWrapper)
                     presentation.addProblemDescriptors(problemDescriptors, globalContext)
                 }
                 true
-            }
+            })
 
             if (exit) break
         }
@@ -117,16 +117,16 @@ class MvExternalLinterInspection : GlobalSimpleInspectionTool() {
         private fun checkProjectLazily(
             moveProject: MoveProject,
             disposable: Disposable
-        ): Lazy<RsExternalLinterResult?>? = runReadAction {
+        ): Lazy<RsExternalLinterResult?>? = ApplicationManager.getApplication().runReadAction(Computable {
             val project = moveProject.project
-            val aptosCli = project.getAptosCli(disposable) ?: return@runReadAction null
+            val aptosCli = project.getAptosCli(disposable) ?: return@Computable null
             RsExternalLinterUtils.checkLazily(
                 aptosCli,
                 project,
                 moveProject.workingDirectory,
                 AptosCompileArgs.forMoveProject(moveProject)
             )
-        }
+        })
 
         private fun getProblemDescriptors(
             analyzedFiles: Set<MoveFile>,

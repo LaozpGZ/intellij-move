@@ -93,3 +93,16 @@
 1. 批次 1（低风险优先）：`runReadAction`、`UiCompatibleDataProvider`、`ProcessAdapter`
 2. 批次 2（中风险）：`Decompressor` 相关调用
 3. 批次 3（需要回归覆盖）：缓存容器替换（`ConcurrentWeakKeySoftValueHashMap`）
+
+### 阶段 C 批次 1 完成记录（2026-02-22）
+
+- 已替换：
+  - `ActionsKt.runReadAction(...)`
+  - `UiCompatibleDataProvider.getData(...)` 覆盖点
+  - `ProcessAdapter` 继承点
+- 验证结果：
+  - `./gradlew verifyPlugin --no-daemon`（253）：`scheduled=12, deprecated=20, experimental=119`
+  - `ORG_GRADLE_PROJECT_shortPlatformVersion=261 ./gradlew verifyPlugin --no-daemon`（261）：`scheduled=12, deprecated=21, experimental=119`
+- 与基线对比（2026-02-22 基线）：
+  - `253 deprecated`：`28 -> 20`（下降 8）
+  - `261 deprecated`：`38 -> 21`（下降 17）

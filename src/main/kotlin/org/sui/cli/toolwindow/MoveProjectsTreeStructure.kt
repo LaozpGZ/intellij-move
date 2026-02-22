@@ -1,7 +1,8 @@
 package org.sui.cli.toolwindow
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Computable
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.CachingSimpleNode
@@ -122,7 +123,8 @@ class MoveProjectsTreeStructure(
             }
 
             override fun buildChildren(): Array<SimpleNode> = emptyArray()
-            override fun getName(): String = runReadAction { module.qualName?.editorText() ?: "null" }
+            override fun getName(): String =
+                ApplicationManager.getApplication().runReadAction(Computable { module.qualName?.editorText() ?: "null" })
             override fun toTestString(): String = "Module($name)"
         }
 
@@ -141,7 +143,8 @@ class MoveProjectsTreeStructure(
             }
 
             override fun buildChildren(): Array<SimpleNode> = emptyArray()
-            override fun getName(): String = runReadAction { function.qualName?.editorText() ?: "null" }
+            override fun getName(): String =
+                ApplicationManager.getApplication().runReadAction(Computable { function.qualName?.editorText() ?: "null" })
             override fun toTestString(): String = "Entrypoint($name)"
         }
 
@@ -160,7 +163,8 @@ class MoveProjectsTreeStructure(
             }
 
             override fun buildChildren(): Array<SimpleNode> = emptyArray()
-            override fun getName(): String = runReadAction { function.qualName?.editorText() ?: "null" }
+            override fun getName(): String =
+                ApplicationManager.getApplication().runReadAction(Computable { function.qualName?.editorText() ?: "null" })
             override fun toTestString(): String = "View($name)"
         }
 

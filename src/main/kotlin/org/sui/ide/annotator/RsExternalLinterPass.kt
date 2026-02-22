@@ -13,9 +13,9 @@ import com.intellij.codeInsight.daemon.impl.FileStatusMap
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.UpdateHighlightersUtil
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.invokeLater
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
@@ -27,6 +27,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.CheckedDisposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
@@ -97,12 +98,12 @@ class RsExternalLinterPass(
                     val annotationResult = annotationResult ?: return@Runnable
                     myProject.service<RsExternalLinterSlowRunNotifier>()
                         .reportExecutionTime(annotationResult.executionTime)
-                    runReadAction {
+                    ApplicationManager.getApplication().runReadAction(Computable {
                         ProgressManager.checkCanceled()
                         doApply(annotationResult)
                         ProgressManager.checkCanceled()
                         doFinish(highlights)
-                    }
+                    })
                 })
             }
 

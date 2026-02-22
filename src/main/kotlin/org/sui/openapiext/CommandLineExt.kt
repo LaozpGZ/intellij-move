@@ -11,10 +11,11 @@ import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.notification.NotificationType.INFORMATION
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.Disposer
 import com.intellij.util.SystemProperties
 import com.intellij.util.io.systemIndependentPath
@@ -93,15 +94,15 @@ fun GeneralCommandLine.execute(
 
     @Suppress("DEPRECATION")
     val ownerIsAlreadyDisposed =
-        runReadAction {
+        ApplicationManager.getApplication().runReadAction(Computable {
             // check that owner is disposed, kill process then
-        if (Disposer.isDisposed(owner)) {
-            true
-        } else {
-            Disposer.register(owner, processKiller)
-            false
-        }
-    }
+            if (Disposer.isDisposed(owner)) {
+                true
+            } else {
+                Disposer.register(owner, processKiller)
+                false
+            }
+        })
 
     if (ownerIsAlreadyDisposed) {
         Disposer.dispose(processKiller) // Kill the process

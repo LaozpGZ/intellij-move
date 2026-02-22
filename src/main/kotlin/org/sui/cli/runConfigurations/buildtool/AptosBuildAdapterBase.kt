@@ -2,15 +2,15 @@ package org.sui.cli.runConfigurations.buildtool
 
 import com.intellij.build.BuildProgressListener
 import com.intellij.build.output.BuildOutputInstantReaderImpl
-import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessListener
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.text.StringUtil.convertLineSeparators
 
 abstract class AptosBuildAdapterBase(
     private val context: AptosBuildContextBase,
     protected val buildProgressListener: BuildProgressListener
-) : ProcessAdapter() {
+) : ProcessListener {
     private val instantReader = BuildOutputInstantReaderImpl(
         context.buildId,
         context.parentId,

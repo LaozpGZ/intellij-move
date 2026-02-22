@@ -43,12 +43,11 @@ private class SuiToolWindowPanel(project: Project) : SimpleToolWindowPanel(true,
         setContent(suiTab.content)
     }
 
-    override fun getData(dataId: String): Any? =
-        when {
-            SuiToolWindow.SELECTED_MOVE_PROJECT.`is`(dataId) -> suiTab.selectedProject
-            PlatformDataKeys.TREE_EXPANDER.`is`(dataId) -> suiTab.treeExpander
-            else -> super.getData(dataId)
-        }
+    override fun uiDataSnapshot(sink: DataSink) {
+        super.uiDataSnapshot(sink)
+        sink[SuiToolWindow.SELECTED_MOVE_PROJECT] = suiTab.selectedProject
+        sink[PlatformDataKeys.TREE_EXPANDER] = suiTab.treeExpander
+    }
 }
 
 class SuiToolWindow(private val project: Project) {

@@ -44,12 +44,11 @@ private class AptosToolWindowPanel(project: Project) : SimpleToolWindowPanel(tru
         setContent(aptosTab.content)
     }
 
-    override fun getData(dataId: String): Any? =
-        when {
-            AptosToolWindow.SELECTED_MOVE_PROJECT.`is`(dataId) -> aptosTab.selectedProject
-            PlatformDataKeys.TREE_EXPANDER.`is`(dataId) -> aptosTab.treeExpander
-            else -> super.getData(dataId)
-        }
+    override fun uiDataSnapshot(sink: DataSink) {
+        super.uiDataSnapshot(sink)
+        sink[AptosToolWindow.SELECTED_MOVE_PROJECT] = aptosTab.selectedProject
+        sink[PlatformDataKeys.TREE_EXPANDER] = aptosTab.treeExpander
+    }
 }
 
 class AptosToolWindow(private val project: Project) {

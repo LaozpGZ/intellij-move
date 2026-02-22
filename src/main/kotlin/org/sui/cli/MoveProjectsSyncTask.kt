@@ -10,20 +10,20 @@ import com.intellij.build.events.BuildEventsNls
 import com.intellij.build.events.MessageEvent
 import com.intellij.build.progress.BuildProgress
 import com.intellij.build.progress.BuildProgressDescriptor
-import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsContexts
@@ -136,14 +136,14 @@ class MoveProjectsSyncTask(
     ) {
         val projectRoot = moveTomlFile.parent?.toNioPathOrNull() ?: error("cannot be invalid path")
         var (moveProject, rootMoveToml) =
-            runReadAction {
+            ApplicationManager.getApplication().runReadAction(Computable {
                 val tomlFile = moveTomlFile.toTomlFile(project)!!
                 val rootMoveToml = MoveToml.fromTomlFile(tomlFile)
 //                val rootMoveToml = MoveToml.fromTomlFile(tomlFile, projectRoot)
                 val rootPackage = MovePackage.fromMoveToml(rootMoveToml)
                 val rootProject = MoveProject(project, rootPackage, emptyList())
                 rootProject to rootMoveToml
-            }
+            })
 
         val result = fetchDependencyPackages(context, projectRoot)
         if (result is TaskResult.Err) {
@@ -154,7 +154,7 @@ class MoveProjectsSyncTask(
         val deps =
             (context.runWithChildProgress("Loading dependencies") { childContext ->
                 // Blocks till completed or cancelled by the toml / file change
-                runReadAction {
+                ApplicationManager.getApplication().runReadAction(Computable {
                     val rootPackage = moveProject.currentPackage
                     val deps = mutableListOf<Pair<MovePackage, RawAddressMap>>()
                     val visitedDepIds = mutableSetOf(DepId(rootPackage.contentRoot.path))
@@ -167,7 +167,7 @@ class MoveProjectsSyncTask(
                         childContext.progress
                     )
                     TaskResult.Ok(deps)
-                }
+                })
             } as TaskResult.Ok).value
 
         projects.add(moveProject.copy(dependencies = deps))
@@ -322,9 +322,8 @@ class MoveProjectsSyncTask(
 
 private class SyncProcessAdapter(
     private val context: MoveProjectsSyncTask.SyncContext
-) : ProcessAdapter(),
-    ProcessProgressListener {
-    override fun onTextAvailable(event: ProcessEvent, outputType: Key<Any>) {
+) : ProcessProgressListener {
+    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
         val text = event.text.trim { it <= ' ' }
         if (text.startsWith("FETCHING GIT DEPENDENCY")) {
             val gitRepo = text.substring("FETCHING GIT DEPENDENCY".length)
@@ -375,5 +374,3 @@ private fun MoveProjectsSyncTask.SyncContext.warning(
 ) {
     syncProgress.message(title, message, com.intellij.build.events.MessageEvent.Kind.WARNING, null)
 }
-
-
