@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Sui Move Language IntelliJ Plugin 架构文档
 
+> 最后更新：2026-02-22 | 版本：1.6.2 | 平台：IntelliJ 2025.3 (253)
+
 ## 项目愿景
 
 本项目旨在为 IntelliJ 平台提供完整的 Sui Move 语言支持，提升开发体验和效率。通过实现语法高亮、代码格式化、智能导航、类型推断等核心功能，让开发者能够在熟悉的 IntelliJ 环境中高效地进行 Sui Move 智能合约开发。
@@ -12,67 +14,72 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 这是一个基于 IntelliJ Platform SDK 开发的插件项目，主要使用 Kotlin 语言实现。项目架构遵循 IntelliJ 插件开发规范，采用模块化设计，将功能划分为多个相互协作的组件。
 
+**技术栈**：Kotlin 2.2.20 + IntelliJ Platform Gradle Plugin 2.11.0 + GrammarKit 2023.3.0.2
+
 ## 模块结构图
 
 ```mermaid
 graph TD
-    A["(根) Sui Move 语言插件"] --> B["核心语言支持"];
-    A --> C["CLI 集成"];
-    A --> D["IDE 功能扩展"];
-    A --> E["工具窗口"];
-    A --> F["运行配置"];
-    A --> G["测试框架"];
-    A --> H["字节码支持"];
-    A --> I["TOML 文件支持"];
+    A["(根) Sui Move 语言插件<br/>intellij-sui-move v1.6.2"] --> B["核心语言支持<br/>lang/ (202 kt)"];
+    A --> C["CLI 集成<br/>cli/ (122 kt)"];
+    A --> D["IDE 功能扩展<br/>ide/ (145 kt)"];
+    A --> H["字节码支持<br/>bytecode/ (6 kt)"];
+    A --> I["TOML 文件支持<br/>toml/ (10 kt)"];
+    A --> J["OpenAPI 扩展<br/>openapiext/ (17 kt)"];
+    A --> K["标准库扩展<br/>stdext/ (7 kt)"];
+    A --> L["工具类<br/>utils/ (12 kt)"];
+    A --> G["测试框架<br/>test/ (196 kt)"];
 
-    B --> B1["语法解析器"];
-    B --> B2["词法分析器"];
-    B --> B3["PSI 结构"];
-    B --> B4["类型系统"];
+    B --> B1["语法解析器 / 词法分析器"];
+    B --> B2["PSI 结构 (76 ext)"];
+    B --> B3["类型系统 / 推断"];
+    B --> B4["引用解析 (resolve + resolve2)"];
+    B --> B5["代码补全 (26 kt)"];
+    B --> B6["Stub 索引"];
 
-    C --> C1["项目服务"];
-    C --> C2["构建系统"];
-    C --> C3["外部 linter"];
+    C --> C1["项目服务 / 包管理"];
+    C --> C2["外部 linter"];
+    C --> C3["运行配置 (Sui/Aptos)"];
+    C --> C4["工具窗口"];
+    C --> C5["设置管理"];
+    C --> C6["SDK 管理"];
 
-    D --> D1["代码检查"];
+    D --> D1["代码检查 (16) + 快速修复 (12)"];
     D --> D2["代码格式化"];
-    D --> D3["快速修复"];
-    D --> D4["导航功能"];
-    D --> D5["代码补全"];
-
-    E --> E1["Sui 工具窗口"];
-    E --> E2["项目刷新"];
-    E --> E3["地址管理"];
-    E --> E4["网络切换"];
-
-    F --> F1["Sui 命令配置"];
-    F --> F2["Aptos 命令配置"];
-    F --> F3["测试运行器"];
+    D --> D3["导航 / 结构视图"];
+    D --> D4["注解器 (语法/语义/错误)"];
+    D --> D5["Inlay Hints (参数/类型)"];
+    D --> D6["重构 / 意图"];
 
     click B "./src/main/kotlin/org/sui/lang/CLAUDE.md" "查看核心语言支持模块"
     click C "./src/main/kotlin/org/sui/cli/CLAUDE.md" "查看 CLI 集成模块"
     click D "./src/main/kotlin/org/sui/ide/CLAUDE.md" "查看 IDE 功能扩展模块"
-    click E "./src/main/kotlin/org/sui/cli/toolwindow/CLAUDE.md" "查看工具窗口模块"
-    click F "./src/main/kotlin/org/sui/cli/runConfigurations/CLAUDE.md" "查看运行配置模块"
+    click C4 "./src/main/kotlin/org/sui/cli/toolwindow/CLAUDE.md" "查看工具窗口模块"
+    click C3 "./src/main/kotlin/org/sui/cli/runConfigurations/CLAUDE.md" "查看运行配置模块"
     click G "./src/test/kotlin/org/sui/CLAUDE.md" "查看测试框架"
     click H "./src/main/kotlin/org/sui/bytecode/CLAUDE.md" "查看字节码支持模块"
     click I "./src/main/kotlin/org/sui/toml/CLAUDE.md" "查看 TOML 文件支持模块"
+    click J "./src/main/kotlin/org/sui/openapiext/CLAUDE.md" "查看 OpenAPI 扩展模块"
+    click K "./src/main/kotlin/org/sui/stdext/CLAUDE.md" "查看标准库扩展模块"
+    click L "./src/main/kotlin/org/sui/utils/CLAUDE.md" "查看工具类模块"
 ```
+
 ## Incompatible Changes in IntelliJ Platform and Plugins API 2025.*
 https://plugins.jetbrains.com/docs/intellij/api-changes-list-2025.html#20253
 
 ## 模块索引
 
-| 模块 | 路径 | 功能描述 | 主要文件 |
-|------|------|----------|----------|
-| 核心语言支持 | src/main/kotlin/org/sui/lang | 提供语法解析、词法分析、PSI 结构和类型系统 | MoveParserDefinition.kt, MoveLanguage.kt, MoveLexer.flex, MoveParser.bnf |
-| CLI 集成 | src/main/kotlin/org/sui/cli | 处理与 Sui 和 Aptos CLI 的集成，项目管理和外部 linter | MoveProjectsService.kt, MvProjectSettingsService.kt, ExternalLinter.kt |
-| IDE 功能扩展 | src/main/kotlin/org/sui/ide | 实现代码检查、格式化、导航、补全等 IDE 功能 | MvHighlighter.kt, MvFormattingModelBuilder.kt, MvUnresolvedReferenceInspection.kt |
-| 工具窗口 | src/main/kotlin/org/sui/cli/toolwindow | 提供 Sui 项目管理的可视化界面 | SuiToolWindowFactory.kt |
-| 运行配置 | src/main/kotlin/org/sui/cli/runConfigurations | 支持 Sui 和 Aptos 命令的运行配置 | SuiCommandConfigurationType.kt, AptosCommandConfigurationType.kt |
-| 字节码支持 | src/main/kotlin/org/sui/bytecode | 提供 Move 字节码反编译和查看功能 | SuiDecompiler.kt, SuiBytecodeFileType.kt |
-| TOML 文件支持 | src/main/kotlin/org/sui/toml | 支持 Move.toml 文件的解析和补全 | MoveToml.kt, MoveTomlCompletionContributor.kt |
-| 测试框架 | src/test/kotlin/org/sui | 包含所有测试文件，覆盖语法、语义、功能等方面 | LoadMoveProjectsTest.kt, HighlightingAnnotatorTest.kt, FormatterTest.kt |
+| 模块 | 路径 | Kt 文件数 | 功能描述 | 主要文件 |
+|------|------|-----------|----------|----------|
+| 核心语言支持 | src/main/kotlin/org/sui/lang | 202 | 语法解析、词法分析、PSI 结构、类型系统、引用解析、代码补全 | MoveParserDefinition.kt, MoveLanguage.kt, MoveLexer.flex, MoveParser.bnf |
+| CLI 集成 | src/main/kotlin/org/sui/cli | 122 | Sui/Aptos CLI 集成、项目管理、外部 linter、运行配置、工具窗口 | MoveProjectsService.kt, MvProjectSettingsService.kt, ExternalLinter.kt |
+| IDE 功能扩展 | src/main/kotlin/org/sui/ide | 145 | 代码检查、格式化、导航、补全、重构、Inlay Hints | MvHighlighter.kt, MvFormattingModelBuilder.kt, MvUnresolvedReferenceInspection.kt |
+| 字节码支持 | src/main/kotlin/org/sui/bytecode | 6 | Move 字节码反编译和查看 | SuiDecompiler.kt, SuiBytecodeFileType.kt |
+| TOML 文件支持 | src/main/kotlin/org/sui/toml | 10 | Move.toml 文件解析、补全、引用 | MoveTomlCompletionContributor.kt, MoveTomlReferenceContributor.kt |
+| OpenAPI 扩展 | src/main/kotlin/org/sui/openapiext | 17 | IntelliJ OpenAPI 扩展工具集 | CommandLineExt.kt, Project.kt, ProjectCache.kt |
+| 标准库扩展 | src/main/kotlin/org/sui/stdext | 7 | Kotlin 标准库扩展函数 | Collections.kt, Concurrency.kt, RsResult.kt |
+| 工具类 | src/main/kotlin/org/sui/utils | 12 | 通用工具类和 UI 组件 | CacheUtils.kt, PlatformUtils.kt, SignatureUtils.kt |
+| 测试框架 | src/test/kotlin/org/sui | 196 | 语法、语义、功能、集成测试 | LoadMoveProjectsTest.kt, HighlightingAnnotatorTest.kt, FormatterTest.kt |
 
 ## 常用命令
 
@@ -105,6 +112,9 @@ https://plugins.jetbrains.com/docs/intellij/api-changes-list-2025.html#20253
 
 # 生成依赖报告
 ./gradlew dependencies
+
+# 切换目标平台版本（通过环境变量）
+ORG_GRADLE_PROJECT_shortPlatformVersion=253 ./gradlew build
 ```
 
 ## 运行与开发
@@ -112,26 +122,13 @@ https://plugins.jetbrains.com/docs/intellij/api-changes-list-2025.html#20253
 ### 开发环境要求
 
 - IntelliJ IDEA (2022.3 或更高版本)
-- Java 17
+- Java 17（253+ 需要 Java 21）
 - Gradle 7.4+
+- Kotlin 2.2.20
 
-### 构建项目
+### 多平台版本支持
 
-```bash
-./gradlew build
-```
-
-### 运行插件
-
-```bash
-./gradlew runIde
-```
-
-### 打包插件
-
-```bash
-./gradlew buildPlugin
-```
+项目通过 `gradle-{version}.properties` 文件支持多个 IntelliJ 平台版本（223~261），当前默认目标为 253。
 
 ## 测试策略
 
@@ -142,13 +139,7 @@ https://plugins.jetbrains.com/docs/intellij/api-changes-list-2025.html#20253
 3. **功能测试** - 验证代码检查、格式化、导航等功能
 4. **集成测试** - 测试与外部工具和服务的交互
 
-所有测试位于 `src/test/kotlin/org/sui` 目录下，覆盖了以下核心功能：
-
-- 语言解析和语法检查
-- 代码格式化和补全
-- 导航和重构
-- 外部 linter 集成
-- 项目加载和管理
+所有测试位于 `src/test/kotlin/org/sui` 目录下（共 196 个 Kotlin 测试文件）。
 
 ## 编码规范
 
@@ -158,6 +149,7 @@ https://plugins.jetbrains.com/docs/intellij/api-changes-list-2025.html#20253
 - 方法和属性使用 camelCase
 - 常量使用 UPPER_SNAKE_CASE
 - 包名使用小写字母
+- PSI 元素类前缀 `Mv`（如 MvFunction, MvStruct）
 
 ### 架构原则
 
@@ -182,6 +174,17 @@ https://plugins.jetbrains.com/docs/intellij/api-changes-list-2025.html#20253
 3. **代码重构** - 提供重构建议和实现
 4. **错误定位** - 帮助分析和定位问题
 5. **测试生成** - 自动生成测试用例
+
+## 覆盖率统计
+
+| 指标 | 数值 |
+|------|------|
+| 总文件数（排除构建产物） | ~1749 |
+| Kotlin 源文件 | 717 |
+| 语法定义文件 | 2 (MoveLexer.flex, MoveParser.bnf) |
+| 资源文件 | 65 |
+| 已索引模块 | 11/11 (100%) |
+| 已生成模块 CLAUDE.md | 11 |
 
 ## 变更记录 (Changelog)
 
