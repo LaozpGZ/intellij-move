@@ -253,6 +253,59 @@ class ReceiverStyleFunctionTest : ResolveTestCase() {
     """
     )
 
+    fun `test resolve method via public use fun from defining module`() = checkByCode(
+        """
+        module 0x1::m {
+            public struct S { x: u64 }
+            public fun receiver(self: &S): u64 { self.x }
+                             //X
+            public use fun receiver as S.alias_receiver;
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(s: S) {
+                s.alias_receiver();
+                  //^
+            }
+        }
+    """
+    )
+
+    fun `test resolve method via public use fun from defining module with mut ref`() = checkByCode(
+        """
+        module 0x1::m {
+            public struct S { x: u64 }
+            public fun set_x(self: &mut S, x: u64) { self.x = x; }
+                         //X
+            public use fun set_x as S.my_set_x;
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(s: &mut S) {
+                s.my_set_x(42);
+                  //^
+            }
+        }
+    """
+    )
+
+    fun `test unresolved non-public use fun from defining module`() = checkByCode(
+        """
+        module 0x1::m {
+            public struct S { x: u64 }
+            public fun receiver(self: &S): u64 { self.x }
+            use fun receiver as S.alias_receiver;
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(s: S) {
+                s.alias_receiver();
+                  //^ unresolved
+            }
+        }
+    """
+    )
+
     @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
     fun `test friend function method in compiler v1`() = checkByCode(
         """

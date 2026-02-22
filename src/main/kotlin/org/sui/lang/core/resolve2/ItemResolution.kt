@@ -54,6 +54,8 @@ private fun processUseFunMethodResolveVariants(
         function.isMethodCompatibleWithReceiver(receiverTy, msl)
     }
 
+    // Step 1: Walk up the current scope chain for local use fun / public use fun declarations
+    var currentModule: MvModule? = null
     var scope: MvElement? = methodOrField
     while (scope != null) {
         val itemsOwner = scope as? MvItemsOwner
@@ -70,10 +72,25 @@ private fun processUseFunMethodResolveVariants(
             }
         }
         if (scope is MvModule) {
+            currentModule = scope
             break
         }
         scope = scope.context as? MvElement
     }
+
+    // Step 2: Check public use fun declarations in the receiver type's defining module.
+    // Per Move 2024 spec, `public use fun` aliases declared in the type's defining module
+    // are visible as methods in all modules.
+    val moveProject = methodOrField.moveProject ?: return false
+    val definingModule = receiverTy.itemModule(moveProject) ?: return false
+    if (definingModule != currentModule) {
+        for (publicUseFunStmt in definingModule.publicUseFunStmtList) {
+            if (processPublicUseFunStmt(publicUseFunStmt, baseProcessor)) {
+                return true
+            }
+        }
+    }
+
     return false
 }
 

@@ -1,6 +1,8 @@
 package org.sui.ide.refactoring
 
 import org.intellij.lang.annotations.Language
+import org.sui.ide.inspections.fixes.CompilerV2Feat.RECEIVER_STYLE_FUNCTIONS
+import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.MvTestBase
 
 class RenameTest : MvTestBase() {
@@ -581,6 +583,64 @@ class RenameTest : MvTestBase() {
                 Option { vec: self }
             }
         }        
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test rename use fun alias definition only`() = doTest(
+        "new_receiver", """
+        module 0x1::m {
+            public struct S { x: u64 }
+            public fun receiver(self: &S): u64 { self.x }
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            use fun 0x1::m::receiver as S./*caret*/alias_receiver;
+            fun main(s: S) {
+                s.alias_receiver();
+            }
+        }
+    """, """
+        module 0x1::m {
+            public struct S { x: u64 }
+            public fun receiver(self: &S): u64 { self.x }
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            use fun 0x1::m::receiver as S.new_receiver;
+            fun main(s: S) {
+                s.alias_receiver();
+            }
+        }
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
+    fun `test rename function via use fun method call renames underlying function`() = doTest(
+        "new_receiver", """
+        module 0x1::m {
+            public struct S { x: u64 }
+            public fun /*caret*/receiver(self: &S): u64 { self.x }
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            use fun 0x1::m::receiver as S.alias_receiver;
+            fun main(s: S) {
+                s.alias_receiver();
+            }
+        }
+    """, """
+        module 0x1::m {
+            public struct S { x: u64 }
+            public fun new_receiver(self: &S): u64 { self.x }
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            use fun 0x1::m::new_receiver as S.alias_receiver;
+            fun main(s: S) {
+                s.alias_receiver();
+            }
+        }
     """
     )
 

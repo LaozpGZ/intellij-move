@@ -15,7 +15,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 s.rece/*caret*/
             }
-        }        
+        }
     """
     )
 
@@ -27,7 +27,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 s.rece/*caret*/
             }
-        }        
+        }
     """, """
         module 0x1::main {
             struct S { field: u8 }
@@ -35,7 +35,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 s.receiver()/*caret*/
             }
-        }        
+        }
     """
     )
 
@@ -47,7 +47,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 let f: u8 = s.rece/*caret*/
             }
-        }        
+        }
     """, """
         module 0x1::main {
             struct S { field: u8 }
@@ -55,7 +55,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 let f: u8 = s.receiver()/*caret*/
             }
-        }        
+        }
     """
     )
 
@@ -70,7 +70,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 s.rece/*caret*/
             }
-        }        
+        }
     """, """
         module 0x1::m {
             struct S { field: u8 }
@@ -81,7 +81,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 s.receiver()/*caret*/
             }
-        }        
+        }
     """
     )
 
@@ -121,7 +121,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 s.rece/*caret*/;
             }
-        }        
+        }
     """, """
         module 0x1::main {
             struct S { field: u8 }
@@ -129,7 +129,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 s.receiver::</*caret*/>();
             }
-        }        
+        }
     """
     )
 
@@ -141,7 +141,7 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 s.rece/*caret*/::<>()
             }
-        }        
+        }
     """, """
         module 0x1::main {
             struct S { field: u8 }
@@ -149,7 +149,51 @@ class ReceiverStyleCompletionTest : CompletionTestCase() {
             fun main(s: S) {
                 s.receiver::</*caret*/>()
             }
-        }        
+        }
+    """
+    )
+
+    fun `test public use fun alias method completion from defining module`() = doSingleCompletion(
+        """
+        module 0x1::m {
+            public struct S { field: u8 }
+            public fun receiver(self: &S): u8 { self.field }
+            public use fun receiver as S.get_field;
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(s: S) {
+                s.get_fi/*caret*/
+            }
+        }
+    """, """
+        module 0x1::m {
+            public struct S { field: u8 }
+            public fun receiver(self: &S): u8 { self.field }
+            public use fun receiver as S.get_field;
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(s: S) {
+                s.get_field()/*caret*/
+            }
+        }
+    """
+    )
+
+    fun `test use fun alias method no completion for non-public from another module`() = checkNoCompletion(
+        """
+        module 0x1::m {
+            public struct S { field: u8 }
+            public fun receiver(self: &S): u8 { self.field }
+            use fun receiver as S.private_alias;
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(s: S) {
+                s.private_ali/*caret*/
+            }
+        }
     """
     )
 }
