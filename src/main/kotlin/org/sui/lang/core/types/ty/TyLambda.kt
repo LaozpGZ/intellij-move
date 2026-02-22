@@ -5,7 +5,8 @@ import org.sui.lang.core.types.infer.TypeFolder
 import org.sui.lang.core.types.infer.TypeVisitor
 import org.sui.lang.core.types.infer.mergeFlags
 
-// TODO: inherit from GenericTy ?
+// TyCallable is not a GenericTy: lambdas are anonymous type expressions without their own
+// type parameters or PSI declarations, unlike TyFunction which wraps a named MvFunctionLike.
 interface TyCallable {
     val paramTypes: List<Ty>
     val retType: Ty
