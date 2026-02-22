@@ -930,10 +930,32 @@ object MvMacroRegistry {
 
     fun builtinSpecOf(name: String): MacroSpec? = builtinSpecs.firstOrNull { it.name == name }
 
-    fun specOf(name: String): MacroSpec? =
-        builtinSpecOf(name) ?: stdlibSpecs.firstOrNull { it.name == name }
+    fun stdlibSpecOf(name: String): MacroSpec? = stdlibSpecs.firstOrNull { it.name == name }
+
+    fun customSpecs(): List<MacroSpec> =
+        MvMacroSpecProvider.EP_NAME.extensionList
+            .flatMap { it.macroSpecs() }
+
+    fun customSpecOf(name: String): MacroSpec? = customSpecs().firstOrNull { it.name == name }
 
     fun isBuiltin(name: String): Boolean = builtinSpecOf(name) != null
 
-    fun completionSpecs(): List<MacroSpec> = builtinSpecs + stdlibSpecs
+    fun isCustom(name: String): Boolean = customSpecOf(name) != null
+
+    fun specOf(name: String): MacroSpec? =
+        customSpecOf(name) ?: builtinSpecOf(name) ?: stdlibSpecOf(name)
+
+    fun completionSpecs(): List<MacroSpec> {
+        val merged = LinkedHashMap<String, MacroSpec>()
+        for (spec in builtinSpecs) {
+            merged.putIfAbsent(spec.name, spec)
+        }
+        for (spec in stdlibSpecs) {
+            merged.putIfAbsent(spec.name, spec)
+        }
+        for (spec in customSpecs()) {
+            merged[spec.name] = spec
+        }
+        return merged.values.toList()
+    }
 }

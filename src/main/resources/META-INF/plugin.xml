@@ -50,6 +50,12 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>org.toml.lang</depends>
 
+    <extensionPoints>
+        <extensionPoint name="macroSpecProvider"
+                        interface="org.sui.lang.core.macros.MvMacroSpecProvider"
+                        dynamic="true"/>
+    </extensionPoints>
+
     <extensions defaultExtensionNs="com.intellij">
 
         <fileType name="SUI_BYTECODE"

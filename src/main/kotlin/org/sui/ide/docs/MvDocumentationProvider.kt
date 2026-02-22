@@ -5,6 +5,7 @@ import com.intellij.lang.documentation.DocumentationMarkup
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import org.sui.cli.MoveProject
 import org.sui.ide.presentation.presentationInfo
 import org.sui.ide.presentation.text
 import org.sui.ide.presentation.typeLabel
@@ -39,13 +40,15 @@ class MvDocumentationProvider : AbstractDocumentationProvider() {
 
         when (docElement) {
             is MvNamedAddress -> {
-                // TODO: add docs for both [addresses] and [dev-addresses]
                 val moveProject = docElement.moveProject ?: return null
                 val refName = docElement.referenceName
-                val named = moveProject.getNamedAddress(refName) ?: return null
-                val address =
-                    named.addressLit(moveProject)?.original ?: angleWrapped("unassigned")
-                return "$refName = \"$address\""
+                val namedAddressDoc = resolveNamedAddressDoc(moveProject, refName) ?: return null
+                val annotation = if (namedAddressDoc.sourceTable == DEV_ADDRESSES_TABLE) {
+                    " ([dev-addresses])"
+                } else {
+                    ""
+                }
+                return "$refName = \"${namedAddressDoc.value}\"$annotation"
             }
             is MvDocAndAttributeOwner -> generateOwnerDoc(docElement, buffer)
             is MvPatBinding -> {
@@ -74,6 +77,28 @@ class MvDocumentationProvider : AbstractDocumentationProvider() {
         return if (buffer.isEmpty()) null else buffer.toString()
     }
 
+    private fun resolveNamedAddressDoc(moveProject: MoveProject, refName: String): NamedAddressDoc? {
+        moveProject.getNamedAddressTestAware(refName)?.let { named ->
+            val resolved = named.addressLit(moveProject)?.original ?: angleWrapped("unassigned")
+            return NamedAddressDoc(resolved, ADDRESSES_TABLE)
+        }
+
+        val moveToml = moveProject.currentPackage.moveToml
+        val devRaw = moveToml.dev_addresses[refName]?.first
+        if (devRaw != null) {
+            val value = if (devRaw == "_") angleWrapped("unassigned") else devRaw
+            return NamedAddressDoc(value, DEV_ADDRESSES_TABLE)
+        }
+
+        val addressesRaw = moveToml.addresses[refName]?.first
+        if (addressesRaw != null) {
+            val value = if (addressesRaw == "_") angleWrapped("unassigned") else addressesRaw
+            return NamedAddressDoc(value, ADDRESSES_TABLE)
+        }
+
+        return null
+    }
+
     private fun generateOwnerDoc(element: MvDocAndAttributeOwner, buffer: StringBuilder) {
         definition(buffer) {
             element.signature(it)
@@ -83,6 +108,11 @@ class MvDocumentationProvider : AbstractDocumentationProvider() {
         content(buffer) { it += text }
     }
 }
+
+private data class NamedAddressDoc(val value: String, val sourceTable: String)
+
+private const val ADDRESSES_TABLE = "addresses"
+private const val DEV_ADDRESSES_TABLE = "dev-addresses"
 
 fun MvDocAndAttributeOwner.documentationAsHtml(): String {
     return docComments()

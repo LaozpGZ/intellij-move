@@ -2,6 +2,8 @@ package org.sui.lang.completion
 
 import org.sui.ide.inspections.fixes.CompilerV2Feat.MACRO_FUNCTIONS
 import org.sui.ide.inspections.fixes.CompilerV2Feat.TYPE_KEYWORD
+import org.sui.lang.core.macros.MacroSpec
+import org.sui.lang.core.macros.MvMacroSpecProvider
 import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.completion.CompletionTestCase
 
@@ -61,7 +63,37 @@ class MacroCompletionTest : CompletionTestCase() {
             fun main() {
                 ass/*caret*/
             }
-        }
+            }
         """
     )
+
+    fun `test custom macro spec provider completion`() {
+        MvMacroSpecProvider.EP_NAME.point.registerExtension(
+            object : MvMacroSpecProvider {
+                override fun macroSpecs(): Collection<MacroSpec> {
+                    return listOf(
+                        MacroSpec(
+                            name = "trace_custom",
+                            tailText = "(value: u64)",
+                            typeText = "()",
+                            minArgs = 1,
+                            maxArgs = 1,
+                        )
+                    )
+                }
+            },
+            testRootDisposable
+        )
+
+        checkContainsCompletion(
+            "trace_custom!",
+            """
+            module 0x1::M {
+                fun main() {
+                    tra/*caret*/
+                }
+            }
+            """
+        )
+    }
 }

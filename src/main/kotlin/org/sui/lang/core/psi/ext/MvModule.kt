@@ -126,10 +126,14 @@ fun MvModule.builtinModules(): List<MvModule> {
     }
 }
 
-// TODO
-fun builtinModule(text: String, project: Project): MvModule {
-    val trimmedText = text.trimIndent()
-    return project.psiFactory.inlineModule(trimmedText, "", "")
+private const val SUI_FRAMEWORK_ADDRESS = "0x2"
+
+fun builtinModule(moduleName: String, project: Project): MvModule {
+    return project.psiFactory.inlineModule(
+        address = SUI_FRAMEWORK_ADDRESS,
+        name = moduleName,
+        blockText = "{}"
+    )
 }
 
 fun MvModule.builtinSpecFunctions(): List<MvSpecFunction> {

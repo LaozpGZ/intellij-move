@@ -25,6 +25,16 @@ val MvItemSpec.module: MvModule?
         }
     }
 
+val MvModuleItemSpec.module: MvModule?
+    get() {
+        val parent = this.parent
+        return when (parent) {
+            is MvModule -> parent
+            is MvModuleSpecBlock -> parent.moduleSpec.moduleItem
+            else -> this.ancestorStrict()
+        }
+    }
+
 fun MvModuleItemSpec.specInlineFunctions(): List<MvSpecInlineFunction> =
     this.itemSpecBlock?.stmtList
         ?.filterIsInstance<MvSpecInlineFunctionStmt>()

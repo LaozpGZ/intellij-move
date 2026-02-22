@@ -168,7 +168,10 @@ module 0x1::Main {
         <error descr="Unresolved function: `call`">/*caret*/call</error>();
     }
 }
-    """, setOf("0x1::M1::call", "0x1::M2::call"), "0x1::M1::call", """
+    """,
+        setOf("0x1::M1::call", "0x1::M2::call"),
+        "0x1::M1::call",
+        """
 module 0x1::M1 {
     public fun call() {}
 }
@@ -182,7 +185,8 @@ module 0x1::Main {
         call();
     }
 }
-    """
+    """,
+        expectedOrder = listOf("0x1::M1::call", "0x1::M2::call")
     )
 
     fun `test no struct in module context`() = checkAutoImportFixByText(
@@ -623,7 +627,8 @@ module 0x1::main {
         @Language("Sui Move") before: String,
         expectedElements: Set<String>,
         choice: String,
-        @Language("Sui Move") after: String
+        @Language("Sui Move") after: String,
+        expectedOrder: List<String>? = null,
     ) = doTest {
         var chooseItemWasCalled = false
 
@@ -632,6 +637,9 @@ module 0x1::main {
                 chooseItemWasCalled = true
                 val actualItems = items.mapTo(HashSet()) { it.qualName.editorText() }
                 assertEquals(expectedElements, actualItems)
+                if (expectedOrder != null) {
+                    assertEquals(expectedOrder, items.map { it.qualName.editorText() })
+                }
                 val selectedValue = items.find { it.qualName.editorText() == choice }
                     ?: error("Can't find `$choice` in `$actualItems`")
                 callback(selectedValue)

@@ -28,7 +28,8 @@ object DefaultMacroSemanticService : MacroSemanticService {
     override fun completionSpecs(includeStdlib: Boolean): List<MacroSpec> {
         val specs = MvMacroRegistry.completionSpecs()
         if (includeStdlib) return specs
-        return specs.filter { isBuiltin(it.name) || it.name in alwaysVisibleStdlibMacros }
+        val customNames = MvMacroRegistry.customSpecs().mapTo(hashSetOf()) { it.name }
+        return specs.filter { isBuiltin(it.name) || it.name in alwaysVisibleStdlibMacros || it.name in customNames }
     }
 
     override fun expectedArgsCount(call: MvMacroCallExpr): Int? {
@@ -38,8 +39,8 @@ object DefaultMacroSemanticService : MacroSemanticService {
 
     override fun inferReturnType(call: MvMacroCallExpr, inference: TypeInferenceWalker): Ty? {
         val name = call.path.referenceName ?: return null
-        val builtinSpec = MvMacroRegistry.builtinSpecOf(name) ?: return null
-        return when (builtinSpec.returnKind) {
+        val spec = specOf(name) ?: return null
+        return when (spec.returnKind) {
             MacroReturnKind.UNIT -> {
                 inferAllArgumentTypes(call, inference)
                 TyUnit

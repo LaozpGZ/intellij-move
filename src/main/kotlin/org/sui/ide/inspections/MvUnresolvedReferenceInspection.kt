@@ -37,7 +37,7 @@ class MvUnresolvedReferenceInspection: MvLocalInspectionTool() {
             // builtin macro call callee (debug!, transfer!, etc.)
             if (path.parent is MvMacroCallExpr) {
                 val macroName = path.referenceName
-                if (macroName != null && macroSemanticService.isBuiltin(macroName)) return
+                if (macroName != null && macroSemanticService.specOf(macroName) != null) return
             }
             // assert macro
             if (path.text == "assert") return

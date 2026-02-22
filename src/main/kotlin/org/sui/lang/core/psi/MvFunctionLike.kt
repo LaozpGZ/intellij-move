@@ -102,8 +102,21 @@ val MvFunctionLike.module: MvModule?
                     this.parent as? MvModule
                 }
             }
-            // TODO:
-            else -> null
+            is MvSpecFunction -> {
+                when (val parent = this.parent) {
+                    is MvModule -> parent
+                    is MvModuleSpecBlock -> parent.moduleSpec.moduleItem
+                    else ->
+                        this.ancestorStrict<MvItemSpec>()?.module
+                            ?: this.ancestorStrict<MvModuleItemSpec>()?.module
+                            ?: this.ancestorStrict()
+                }
+            }
+            is MvSpecInlineFunction ->
+                this.ancestorStrict<MvItemSpec>()?.module
+                    ?: this.ancestorStrict<MvModuleItemSpec>()?.module
+                    ?: this.ancestorStrict()
+            else -> this.ancestorStrict()
         }
 
 val MvFunctionLike.script: MvScript? get() = this.parent as? MvScript

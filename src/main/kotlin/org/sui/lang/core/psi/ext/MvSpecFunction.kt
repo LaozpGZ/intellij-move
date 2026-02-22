@@ -3,18 +3,21 @@ package org.sui.lang.core.psi.ext
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
 import com.intellij.psi.stubs.IStubElementType
+import org.sui.lang.core.psi.MvFunctionLike
 import org.sui.ide.MoveIcons
 import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.MvSpecFunction
 import org.sui.lang.core.psi.MvSpecInlineFunction
 import org.sui.lang.core.psi.functionItemPresentation
+import org.sui.lang.core.psi.module
 import org.sui.lang.core.psi.impl.MvNameIdentifierOwnerImpl
 import org.sui.lang.core.stubs.MvSpecFunctionStub
 import org.sui.lang.core.stubs.MvStubbedNamedElementImpl
 import org.sui.lang.core.types.ItemQualName
 import javax.swing.Icon
 
-val MvSpecFunction.module: MvModule? get() = this.parent as? MvModule
+val MvSpecFunction.module: MvModule?
+    get() = (this as MvFunctionLike).module
 
 abstract class MvSpecFunctionMixin : MvStubbedNamedElementImpl<MvSpecFunctionStub>,
                                      MvSpecFunction {

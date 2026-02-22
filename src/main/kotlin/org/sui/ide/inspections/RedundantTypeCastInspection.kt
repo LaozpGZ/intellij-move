@@ -18,7 +18,7 @@ class RedundantTypeCastInspection : MvLocalInspectionTool() {
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean) = object : MvVisitor() {
         override fun visitCastExpr(castExpr: MvCastExpr) {
             val msl = castExpr.isMsl()
-            // TODO: different rules for msl, no need for any casts at all
+            // Keep this inspection scoped to Move code; MSL has its own cast semantics.
             if (msl) return
 
 //            val itemContext = castExpr.itemContext(msl)

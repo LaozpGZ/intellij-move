@@ -2,6 +2,8 @@ package org.sui.ide.inspections
 
 import org.sui.ide.inspections.fixes.CompilerV2Feat.MACRO_FUNCTIONS
 import org.sui.ide.inspections.fixes.CompilerV2Feat.RECEIVER_STYLE_FUNCTIONS
+import org.sui.lang.core.macros.MacroSpec
+import org.sui.lang.core.macros.MvMacroSpecProvider
 import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.DebugMode
 import org.sui.utils.tests.NamedAddress
@@ -69,6 +71,35 @@ class MvUnresolvedReferenceInspectionTest : InspectionTestBase(MvUnresolvedRefer
         }
     """
     )
+
+    fun `test no unresolved reference for custom macro from provider`() {
+        MvMacroSpecProvider.EP_NAME.point.registerExtension(
+            object : MvMacroSpecProvider {
+                override fun macroSpecs(): Collection<MacroSpec> {
+                    return listOf(
+                        MacroSpec(
+                            name = "trace_custom",
+                            tailText = "(value: u64)",
+                            typeText = "()",
+                            minArgs = 1,
+                            maxArgs = 1,
+                        )
+                    )
+                }
+            },
+            testRootDisposable
+        )
+
+        checkByText(
+            """
+        module 0x1::M {
+            fun main() {
+                trace_custom!(1);
+            }
+        }
+        """
+        )
+    }
 
     fun `test unresolved unknown macro call`() = checkByText(
         """

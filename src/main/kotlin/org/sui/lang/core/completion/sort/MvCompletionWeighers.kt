@@ -77,11 +77,6 @@ private val COMPLETION_WEIGHERS: List<Any> = listOf(
 //    preferTrue(P::typeHasAllRequiredAbilities, id = "rust-prefer-matching-abilities"),
 //    preferTrue(P::isCompatibleWithContext, id = "rust-prefer-matching-context"),
 
-    // TODO these weighers most likely should be after "stats"
-    preferTrue(P::isLocal, id = "rust-prefer-locals"),
-//    preferUpperVariant(P::elementKind, id = "rust-prefer-by-kind"),
-//    preferTrue(P::isInherentImplMember, id = "rust-prefer-inherent-impl-member"),
-
     /**
      * Checks prefix matching.
      * @see com.intellij.codeInsight.completion.impl.RealPrefixMatchingWeigher
@@ -92,7 +87,12 @@ private val COMPLETION_WEIGHERS: List<Any> = listOf(
      * Bubbles up the most frequently used items.
      * @see com.intellij.codeInsight.completion.StatisticsWeigher.LookupStatisticsWeigher
      */
-//    "stats",
+    "stats",
+
+    // Prefer local items after statistics are applied to keep suggestions stable and context-aware.
+    preferTrue(P::isLocal, id = "rust-prefer-locals"),
+//    preferUpperVariant(P::elementKind, id = "rust-prefer-by-kind"),
+//    preferTrue(P::isInherentImplMember, id = "rust-prefer-inherent-impl-member"),
 
     /**
      * Puts closer elements above more distant ones (relative to the location where completion is invoked).

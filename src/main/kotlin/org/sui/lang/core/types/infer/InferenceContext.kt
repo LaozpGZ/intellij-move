@@ -59,7 +59,7 @@ fun compatAbilities(expectedTy: Ty, actualTy: Ty, msl: Boolean): Boolean {
 }
 
 fun isCompatible(expectedTy: Ty, actualTy: Ty, msl: Boolean): Boolean {
-    // TODO: do we need to skip unification then, if we recreate the InferenceContext anyway?
+    // This is a pure compatibility probe; keep temporary constraints local to this context.
     val inferenceCtx = InferenceContext(msl, skipUnification = true)
     return inferenceCtx.combineTypes(expectedTy, actualTy).isOk
 }

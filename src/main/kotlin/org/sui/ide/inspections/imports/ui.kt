@@ -16,6 +16,8 @@ import com.intellij.ui.popup.list.ListPopupImpl
 import com.intellij.ui.popup.list.PopupListElementRenderer
 import org.jetbrains.annotations.TestOnly
 import org.sui.ide.utils.imports.ImportCandidate
+import org.sui.lang.core.types.Address
+import org.sui.lang.core.types.ItemQualName
 import org.sui.openapiext.common.isUnitTestMode
 import org.sui.utils.ui.NavigationUtilCompat
 import java.awt.BorderLayout
@@ -61,9 +63,8 @@ private class PopupImportItemUi(private val project: Project, private val dataCo
     ImportItemUi {
 
     override fun chooseItem(items: List<ImportCandidate>, callback: (ImportCandidate) -> Unit) {
-        val candidatePsiItems = items.map(::ImportCandidatePsiElement)
+        val candidatePsiItems = sortImportCandidatesForPopup(items).map(::ImportCandidatePsiElement)
 
-        // TODO: sort items in popup
         val step =
             object : BaseListPopupStep<ImportCandidatePsiElement>("Item to Import", candidatePsiItems) {
                 override fun isAutoSelectionEnabled(): Boolean = false
@@ -110,6 +111,24 @@ private class PopupImportItemUi(private val project: Project, private val dataCo
         }
         NavigationUtilCompat.hidePopupIfDumbModeStarts(popup, project)
         popup.showInBestPositionFor(dataContext)
+    }
+}
+
+internal fun sortImportCandidatesForPopup(items: List<ImportCandidate>): List<ImportCandidate> {
+    return items.sortedWith(
+        compareBy<ImportCandidate>(
+            { it.qualName.itemName.lowercase() },
+            { it.qualName.moduleName.orEmpty().lowercase() },
+            { it.qualName.addressSortKey() },
+            { it.qualName.editorText().lowercase() },
+        )
+    )
+}
+
+private fun ItemQualName.addressSortKey(): String {
+    return when (val address = this.address) {
+        is Address.Named -> address.name.lowercase()
+        is Address.Value -> address.addressLit().canonical().lowercase()
     }
 }
 
