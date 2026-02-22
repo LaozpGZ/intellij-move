@@ -39,6 +39,8 @@ val psiViewerPlugin: String by project
 val shortPlatformVersion = prop("shortPlatformVersion")
 val shortPlatformVersionInt = shortPlatformVersion.toIntOrNull() ?: 0
 val useInstallerFlag = prop("useInstaller").toBooleanStrict()
+val verifierUseInstallerFlag = propOrNull("verifierUseInstaller")?.toBooleanStrictOrNull() ?: true
+val verifierAllowInternalApiUsages = propOrNull("verifierAllowInternalApiUsages")?.toBooleanStrictOrNull() ?: false
 val codeVersion = "1.6.2"
 var pluginVersion = "$codeVersion.$shortPlatformVersion"
 if (publishingChannel != "default") {
@@ -174,7 +176,7 @@ allprojects {
                 if (!verifierIdeVersion.isNullOrEmpty()) {
                     val (type, version) = verifierIdeVersion.split('-', limit = 2)
                     create(type, version) {
-                        useInstaller.set(true)
+                        useInstaller.set(verifierUseInstallerFlag)
                     }
                 } else {
                     recommended()
@@ -185,15 +187,18 @@ allprojects {
             //ide(prop("verifierIdeVersion").trim())
             //}
             //}
+            val toleratedFailureLevels = EnumSet.of(
+                VerifyPluginTask.FailureLevel.DEPRECATED_API_USAGES,
+                VerifyPluginTask.FailureLevel.EXPERIMENTAL_API_USAGES,
+                VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+            ).apply {
+                if (verifierAllowInternalApiUsages) {
+                    add(VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES)
+                }
+            }
             failureLevel.set(
                 EnumSet.complementOf(
-                    EnumSet.of(
-                        //these are the only issue swetolerate
-                        VerifyPluginTask.FailureLevel.DEPRECATED_API_USAGES,
-                        VerifyPluginTask.FailureLevel.EXPERIMENTAL_API_USAGES,
-                        VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
-                        VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES,
-                    )
+                    toleratedFailureLevels
                 )
             )
         }

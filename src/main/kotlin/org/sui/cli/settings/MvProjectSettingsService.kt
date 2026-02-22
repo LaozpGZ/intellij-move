@@ -193,8 +193,8 @@ class MvProjectSettingsService(
     }
 
     private fun MoveProjectSettings.isDefaultValue(prop: kotlin.reflect.KProperty1<MoveProjectSettings, *>): Boolean {
-        val storedProperty = __getProperties().firstOrNull { it.name == prop.name } ?: return true
-        return storedProperty.isEqualToDefault()
+        val defaultState = MoveProjectSettings()
+        return prop.get(this) == prop.get(defaultState)
     }
 
     private fun findRelevantMoveProject(): MoveProject? {
