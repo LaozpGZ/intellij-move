@@ -2458,12 +2458,7 @@ class TypeInferenceWalker(
         val matchingTy = ctx.resolveTypeVarsIfPossible(matchExpr.matchArgument.expr?.inferType() ?: TyUnknown)
         val arms = matchExpr.arms
         for (arm in arms) {
-            (arm.pat as? MvPat)?.extractBindings(this, matchingTy)
-            // For PathExpr, we might need to process its bindings
-            if (arm.pat is MvPathExpr) {
-                // Currently PathExpr might not have bindings, but we need to handle this case
-                // We might need to add code to process PathExpr's bindings
-            }
+            arm.pat.extractBindings(this, matchingTy)
             arm.expr?.inferType()
             (arm.matchArmGuard as MvMatchArmGuard?)?.getExpr()?.inferType(TyBool)
         }
