@@ -64,13 +64,12 @@ fun MvPat.extractBindings(fcx: TypeInferenceWalker, ty: Ty, defBm: RsBindingMode
                 }
             }
 
-            val structFields = item.fields.associateBy { it.name }
+            val structFields = item.allFields.associateBy { it.name }
             for (fieldPat in this.patFieldList) {
                 val kind = fieldPat.kind
                 val fieldType = structFields[kind.fieldName]
-                    ?.type
-                    ?.loweredType(fcx.msl)
-                    ?.substituteOrUnknown(ty.typeParameterValues)
+                    ?.fieldTy(fcx.msl)
+                    ?.substituteOrUnknown(expected.typeParameterValues)
                     ?: TyUnknown
 
                 when (kind) {

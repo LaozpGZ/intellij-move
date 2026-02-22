@@ -217,6 +217,32 @@ class ExpressionTypesTest : TypificationTestCase() {
     """
     )
 
+    fun `test type of binding from numeric struct pattern`() = testExpr(
+        """
+    module 0x1::M {
+        struct S(u8, bool);
+        fun main(s: S) {
+            let S { 0: first, 1: second } = s;
+            first;
+          //^ u8
+        }
+    }
+    """
+    )
+
+    fun `test type of second binding from numeric struct pattern`() = testExpr(
+        """
+    module 0x1::M {
+        struct S(u8, bool);
+        fun main(s: S) {
+            let S { 0: first, 1: second } = s;
+            second;
+          //^ bool
+        }
+    }
+    """
+    )
+
     fun `test dot access to field with struct type`() = testExpr(
         """
     module 0x1::M {
@@ -1394,6 +1420,32 @@ module 0x1::main {
                 a == 2u8;
                 a;
               //^ u64  
+            }
+        }        
+    """
+    )
+
+    fun `test equality auto references value lhs`() = testExpr(
+        allowErrors = false,
+        code = """
+        module 0x1::m {
+            fun main() {
+                let x = 1u64;
+                (x == &x);
+              //^ bool
+            }
+        }        
+    """
+    )
+
+    fun `test equality auto references value rhs`() = testExpr(
+        allowErrors = false,
+        code = """
+        module 0x1::m {
+            fun main() {
+                let x = 1u64;
+                (&x != x);
+              //^ bool
             }
         }        
     """

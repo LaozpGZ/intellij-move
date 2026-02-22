@@ -46,6 +46,58 @@ class ModulesCompletionProjectTest : CompletionProjectTestCase() {
             }
         }
 
+    fun `test complete module from global named address path`() = doSingleCompletion(
+        {
+            moveToml(
+                """
+        [package]
+        name = "package"
+
+        [addresses]
+        std = "0x1"
+        """
+            )
+            sources {
+                move(
+                    "vector.move", """
+                module std::vector {}
+            """
+                )
+                main(
+                    """
+                module 0x1::main {
+                    use ::std::ve/*caret*/;
+                }
+            """
+                )
+            }
+        },
+        """
+            module 0x1::main {
+                use ::std::vector/*caret*/;
+            }
+        """
+    )
+
+    fun `test complete module in nested use group from value address`() =
+        checkContainsCompletionsExact(listOf("move_from", "move_to", "vector")) {
+            namedMoveToml("package")
+            sources {
+                move(
+                    "vector.move", """
+                module 0x1::vector {}
+            """
+                )
+                main(
+                    """
+                module 0x1::main {
+                    use 0x1::{ve/*caret*/};
+                }
+            """
+                )
+            }
+        }
+
     fun `test module completion with transitive dependency`() = doSingleCompletion(
         {
             moveToml(

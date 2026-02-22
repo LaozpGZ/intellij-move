@@ -1005,6 +1005,19 @@ module 0x1::main {
     """
     )
 
+    fun `test equality supports auto referencing between value and reference`() = checkByText(
+        """
+module 0x1::main {
+    fun main(a: u64) {
+        a == &a;
+        &a == a;
+        a != &a;
+        &a != a;
+    }
+}
+    """
+    )
+
     fun `test cannot equal completely different types`() = checkByText(
         """
 module 0x1::main {
@@ -1014,6 +1027,17 @@ module 0x1::main {
         <error descr="Incompatible arguments to '==': 'S' and 'bool'">S { val: 10 } == false</error>;
     }
 }        
+    """
+    )
+
+    fun `test equality auto referencing does not hide incompatible types`() = checkByText(
+        """
+module 0x1::main {
+    fun main(a: u64) {
+        <error descr="Incompatible arguments to '==': 'integer' and '&bool'">a == &true</error>;
+        <error descr="Incompatible arguments to '!=': '&u64' and 'bool'">&a != true</error>;
+    }
+}
     """
     )
 
@@ -1231,6 +1255,19 @@ module 0x1::pool {
                 let S(amount, flag) = s;
                 amount;
                 flag;
+            }
+        }
+    """
+    )
+
+    fun `test type check for numeric struct pattern bindings`() = checkByText(
+        """
+        module 0x1::m {
+            struct S(u8, bool);
+            fun call(s: S) {
+                let S { 0: first, 1: second } = s;
+                let _: bool = <error descr="Incompatible type 'u8', expected 'bool'">first</error>;
+                let _: u8 = <error descr="Incompatible type 'bool', expected 'u8'">second</error>;
             }
         }
     """

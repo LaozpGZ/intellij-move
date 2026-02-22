@@ -62,6 +62,8 @@ class CompleteParsingTest : MvParsingTestCase("complete") {
     fun `test loops`() = doTest()
     fun `test break values`() = doTest()
 
+    fun `test revised paths`() = doTest()
+
     fun `test paths`() = doTest()
 
     // compiler v2

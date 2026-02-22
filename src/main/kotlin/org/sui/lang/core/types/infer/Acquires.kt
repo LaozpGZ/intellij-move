@@ -48,10 +48,14 @@ abstract class AcquireTypesOwnerVisitor: PsiRecursiveElementVisitor() {
 class AcquiresTypeContext {
     private val functionTypes: MutableMap<MvFunction, List<Ty>> = concurrentMapOf()
     private val callableTypes: MutableMap<MvCallable, List<Ty>> = concurrentMapOf()
+    private val functionTypesInProgress: MutableSet<MvFunction> = mutableSetOf()
 
     fun getFunctionTypes(function: MvFunction): List<Ty> {
+        functionTypes[function]?.let { return it }
+        if (!functionTypesInProgress.add(function)) return emptyList()
+
         val inference = function.inference(false)
-        return functionTypes.getOrPut(function) {
+        val resolvedTypes = try {
             if (function.isInline) {
                 // collect inner callExpr types
                 val allTypes = mutableListOf<Ty>()
@@ -74,7 +78,11 @@ class AcquiresTypeContext {
                 // parse from MvAcquiresType
                 function.acquiresPathTypes.map { it.loweredType(false) }
             }
+        } finally {
+            functionTypesInProgress.remove(function)
         }
+        functionTypes[function] = resolvedTypes
+        return resolvedTypes
     }
 
     fun getCallTypes(callable: MvCallable, inference: InferenceResult): List<Ty> {

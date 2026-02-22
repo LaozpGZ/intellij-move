@@ -65,7 +65,11 @@ fun MvPath.pathKind(isCompletion: Boolean = false): PathKind {
         // use 0x1::m::{item}
         //                ^
         val useSpeckQualifier = (useGroup.parent as MvUseSpeck).path
-        return PathKind.QualifiedPath.UseGroupItem(this, useSpeckQualifier, ITEM_NAMESPACES)
+        val ns = when (useSpeckQualifier.pathKind(isCompletion)) {
+            is PathKind.NamedAddress, is PathKind.ValueAddress -> MODULES
+            else -> ITEM_NAMESPACES
+        }
+        return PathKind.QualifiedPath.UseGroupItem(this, useSpeckQualifier, ns)
     }
 
     // one-element path

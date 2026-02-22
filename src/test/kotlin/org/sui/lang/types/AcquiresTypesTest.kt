@@ -252,34 +252,38 @@ class AcquiresTypesTest : MvTestBase() {
     """, listOf("Element")
     )
 
-    // TODO: test
-//    fun `test recursive inline function`() = testFunction("""
-//        module 0x1::main {
-//            inline fun get_item<Element>(i: u8, addr: address) {
-//                       //^
-//                borrow_global<Element>(addr);
-//                if (i != 0) {
-//                    get_item<Element>(i - 1, addr);
-//                }
-//            }
-//        }
-//    """, listOf("Element"))
+    fun `test recursive inline function`() = testFunction(
+        """
+        module 0x1::main {
+            inline fun get_item<Element>(i: u8, addr: address) {
+                       //^
+                borrow_global<Element>(addr);
+                if (i != 0) {
+                    get_item<Element>(i - 1, addr);
+                }
+            }
+        }
+    """,
+        listOf("Element")
+    )
 
-    // TODO: test
-//    fun `test transitively recursive inline function`() = testFunction("""
-//        module 0x1::main {
-//            inline fun get_item<Element>(i: u8, addr: address) {
-//                       //^
-//                borrow_global<Element>(addr);
-//                if (i != 0) {
-//                    get_another_item<Element>(i - 1, addr);
-//                }
-//            }
-//            inline fun get_another_item<Element>(i: u8, addr: address) {
-//                get_item<Element>(i - 1, addr);
-//            }
-//        }
-//    """, listOf("Element"))
+    fun `test transitively recursive inline function`() = testFunction(
+        """
+        module 0x1::main {
+            inline fun get_item<Element>(i: u8, addr: address) {
+                       //^
+                borrow_global<Element>(addr);
+                if (i != 0) {
+                    get_another_item<Element>(i - 1, addr);
+                }
+            }
+            inline fun get_another_item<Element>(i: u8, addr: address) {
+                get_item<Element>(i - 1, addr);
+            }
+        }
+    """,
+        listOf("Element")
+    )
 
 
     private fun testFunction(@Language("Sui Move") code: String, expectedTypes: List<String>) {

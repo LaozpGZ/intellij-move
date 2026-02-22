@@ -1826,13 +1826,46 @@ class TypeInferenceWalker(
                         )
                     }
                 }
-            } else if (ctx.combineTypes(leftTy, rightTy).isErr) {
-                ctx.reportTypeError(
-                    TypeError.IncompatibleArgumentsToBinaryExpr(binaryExpr, leftTy, rightTy, op)
-                )
+            } else {
+                val compatibleTypes = selectEqualityOperandTypes(leftTy, rightTy)
+                if (compatibleTypes == null || !combineEqualityTypes(compatibleTypes.first, compatibleTypes.second)) {
+                    ctx.reportTypeError(
+                        TypeError.IncompatibleArgumentsToBinaryExpr(binaryExpr, leftTy, rightTy, op)
+                    )
+                }
             }
         }
         return TyBool
+    }
+
+    private fun selectEqualityOperandTypes(leftTy: Ty, rightTy: Ty): Pair<Ty, Ty>? {
+        val candidates = buildList {
+            add(leftTy to rightTy)
+            autoborrow(leftTy, rightTy)?.let { add(it to rightTy) }
+            autoborrow(rightTy, leftTy)?.let { add(leftTy to it) }
+        }.distinct()
+        return candidates.firstOrNull { canCombineEqualityTypes(it.first, it.second) }
+    }
+
+    private fun canCombineEqualityTypes(leftTy: Ty, rightTy: Ty): Boolean {
+        return ctx.freezeUnification { combineEqualityTypes(leftTy, rightTy) }
+    }
+
+    private fun combineEqualityTypes(leftTy: Ty, rightTy: Ty): Boolean {
+        val firstTrySnapshot = ctx.startSnapshot()
+        if (ctx.combineTypes(leftTy, rightTy).isOk) {
+            firstTrySnapshot.commit()
+            return true
+        }
+        firstTrySnapshot.rollback()
+
+        val secondTrySnapshot = ctx.startSnapshot()
+        if (ctx.combineTypes(rightTy, leftTy).isOk) {
+            secondTrySnapshot.commit()
+            return true
+        }
+        secondTrySnapshot.rollback()
+        return false
     }
 
     private fun tryRefineIntegerExpr(expr: MvExpr, expectedTy: TyInteger) {

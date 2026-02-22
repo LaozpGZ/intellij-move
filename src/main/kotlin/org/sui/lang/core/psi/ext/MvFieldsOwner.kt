@@ -28,8 +28,8 @@ val MvFieldsOwner.itemElement: MvStructOrEnumItemElement
 //    }
 //}
 
-val MvFieldsOwner.fields: List<MvNamedFieldDecl>
-    get() = namedFields
+val MvFieldsOwner.fields: List<MvNamedElement>
+    get() = allFields
 
 val MvFieldsOwner.allFields: List<MvNamedElement>
     get() = namedFields + positionalFields

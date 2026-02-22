@@ -478,4 +478,73 @@ module 0x1::string_tests {
         }        
     """
     )
+
+    @NamedAddress("std", "0x1")
+    fun `test resolve module from global named address path`() = checkByCode(
+        """
+        module std::vector {}
+                   //X
+        module 0x1::m {
+            use ::std::vector;
+                      //^
+        }
+    """
+    )
+
+    fun `test resolve module from global value address path`() = checkByCode(
+        """
+        module 0x1::vector {
+                   //X
+            public fun empty() {}
+        }
+        module 0x1::m {
+            fun main() {
+                ::0x1::vector::empty();
+                     //^
+            }
+        }
+    """
+    )
+
+    @NamedAddress("std", "0x1")
+    fun `test resolve module from nested use group path`() = checkByCode(
+        """
+        module std::vector {}
+                   //X
+        module 0x1::m {
+            use std::{vector::{Self as Vec, empty}};
+                      //^
+        }
+    """
+    )
+
+    @NamedAddress("std", "0x1")
+    fun `test resolve item from nested use group path`() = checkByCode(
+        """
+        module std::vector {
+            public fun empty() {}
+                       //X
+        }
+        module 0x1::m {
+            use std::{
+                vector::{
+                    Self as Vec,
+                    empty as vec_empty
+                    //^
+                }
+            };
+        }
+    """
+    )
+
+    fun `test resolve module from nested use group with value address`() = checkByCode(
+        """
+        module 0x1::vector {}
+                   //X
+        module 0x1::m {
+            use 0x1::{vector::{Self}};
+                     //^
+        }
+    """
+    )
 }

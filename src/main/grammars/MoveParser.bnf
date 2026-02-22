@@ -921,6 +921,7 @@ private Expr_first ::= let
                         | copy
                         | move
                         | abort
+                        | '::'
                         | '*'
                         | '&'
                         | '!'
@@ -1306,9 +1307,9 @@ fake Path ::= (Path '::')? (PathIdent | PathAddress) TypeArgumentList?
 }
 
 private PathImpl ::= PathStart PathSegment*
-private Path_first ::= PATH_MODE_IDENTIFIER | DIEM_ADDRESS | INTEGER_LITERAL
+private Path_first ::= '::' | PATH_MODE_IDENTIFIER | DIEM_ADDRESS | INTEGER_LITERAL
 
-PathStart ::= ((PathAddress &'::') | PathIdent) TypeArgumentList?
+PathStart ::= ('::')? ((PathAddress &'::') | PathIdent) TypeArgumentList?
 {
     name = "path"
     elementType = Path

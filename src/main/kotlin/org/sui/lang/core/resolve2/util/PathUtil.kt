@@ -13,15 +13,17 @@ fun interface LeafUseSpeckConsumer {
 
 fun MvUseStmt.forEachLeafSpeck(consumer: LeafUseSpeckConsumer) {
     val rootUseSpeck = this.childOfType<MvUseSpeck>() ?: return
-    val useGroup = rootUseSpeck.useGroup
+    rootUseSpeck.forEachLeafSpeck(consumer)
+}
+
+private fun MvUseSpeck.forEachLeafSpeck(consumer: LeafUseSpeckConsumer): Boolean {
+    val useGroup = this.useGroup
     if (useGroup == null) {
-        // basePath is null, path is full path of useSpeck
-        val alias = rootUseSpeck.useAlias
-        if (!consumer.consume(rootUseSpeck.path, alias)) return
-    } else {
-        for (childSpeck in useGroup.childrenOfType<MvUseSpeck>()) {
-            val alias = childSpeck.useAlias
-            if (!consumer.consume(childSpeck.path, alias)) continue
-        }
+        return consumer.consume(this.path, this.useAlias)
     }
+
+    for (childSpeck in useGroup.childrenOfType<MvUseSpeck>()) {
+        if (childSpeck.forEachLeafSpeck(consumer)) return true
+    }
+    return false
 }

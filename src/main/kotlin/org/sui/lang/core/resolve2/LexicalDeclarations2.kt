@@ -341,6 +341,7 @@ private fun MvItemsOwner.getUseSpeckItems(): List<UseSpeckItem> =
                 val usageScope = useStmt.usageScope
                 useStmt.forEachLeafSpeck { speckPath, alias ->
                     add(UseSpeckItem(speckPath, alias, usageScope))
+                    false
                 }
             }
         }

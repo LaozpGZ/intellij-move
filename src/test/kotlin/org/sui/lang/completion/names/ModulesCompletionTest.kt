@@ -57,6 +57,48 @@ class ModulesCompletionTest : CompletionTestCase() {
         """
     )
 
+    fun `test autocomplete available modules for global value address`() = doSingleCompletion(
+        """
+        module 0x1::Transaction {}
+        script {
+            use ::0x1::Tra/*caret*/;
+        }
+        """, """
+        module 0x1::Transaction {}
+        script {
+            use ::0x1::Transaction/*caret*/;
+        }
+        """
+    )
+
+    fun `test complete module in nested use group`() = checkContainsCompletion(
+        "vector",
+        """
+        module 0x1::vector {}
+        module 0x1::M {
+            use 0x1::{ve/*caret*/};
+        }
+        """
+    )
+
+    fun `test complete item in nested use group`() = doSingleCompletion(
+        """
+        module 0x1::vector {
+            public fun empty() {}
+        }
+        module 0x1::M {
+            use 0x1::{vector::{em/*caret*/}};
+        }
+        """, """
+        module 0x1::vector {
+            public fun empty() {}
+        }
+        module 0x1::M {
+            use 0x1::{vector::{empty/*caret*/}};
+        }
+        """
+    )
+
     fun `test single completion for two modules with the same name`() = doSingleCompletion(
         """
         module 0x1::Transaction {}
@@ -103,6 +145,26 @@ class ModulesCompletionTest : CompletionTestCase() {
         
         script {
             use 0x1::transaction::transpose/*caret*/;
+        }
+        """
+    )
+
+    fun `test no auto import for functions at item completion in global value address use speck`() = doSingleCompletion(
+        """
+        module 0x1::transaction {
+            public fun transpose() {}
+        }
+
+        script {
+            use ::0x1::transaction::transp/*caret*/;
+        }
+        """, """
+        module 0x1::transaction {
+            public fun transpose() {}
+        }
+
+        script {
+            use ::0x1::transaction::transpose/*caret*/;
         }
         """
     )

@@ -10,6 +10,7 @@ import org.sui.lang.core.resolve.ref.Namespace.MODULE
 import org.sui.lang.core.resolve2.*
 import org.sui.lang.core.resolve2.PathKind.NamedAddress
 import org.sui.lang.core.resolve2.PathKind.ValueAddress
+import org.sui.lang.core.types.Address
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.ty.Ty
 import org.sui.lang.core.types.ty.TyAdt
@@ -173,10 +174,16 @@ fun processQualifiedPathResolveVariants(
     val resolvedQualifier = qualifier.reference?.resolveFollowingAliases()
     if (resolvedQualifier == null) {
         if (MODULE in ns) {
-            // can be module, try for named address as a qualifier
-            val addressName = qualifier.referenceName ?: return false
-            val address = ctx.moveProject?.getNamedAddressTestAware(addressName) ?: return false
-            if (processModulePathResolveVariants(ctx, address, processor)) return true
+            // can be module, try for value/named address as a qualifier
+            qualifier.pathAddress?.text?.let { valueAddress ->
+                if (processModulePathResolveVariants(ctx, Address.Value(valueAddress), processor)) return true
+            }
+
+            val addressName = qualifier.referenceName
+            if (addressName != null) {
+                val address = ctx.moveProject?.getNamedAddressTestAware(addressName)
+                if (address != null && processModulePathResolveVariants(ctx, address, processor)) return true
+            }
         }
         return false
     }
@@ -242,4 +249,3 @@ private fun resolvePath(
 //        else -> result
 //    }
 }
-

@@ -36,6 +36,22 @@ class MatchArmDuplicateErrorTest : AnnotatorTestCase(MvErrorAnnotator::class) {
         """
     )
 
+    fun `test guarded enum arm is unreachable after unguarded same variant`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B }
+
+            fun main(e: E): u8 {
+                match (e) {
+                    E::A => 1,
+                    <error descr="Unreachable match arm">E::A</error> if true => 2,
+                    E::B => 3,
+                }
+            }
+        }
+        """
+    )
+
     fun `test non exhaustive match reports missing arms`() = checkErrors(
         """
         module 0x1::m {
@@ -44,6 +60,21 @@ class MatchArmDuplicateErrorTest : AnnotatorTestCase(MvErrorAnnotator::class) {
             fun main(e: E): u8 {
                 match (e) <error descr="Non-exhaustive match. Missing arms: E::B">{
                     E::A => 1,
+                }</error>
+            }
+        }
+        """
+    )
+
+    fun `test guarded enum arm does not make match exhaustive`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B }
+
+            fun main(e: E): u8 {
+                match (e) <error descr="Non-exhaustive match. Missing arms: E::A">{
+                    E::A if true => 1,
+                    E::B => 2,
                 }</error>
             }
         }
@@ -59,6 +90,36 @@ class MatchArmDuplicateErrorTest : AnnotatorTestCase(MvErrorAnnotator::class) {
                 match (e) {
                     _ => 1,
                     <error descr="Unreachable match arm">E::A</error> => 2,
+                }
+            }
+        }
+        """
+    )
+
+    fun `test wildcard arm after guarded wildcard is reachable`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B }
+
+            fun main(e: E): u8 {
+                match (e) {
+                    _ if true => 1,
+                    _ => 2,
+                }
+            }
+        }
+        """
+    )
+
+    fun `test guarded wildcard arm is unreachable after wildcard`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B }
+
+            fun main(e: E): u8 {
+                match (e) {
+                    _ => 1,
+                    <error descr="Unreachable match arm">_</error> if true => 2,
                 }
             }
         }

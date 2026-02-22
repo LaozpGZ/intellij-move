@@ -205,10 +205,10 @@ class MvErrorAnnotator: MvAnnotatorBase() {
     private data class MatchArmVariant(
         val anchor: PsiElement,
         val variant: MvEnumVariant,
+        val hasGuard: Boolean,
     )
 
     private fun extractMatchArmVariant(arm: MvMatchArm): MatchArmVariant? {
-        if (arm.matchArmGuard != null) return null
         val pattern = arm.pat
         val path = when (pattern) {
             is MvPatStruct -> pattern.path
@@ -220,7 +220,7 @@ class MvErrorAnnotator: MvAnnotatorBase() {
             else -> null
         } ?: return null
         val variant = path.reference?.resolveFollowingAliases() as? MvEnumVariant ?: return null
-        return MatchArmVariant(path, variant)
+        return MatchArmVariant(path, variant, arm.matchArmGuard != null)
     }
 
     private fun isCatchAllMatchArm(arm: MvMatchArm): Boolean {
@@ -235,6 +235,7 @@ class MvErrorAnnotator: MvAnnotatorBase() {
         val seenVariants = hashSetOf<MvEnumVariant>()
         for (arm in matchExpr.arms) {
             val armVariant = extractMatchArmVariant(arm) ?: continue
+            if (armVariant.hasGuard) continue
             if (!seenVariants.add(armVariant.variant)) {
                 val enumName = armVariant.variant.enumItem.name
                 val variantNamePart = armVariant.variant.name
@@ -250,45 +251,59 @@ class MvErrorAnnotator: MvAnnotatorBase() {
         val arms = matchExpr.arms
         if (arms.size < 2) return
 
-        val firstCatchAllIndex = arms.indexOfFirst(::isCatchAllMatchArm)
-        if (firstCatchAllIndex >= 0) {
-            for (arm in arms.subList(firstCatchAllIndex + 1, arms.size)) {
-                holder.createErrorAnnotation(arm.pat, "Unreachable match arm")
-            }
-            val enumItem = resolveMatchedEnum(matchExpr)
-            if (enumItem != null && firstCatchAllIndex > 0) {
-                val armsBeforeCatchAll = arms.subList(0, firstCatchAllIndex)
-                if (collectCoveredVariants(armsBeforeCatchAll, enumItem).size == enumItem.variants.size) {
-                    holder.createErrorAnnotation(arms[firstCatchAllIndex].pat, "Unreachable match arm")
-                }
-            }
-            return
-        }
-
-        val enumItem = resolveMatchedEnum(matchExpr) ?: return
+        val enumItem = resolveMatchedEnum(matchExpr)
         val coveredVariants = mutableSetOf<MvEnumVariant>()
+        var isExhaustiveWithoutGuard = false
+        var hasCatchAllWithoutGuard = false
 
-        for ((index, arm) in arms.withIndex()) {
-            val variant = extractMatchArmVariant(arm)?.variant ?: continue
-            if (variant.enumItem != enumItem) continue
-
-            coveredVariants.add(variant)
-            if (coveredVariants.size < enumItem.variants.size) continue
-
-            if (index == arms.lastIndex) return
-            for (unreachableArm in arms.subList(index + 1, arms.size)) {
-                holder.createErrorAnnotation(unreachableArm.pat, "Unreachable match arm")
+        for (arm in arms) {
+            if (isExhaustiveWithoutGuard || hasCatchAllWithoutGuard) {
+                holder.createErrorAnnotation(arm.pat, "Unreachable match arm")
+                continue
             }
-            return
+
+            val armVariant = extractMatchArmVariant(arm)
+            if (enumItem != null &&
+                armVariant != null &&
+                armVariant.hasGuard &&
+                armVariant.variant.enumItem == enumItem &&
+                armVariant.variant in coveredVariants
+            ) {
+                holder.createErrorAnnotation(armVariant.anchor, "Unreachable match arm")
+                continue
+            }
+
+            if (isCatchAllMatchArm(arm)) {
+                if (enumItem != null && coveredVariants.size == enumItem.variants.size) {
+                    holder.createErrorAnnotation(arm.pat, "Unreachable match arm")
+                    isExhaustiveWithoutGuard = true
+                    continue
+                }
+                hasCatchAllWithoutGuard = true
+                continue
+            }
+
+            if (enumItem == null ||
+                armVariant == null ||
+                armVariant.hasGuard ||
+                armVariant.variant.enumItem != enumItem
+            ) {
+                continue
+            }
+
+            coveredVariants.add(armVariant.variant)
+            if (coveredVariants.size == enumItem.variants.size) {
+                isExhaustiveWithoutGuard = true
+            }
         }
     }
 
     private fun collectCoveredVariants(arms: List<MvMatchArm>, enumItem: MvEnum): Set<MvEnumVariant> {
         val coveredVariants = mutableSetOf<MvEnumVariant>()
         for (arm in arms) {
-            val variant = extractMatchArmVariant(arm)?.variant ?: continue
-            if (variant.enumItem == enumItem) {
-                coveredVariants.add(variant)
+            val armVariant = extractMatchArmVariant(arm) ?: continue
+            if (!armVariant.hasGuard && armVariant.variant.enumItem == enumItem) {
+                coveredVariants.add(armVariant.variant)
             }
         }
         return coveredVariants

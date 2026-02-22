@@ -374,6 +374,50 @@ module 0x1::main {
     """
     )
 
+    fun `test remove unused nested use leaf and keep used nested use imports`() = doTest(
+        """
+        module std::vector {
+            public fun empty<Element>(): vector<Element> { vector[] }
+            public fun length<Element>(v: &vector<Element>): u64 { 0 }
+        }
+        module std::option {
+            public fun none<Element>(): u64 { 0 }
+        }
+        module 0x1::main {
+            use std::{
+                option::{none as opt_none},
+                vector::{Self, empty, length as vec_len}
+            };
+
+            fun main() {
+                let v = empty<u8>();
+                let _len = vector::length(&v);
+                let _none = opt_none<u8>();
+            }
+        }
+    """, """
+        module std::vector {
+            public fun empty<Element>(): vector<Element> { vector[] }
+            public fun length<Element>(v: &vector<Element>): u64 { 0 }
+        }
+        module std::option {
+            public fun none<Element>(): u64 { 0 }
+        }
+        module 0x1::main {
+            use std::{
+                option::{none as opt_none},
+                vector::{Self, empty}
+            };
+
+            fun main() {
+                let v = empty<u8>();
+                let _len = vector::length(&v);
+                let _none = opt_none<u8>();
+            }
+        }
+    """
+    )
+
     @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS)
     fun `test remove unused use fun import`() = doTest(
         """
