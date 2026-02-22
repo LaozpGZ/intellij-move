@@ -8,17 +8,17 @@
 
 ## 任务
 
-- [ ] 补齐多层 nested use 样例（含 alias / Self 混合）
-- [ ] 验证 resolve 与 optimize imports 一致性
-- [ ] 验证 completion 在该场景下稳定
-- [ ] 增加 project 级回归样例
+- [x] 补齐多层 nested use 样例（含 alias / Self 混合）
+- [x] 验证 resolve 与 optimize imports 一致性
+- [x] 验证 completion 在该场景下稳定
+- [x] 增加 project 级回归样例
 
 ## DoD
 
-- [ ] nested use 深层样例全部通过
-- [ ] optimize imports 不破坏语义
-- [ ] completion 与 resolve 一致
-- [ ] 定向回归与全量测试通过
+- [x] nested use 深层样例全部通过
+- [x] optimize imports 不破坏语义
+- [x] completion 与 resolve 一致
+- [x] 定向回归与全量测试通过
 
 ## 建议测试
 
