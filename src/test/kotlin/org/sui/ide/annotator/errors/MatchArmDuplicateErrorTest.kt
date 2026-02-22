@@ -173,4 +173,97 @@ class MatchArmDuplicateErrorTest : AnnotatorTestCase(MvErrorAnnotator::class) {
         }
         """
     )
+
+    fun `test all variants guarded without catch-all is non-exhaustive`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B }
+
+            fun main(e: E): u8 {
+                match (e) <error descr="Non-exhaustive match. Missing arms: E::A, E::B">{
+                    E::A if true => 1,
+                    E::B if true => 2,
+                }</error>
+            }
+        }
+        """
+    )
+
+    fun `test mixed guarded and unguarded arms partial coverage is non-exhaustive`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B, C }
+
+            fun main(e: E): u8 {
+                match (e) <error descr="Non-exhaustive match. Missing arms: E::B">{
+                    E::A => 1,
+                    E::B if true => 2,
+                    E::C => 3,
+                }</error>
+            }
+        }
+        """
+    )
+
+    fun `test guarded wildcard followed by unguarded wildcard is exhaustive`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B }
+
+            fun main(e: E): u8 {
+                match (e) {
+                    _ if true => 1,
+                    _ => 2,
+                }
+            }
+        }
+        """
+    )
+
+    fun `test guarded wildcard alone is non-exhaustive`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B }
+
+            fun main(e: E): u8 {
+                match (e) <error descr="Non-exhaustive match. Missing arms: E::A, E::B">{
+                    _ if true => 1,
+                }</error>
+            }
+        }
+        """
+    )
+
+    fun `test mixed guarded and unguarded arms full coverage is exhaustive`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B }
+
+            fun main(e: E): u8 {
+                match (e) {
+                    E::A if true => 1,
+                    E::A => 2,
+                    E::B => 3,
+                }
+            }
+        }
+        """
+    )
+
+    fun `test multiple guarded arms for same variant before unguarded`() = checkErrors(
+        """
+        module 0x1::m {
+            enum E has copy, drop { A, B }
+
+            fun main(e: E): u8 {
+                match (e) {
+                    E::A if true => 1,
+                    E::A if true => 2,
+                    E::A => 3,
+                    E::B => 4,
+                }
+            }
+        }
+        """
+    )
 }
