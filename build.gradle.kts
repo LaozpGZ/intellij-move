@@ -4,6 +4,7 @@ import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import java.util.*
 
@@ -230,6 +231,27 @@ allprojects {
                 languageVersion.set(KotlinVersion.KOTLIN_2_2)
                 apiVersion.set(KotlinVersion.KOTLIN_2_2)
                 freeCompilerArgs.add("-Xjvm-default=all")
+            }
+        }
+
+        withType<Test> {
+            val includeLegacySemanticTests = project.findProperty("includeLegacySemanticTests")
+                ?.toString()
+                ?.toBooleanStrictOrNull() ?: false
+
+            // After migrating Move semantic features to move-analyzer (LSP),
+            // local semantic test suites are opt-in via -PincludeLegacySemanticTests=true.
+            if (!includeLegacySemanticTests) {
+                filter {
+                    excludeTestsMatching("org.sui.ide.annotator.*")
+                    excludeTestsMatching("org.sui.ide.inspections.*")
+                    excludeTestsMatching("org.sui.ide.hints.*")
+                    excludeTestsMatching("org.sui.ide.docs.*")
+                    excludeTestsMatching("org.sui.lang.completion.*")
+                    excludeTestsMatching("org.sui.ide.search.FindUsagesNamedModulePathTest")
+                    excludeTestsMatching("org.sui.lang.resolve.ResolveNamedModulePathTreeProjectTest")
+                    excludeTestsMatching("org.sui.lang.types.compilerV2.ReceiverStyleFunctionsTest")
+                }
             }
         }
 
