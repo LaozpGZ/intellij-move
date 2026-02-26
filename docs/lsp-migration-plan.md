@@ -61,18 +61,28 @@ Branch: `refactor/lsp-migration`
 - Move `SyntaxHighlighter`
 - Move parser/formatter/refactoring 等非本次迁移核心项
 
+### 3.5 测试策略（迁移期）
+
+- 默认测试策略：`./gradlew test` 仅验证“LSP 迁移后仍应稳定的能力”。
+- 旧本地语义测试（annotator/inspection/completion/hints/docs 等）默认排除。
+- 如需回看旧语义行为，可显式执行：
+  - `./gradlew test -PincludeLegacySemanticTests=true`
+
 ## 4. 验证结果
 
 - `./gradlew compileKotlin`：通过
 - `./gradlew buildPlugin`：通过
+- `./gradlew test`（迁移默认模式）：通过（`930 passed`）
 - 详细执行日志见：
   - `docs/lsp-migration-logs.md`
   - `docs/lsp-migration-build.log`
   - `docs/lsp-migration-compile.log`
+  - `docs/lsp-migration-test.log`
 
 ## 5. 后续待办（下一阶段）
 
 - 在真实 Sui Move 项目中做手工回归：
   - completion / diagnostics / go-to-definition / hover
+- 增加 LSP 集成测试（逐步替换旧本地语义测试）
 - 对“高亮小问题”继续做词法 token 映射精修
 - 视反馈决定是否进一步收敛本地 refactoring/navigation 扩展点

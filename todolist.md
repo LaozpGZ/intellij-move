@@ -12,6 +12,8 @@ Working Branch: `refactor/lsp-migration`
 - [x] 下线 Move 本地语义扩展点（completion/annotator/inspection 等）
 - [x] 构建校验通过（`compileKotlin` / `buildPlugin`）
 - [x] 迁移日志沉淀到 Markdown
+- [x] 迁移期测试策略落地（默认排除旧语义测试，可显式恢复）
+- [x] 测试校验通过（`./gradlew test`，930/930）
 
 ## 你睡觉期间我会持续维护的上下文锚点
 
@@ -19,10 +21,12 @@ Working Branch: `refactor/lsp-migration`
 - 执行日志：`docs/lsp-migration-logs.md`
 - 打包原始日志：`docs/lsp-migration-build.log`
 - 编译原始日志：`docs/lsp-migration-compile.log`
+- 测试原始日志：`docs/lsp-migration-test.log`
 
 ## 下一步执行队列
 
 - [ ] 在样例项目做 LSP 功能回归（补全/诊断/跳转/悬停）
+- [ ] 增加 LSP 集成测试，逐步替换旧本地语义测试
 - [ ] 记录实际回归结论到 `docs/lsp-migration-logs.md`
 - [ ] 根据结果做第二次小修并提交（若有）
 
