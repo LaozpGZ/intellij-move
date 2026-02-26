@@ -49,6 +49,7 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>org.toml.lang</depends>
+    <depends>com.redhat.devtools.lsp4ij</depends>
 
     <extensionPoints>
         <extensionPoint name="macroSpecProvider"
@@ -118,13 +119,7 @@
         <stubIndex implementation="org.sui.lang.index.MvModuleIndex"/>
         <stubIndex implementation="org.sui.lang.index.MvModuleSpecIndex"/>
 
-        <lang.documentationProvider language="Sui Move"
-                                    implementationClass="org.sui.ide.docs.MvDocumentationProvider"/>
-
         <lang.importOptimizer language="Sui Move" implementationClass="org.sui.ide.refactoring.MvImportOptimizer"/>
-
-        <gotoSymbolContributor implementation="org.sui.ide.navigation.goto.MvSymbolNavigationContributor"/>
-        <gotoClassContributor implementation="org.sui.ide.navigation.goto.MvStructNavigationContributor"/>
 
         <lang.syntaxHighlighter language="Sui Move"
                                 implementationClass="org.sui.ide.MvHighlighter"/>
@@ -166,21 +161,6 @@
         <!--                                   id="mvRenameAddressProcessor" />-->
 
 
-        <lang.findUsagesProvider language="Sui Move"
-                                 implementationClass="org.sui.ide.search.MvFindUsagesProvider"/>
-        <usageTypeProvider
-                implementation="org.sui.ide.search.NamedAddressUsageTypeProvider"/>
-        <findUsagesHandlerFactory
-                implementation="org.sui.ide.search.NamedAddressFindUsagesHandlerFactory"/>
-
-        <completion.confidence language="Sui Move"
-                               implementationClass="org.sui.lang.core.completion.MvCompletionConfidence"/>
-        <completion.contributor language="Sui Move"
-                                implementationClass="org.sui.lang.core.completion.CommonCompletionContributor"/>
-        <completion.contributor language="Sui Move"
-                                implementationClass="org.sui.lang.core.completion.KeywordCompletionContributor"/>
-        <completion.contributor language="Sui Move"
-                                implementationClass="org.sui.lang.core.completion.MoveTextFieldCompletionContributor"/>
         <completion.contributor language="TOML"
                                 implementationClass="org.sui.toml.completion.MoveTomlCompletionContributor"/>
         <weigher key="completion"
@@ -190,31 +170,9 @@
 
         <psi.referenceContributor language="TOML"
                                   implementation="org.sui.toml.MoveTomlReferenceContributor"/>
-        <psi.referenceContributor language="Sui Move"
-                                  implementation="org.sui.toml.NamedAddressReferenceContributor"/>
-
-        <annotator language="Sui Move"
-                   implementationClass="org.sui.ide.annotator.MvErrorAnnotator"/>
-        <annotator language="Sui Move"
-                   implementationClass="org.sui.ide.annotator.MvSyntaxErrorAnnotator"/>
-        <annotator language="Sui Move"
-                   implementationClass="org.sui.ide.annotator.HighlightingAnnotator"/>
-
-        <highlightingPassFactory implementation="org.sui.ide.annotator.RsHighlightingPassFactoryRegistrar"/>
 
         <annotator language="TOML"
                    implementationClass="org.sui.toml.MoveTomlErrorAnnotator"/>
-
-        <codeInsight.parameterInfo language="Sui Move"
-                                   implementationClass="org.sui.ide.hints.FunctionParameterInfoHandler"/>
-        <codeInsight.parameterInfo language="Sui Move"
-                                   implementationClass="org.sui.ide.hints.TypeParameterInfoHandler"/>
-        <codeInsight.parameterInfo language="Sui Move"
-                                   implementationClass="org.sui.ide.hints.StructLitFieldsInfoHandler"/>
-        <codeInsight.parameterNameHints language="Sui Move"
-                                        implementationClass="org.sui.ide.hints.MvInlayParameterHintsProvider"/>
-        <codeInsight.inlayProvider language="Sui Move"
-                                   implementationClass="org.sui.ide.hints.type.MvInlayTypeHintsProvider"/>
 
         <defaultLiveTemplates file="liveTemplates/Move.xml"/>
         <liveTemplateContext contextId="Generic" implementation="org.sui.ide.liveTemplates.MvContextType$Generic"/>
@@ -248,85 +206,6 @@
         <!--        <statusBarWidgetFactory id="moveExternalLinterWidget"-->
         <!--                                implementation="org.sui.cli.externalLinter.RsExternalLinterWidgetFactory"-->
         <!--                                order="first"/>-->
-
-
-        <!--        <localInspection language="Sui Move" groupPath="Move" groupName="Naming"-->
-        <!--                         displayName="Attempt to override a built-in function"-->
-        <!--                         enabledByDefault="true" level="ERROR"-->
-        <!--                         implementationClass="org.sui.ide.inspections.lints.FunctionNamingInspection"/>-->
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Unresolved reference"
-                         enabledByDefault="true"
-                         level="ERROR"
-                         implementationClass="org.sui.ide.inspections.MvUnresolvedReferenceInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Field initialization shorthand"
-                         enabledByDefault="true" level="WEAK WARNING"
-                         implementationClass="org.sui.ide.inspections.FieldInitShorthandInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Invalid module declaration"
-                         enabledByDefault="true" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.InvalidModuleDeclarationInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Constant naming convention"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.MvConstNamingInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Struct naming convention"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.MvStructNamingInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Function naming convention"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.MvFunctionNamingInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Local variable naming convention"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.MvLocalBindingNamingInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Type checking"
-                         enabledByDefault="true" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.MvTypeCheckInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Ability checking"
-                         enabledByDefault="false" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.MvAbilityCheckInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Missing acquires"
-                         enabledByDefault="true" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.MvMissingAcquiresInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Unused acquires"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.MvUnusedAcquiresTypeInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Unused struct type parameter"
-                         enabledByDefault="true" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.PhantomTypeParameterInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Unused import"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.MvUnusedImportInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Unused declaration"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.MvUnusedVariableInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Unused test signer"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.UnusedTestSignerInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Redundant type cast"
-                         enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.RedundantTypeCastInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Convert to method call"
-                         enabledByDefault="true" level="WEAK WARNING"
-                         implementationClass="org.sui.ide.inspections.ReplaceWithMethodCallInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Convert to index expr"
-                         enabledByDefault="true" level="WEAK WARNING"
-                         implementationClass="org.sui.ide.inspections.compilerV2.ReplaceWithIndexExprInspection"/>
 
         <!--cannotberunon-the-fly,thereforeenabled-->
         <!--        <globalInspection language="Sui Move" groupName="Move"-->
@@ -465,6 +344,17 @@
                 groupKey="advanced.setting.sui.group"
                 descriptionKey="advanced.setting.org.move.sui.test.tool.window.description"
         />
+    </extensions>
+
+    <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+        <server id="suiMoveAnalyzer"
+                name="Sui Move Analyzer"
+                factoryClass="org.sui.ide.lsp.MoveAnalyzerLanguageServerFactory">
+            <description><![CDATA[
+                <p>Use move-analyzer as the single semantic engine for Sui Move files.</p>
+            ]]></description>
+        </server>
+        <languageMapping language="Sui Move" serverId="suiMoveAnalyzer" languageId="move"/>
     </extensions>
 
     <projectListeners>

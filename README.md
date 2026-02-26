@@ -23,17 +23,18 @@ s
 ## Features
 
 * Syntax highlighting
+* Semantic features powered by `move-analyzer` (completion, diagnostics, hover, navigation)
 * Code formatting
-* Go-to-definition
-* Type inference
 * Execute custom command
 * Some quick buttons
 * `sui` binary integration
 
 ## Dependencies
 
-For git dependencies specified in `Move.toml` file you need to manually run `move package build` to populate `build/`
-directory.
+This plugin uses `move-analyzer` as the semantic engine.
+
+- Configure analyzer path at `Settings > Languages & Frameworks > Sui Move Language > Move Analyzer (LSP)`.
+- If your project has git dependencies in `Move.toml`, run `sui move build` once to fetch dependencies before using semantic features.
 
 ## Compatible IDEs
 

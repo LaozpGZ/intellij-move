@@ -17,16 +17,18 @@
 ## 特性
 
 - 语法高亮
+- 基于 `move-analyzer` 的语义能力（补全、诊断、悬停、跳转）
 - 代码格式化
-- 跳转到定义
-- 类型推断
 - 执行自定义命令
 - 一些快捷按钮
 - `sui` 二进制集成
 
 ## 依赖
 
-对于 Move.toml 文件中指定的 git 依赖，你需要手动运行 move package build 来填充 build/ 目录。
+本插件使用 `move-analyzer` 作为语义引擎。
+
+- 配置路径：`Settings > Languages & Frameworks > Sui Move Language > Move Analyzer (LSP)`。
+- 对于 `Move.toml` 中的 git 依赖，首次使用语义能力前请先执行一次 `sui move build` 拉取依赖。
 
 ## 兼容的 IDE
 

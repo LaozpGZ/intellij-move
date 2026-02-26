@@ -113,6 +113,7 @@ allprojects {
             testFramework(TestFrameworkType.Platform)
             pluginVerifier(Constraints.LATEST_VERSION)
             bundledPlugin("org.toml.lang")
+            plugin("com.redhat.devtools.lsp4ij:0.19.2")
             jetbrainsRuntime()
         }
     }

@@ -47,6 +47,8 @@ class MvProjectSettingsService(
     val disableTelemetry: Boolean get() = state.disableTelemetry
     val skipFetchLatestGitDeps: Boolean get() = state.skipFetchLatestGitDeps
     val dumpStateOnTestFailure: Boolean get() = state.dumpStateOnTestFailure
+    val moveAnalyzerEnabled: Boolean get() = state.moveAnalyzerEnabled
+    val moveAnalyzerPath: String? get() = state.moveAnalyzerPath
 
     val enableReceiverStyleFunctions: Boolean get() = effectiveLanguageFeatures().receiverStyleFunctions
     val enableResourceAccessControl: Boolean get() = effectiveLanguageFeatures().resourceAccessControl
@@ -120,6 +122,9 @@ class MvProjectSettingsService(
         var dumpStateOnTestFailure: Boolean by property(false)
 
         var addCompilerV2CLIFlags: Boolean by property(false)
+
+        var moveAnalyzerEnabled: Boolean by property(true)
+        var moveAnalyzerPath: String? by string()
 
         override fun copy(): MoveProjectSettings {
             val state = MoveProjectSettings()

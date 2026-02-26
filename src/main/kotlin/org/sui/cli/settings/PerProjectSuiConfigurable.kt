@@ -1,6 +1,7 @@
 package org.sui.cli.settings
 
 import com.intellij.openapi.options.BoundConfigurable
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.DialogPanel
@@ -9,16 +10,40 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import org.sui.cli.settings.sui.ChooseSuiCliPanel
+import org.sui.ide.lsp.MoveAnalyzerPathResolver
+import org.sui.openapiext.pathField
 import org.sui.openapiext.showSettingsDialog
+import org.sui.stdext.blankToNull
 
 // panels needs not to be bound to the Configurable itself, as it's sometimes created without calling the `createPanel()`
 class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui") {
 
     override fun createPanel(): DialogPanel {
+        val configurableDisposable = requireNotNull(this.disposable)
         val chooseSuiCliPanel = ChooseSuiCliPanel(versionUpdateListener = null)
-        this.disposable?.let {
-            Disposer.register(it, chooseSuiCliPanel)
+        this.disposable?.let { parentDisposable ->
+            Disposer.register(parentDisposable, chooseSuiCliPanel)
         }
+        val moveAnalyzerPathField = pathField(
+            FileChooserDescriptorFactory.createSingleFileOrExecutableAppDescriptor(),
+            configurableDisposable,
+            "Choose move-analyzer executable",
+        )
+        val moveAnalyzerVersionLabel = VersionLabel(configurableDisposable, versionUpdateListener = null)
+
+        fun updateMoveAnalyzerVersion(pathText: String? = moveAnalyzerPathField.text) {
+            val resolvedPath = MoveAnalyzerPathResolver.resolveExecutable(project, pathText?.blankToNull())
+            moveAnalyzerVersionLabel.updateAndNotifyListeners(resolvedPath)
+        }
+
+        moveAnalyzerPathField.childComponent.document.addDocumentListener(
+            object : com.intellij.ui.DocumentAdapter() {
+                override fun textChanged(e: javax.swing.event.DocumentEvent) {
+                    updateMoveAnalyzerVersion()
+                }
+            }
+        )
+
         return panel {
             val settings = project.moveSettings
             val state = settings.state.copy()
@@ -122,6 +147,21 @@ class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui")
 //                            .bindSelected(state::dumpStateOnTestFailure)
 //                    }
                 }
+                group("Move Analyzer (LSP)") {
+                    row {
+                        checkBox("Enable move-analyzer semantic features")
+                            .comment("Use move-analyzer (LSP) for completion, diagnostics, navigation and hover.")
+                            .bindSelected(state::moveAnalyzerEnabled)
+                    }
+                    row("Analyzer path:") {
+                        cell(moveAnalyzerPathField)
+                            .align(AlignX.FILL)
+                            .resizableColumn()
+                    }
+                    row("Resolved version:") {
+                        cell(moveAnalyzerVersionLabel)
+                    }
+                }
             }
 
             if (!project.isDefault) {
@@ -158,6 +198,8 @@ class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui")
                     it.addCompilerV2CLIFlags = state.addCompilerV2CLIFlags
 //                    it.fetchAptosDeps = state.fetchAptosDeps
                     it.fetchSuiDeps = state.fetchSuiDeps
+                    it.moveAnalyzerEnabled = state.moveAnalyzerEnabled
+                    it.moveAnalyzerPath = moveAnalyzerPathField.text.blankToNull()
                 }
             }
 
@@ -165,6 +207,8 @@ class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui")
             onReset {
                 chooseSuiCliPanel.data =
                     ChooseSuiCliPanel.Data(state.suiExecType, state.localSuiPath)
+                moveAnalyzerPathField.text = state.moveAnalyzerPath.orEmpty()
+                updateMoveAnalyzerVersion(state.moveAnalyzerPath)
             }
 
             /// checks whether any settings are modified (should be fast)
@@ -185,6 +229,8 @@ class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui")
                         || state.disableTelemetry != settings.disableTelemetry
                         || state.skipFetchLatestGitDeps != settings.skipFetchLatestGitDeps
                         || state.dumpStateOnTestFailure != settings.dumpStateOnTestFailure
+                        || state.moveAnalyzerEnabled != settings.moveAnalyzerEnabled
+                        || moveAnalyzerPathField.text.blankToNull() != settings.moveAnalyzerPath
             }
         }
     }
