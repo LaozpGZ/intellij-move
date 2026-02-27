@@ -79,6 +79,7 @@ Branch: `refactor/lsp-migration`
 - `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerCommandProviderTest"`：通过（`3 passed`）
 - `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"`：通过（`6 passed`）
 - `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`：通过（默认模式）
+- `./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`：通过（opt-in 模式）
 - `./gradlew test`（迁移默认模式）：通过（`944 passed`）
 - 第一、二、三批 LSP 集成测试已完成：
   - `src/test/kotlin/org/sui/ide/lsp/FakeMoveAnalyzerServer.kt`

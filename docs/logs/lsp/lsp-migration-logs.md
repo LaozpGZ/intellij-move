@@ -519,3 +519,39 @@ move-analyzer 1.67.0-ecde3d1a9665
 - 真实 analyzer 回归目前为“显式开关”模式：
   - `./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`
 - 下一步将继续把 real 模式断言从“definition request 可达”提升到“definition result 命中”。
+
+---
+
+## 16. Real Analyzer Opt-in Stabilization (Thread Leak Whitelist)
+
+### Date
+- 2026-02-27
+
+### Goal
+- 让 `-PincludeRealMoveAnalyzerTests=true` 在本机可稳定通过，避免被 `ThreadLeakTracker` 误判阻断。
+
+### Root Cause
+- 真实 `move-analyzer` 进程在测试 teardown 后短时间内仍保留以下线程：
+  - `"/Users/gz/.cargo/bin/move-analyzer "`
+  - `"BaseDataReader: error stream of /Users/gz/.cargo/bin/move-analyzer "`
+  - `"BaseDataReader: output stream of /Users/gz/.cargo/bin/move-analyzer "`
+- 在严格 leak 检查下会被判定为用例失败。
+
+### Fix
+- 在 `MoveAnalyzerRealLspIntegrationTest` 中注册 long-running 线程白名单：
+  - `ThreadLeakTracker.longRunningThreadCreated(testRootDisposable, ...)`
+- 保留 real LSP wrapper 的主动销毁逻辑（`dispose(true)` + fallback）。
+
+### Verification
+```bash
+./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"
+./gradlew test
+```
+
+### Result
+- 真实 opt-in 回归：通过
+- 默认全量回归：通过（`944 tests, 0 failures`）
+
+### Artifacts
+- `docs/logs/lsp/lsp-integration-tests.log`
+- `build/reports/tests/test/index.html`
