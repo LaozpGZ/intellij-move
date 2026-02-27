@@ -77,14 +77,17 @@ Branch: `refactor/lsp-migration`
 - `./gradlew compileKotlin`：通过
 - `./gradlew buildPlugin`：通过
 - `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerCommandProviderTest"`：通过（`3 passed`）
-- `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"`：通过（`6 passed`）
+- `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"`：通过（`8 passed`）
 - `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`：通过（默认模式）
 - `./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`：通过（opt-in 模式）
-- `./gradlew test`（迁移默认模式）：通过（`944 passed`）
+- `./gradlew test`（迁移默认模式）：通过（`946 passed`）
 - 第一、二、三批 LSP 集成测试已完成：
   - `src/test/kotlin/org/sui/ide/lsp/FakeMoveAnalyzerServer.kt`
   - `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerLspIntegrationTest.kt`
   - 覆盖能力：`diagnostics`、`go-to-definition`、`completion`、`hover`、`references`、`rename`
+- 新增 diagnostics/definition 扩展覆盖（第四批，fake analyzer）：
+  - diagnostics: `missing_symbol` marker
+  - definition: fully-qualified function call (`0x1::main::compute_value`)
 - 真实 analyzer 集成回归入口已添加（默认关闭）：
   - `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerRealLspIntegrationTest.kt`
   - 覆盖能力：`diagnostics` 与 `definition request`（opt-in）

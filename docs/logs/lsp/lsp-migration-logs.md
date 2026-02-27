@@ -584,3 +584,38 @@ python3 <probe script>
   - diagnostics：强断言
   - definition：请求链路可达（非超时/非异常）断言
 - 后续在真实业务项目和 IDE 手工回归中继续验证 definition 命中行为，再决定是否升级为强断言。
+
+---
+
+## 18. LSP Diagnostics/Definition Coverage Expansion (Fake Analyzer)
+
+### Date
+- 2026-02-27
+
+### Goal
+- 继续补齐 LSP 集成测试中的 `diagnostics + definition` 覆盖，逐步替换旧本地语义链路测试。
+
+### Changes
+- `FakeMoveAnalyzerServer` 增强：
+  - `definition` 从硬编码 `target` 升级为“按光标符号解析并查找函数定义”。
+  - diagnostics 支持新增 marker：`missing_symbol`（消息：`fake unresolved symbol diagnostic`）。
+  - 增加 `textDocument/didChange` 处理，文档变更时重发 diagnostics。
+- `MoveAnalyzerLspIntegrationTest` 新增用例：
+  - `test unresolved symbol diagnostics are reported from move analyzer`
+  - `test goto definition resolves fully-qualified function call`
+
+### Verification Commands
+```bash
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"
+./gradlew test
+```
+
+### Verification Result
+- 定向 LSP 集成测试：通过
+- 全量迁移模式测试：通过
+  - `946 tests, 0 failures`
+
+### Artifacts
+- `docs/logs/lsp/lsp-integration-tests.log`
+- `docs/logs/lsp/lsp-migration-test.log`
+- `build/reports/tests/test/index.html`
