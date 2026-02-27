@@ -555,3 +555,32 @@ move-analyzer 1.67.0-ecde3d1a9665
 ### Artifacts
 - `docs/logs/lsp/lsp-integration-tests.log`
 - `build/reports/tests/test/index.html`
+
+---
+
+## 17. Definition-Hit Probe on Real Analyzer (Current Limitation)
+
+### Date
+- 2026-02-27
+
+### Goal
+- 将 real 集成测试中的 definition 从“request 可达”升级为“命中返回 location”。
+
+### Probe
+- 使用最小 Sui Move 项目（`target()`、`0x1::main::target()`、`std::vector::empty`）直接通过 JSON-RPC 向真实 analyzer 发起 `textDocument/definition`。
+- 多位置扫描结果均为 `result: null` 或空列表。
+
+### Command (excerpt)
+```bash
+python3 <probe script>
+```
+
+### Result
+- `non-empty definition results: 0`
+- 说明：在当前 analyzer / 最小项目模型下，definition 的“稳定命中 location”暂不可作为自动化强断言条件。
+
+### Decision
+- 保留当前 real 集成测试策略：
+  - diagnostics：强断言
+  - definition：请求链路可达（非超时/非异常）断言
+- 后续在真实业务项目和 IDE 手工回归中继续验证 definition 命中行为，再决定是否升级为强断言。
