@@ -704,3 +704,43 @@ ulimit -n 4096
 - `docs/logs/lsp/lsp-integration-tests.log`
 - `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest.xml`
 - `build/reports/tests/test/index.html`
+
+---
+
+## 21. Real Analyzer Definition-Hit Assertion Upgrade
+
+### Date
+- 2026-02-27
+
+### Goal
+- 将 `MoveAnalyzerRealLspIntegrationTest` 的 definition 断言从“request 可达”升级为“必须命中声明位置”。
+
+### Changes
+- 用例升级：
+  - 测试名更新为 `test goto definition resolves declaration from real move analyzer`。
+  - 断言要求：
+    - definition 结果非空；
+    - 命中当前文件；
+    - range 覆盖 `target` 声明位置（并保留文本兜底检查）。
+- 稳定化处理：
+  - definition 用例改为纯净代码路径（去掉故意 unresolved symbol 干扰）。
+  - 增加 `waitForLanguageServerReady()`，先等 real analyzer 会话可用。
+  - definition 查询改为“同一调用标识符多 offset 轮询”，规避 cursor 位点敏感性带来的空结果抖动。
+  - `uri` 显式非空校验，修复 `compileTestKotlin` 的可空类型错误。
+
+### Verification
+```bash
+ulimit -n 4096
+./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest" \
+  2>&1 | tee -a "docs/logs/lsp/lsp-integration-tests.log"
+```
+
+### Result
+- `BUILD SUCCESSFUL`
+- 真实退出码：`0`
+- `MoveAnalyzerRealLspIntegrationTest`: `4 tests, 0 failures`
+
+### Artifacts
+- `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerRealLspIntegrationTest.kt`
+- `docs/logs/lsp/lsp-integration-tests.log`
+- `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest.xml`
