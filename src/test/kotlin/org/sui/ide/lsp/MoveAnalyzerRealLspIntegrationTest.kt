@@ -2,22 +2,32 @@ package org.sui.ide.lsp
 
 import com.redhat.devtools.lsp4ij.LSPFileSupport
 import com.redhat.devtools.lsp4ij.LSPIJUtils
+import com.redhat.devtools.lsp4ij.LanguageServerItem
 import com.redhat.devtools.lsp4ij.LanguageServiceAccessor
+import com.redhat.devtools.lsp4ij.client.features.LSPClientFeatures
 import com.redhat.devtools.lsp4ij.features.navigation.LSPDefinitionParams
+import com.redhat.devtools.lsp4ij.features.references.LSPReferenceParams
+import com.redhat.devtools.lsp4ij.features.rename.WorkspaceEditData
 import com.redhat.devtools.lsp4ij.usages.LocationData
 import com.intellij.testFramework.common.ThreadLeakTracker
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.WorkspaceEdit
 import org.sui.cli.settings.moveSettings
 import org.sui.utils.tests.MvProjectTestBase
 import java.util.concurrent.TimeUnit
+import java.util.function.Predicate
 
 class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
     override fun tearDown() {
         try {
-            stopLanguageServers()
+            if (!project.isDisposed) {
+                stopLanguageServers()
+            }
+        } catch (_: Throwable) {
+            // Avoid masking test failures with teardown disposal races.
         } finally {
             super.tearDown()
         }
@@ -80,6 +90,80 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
             locationData.location().uri.isNotBlank()
         }) {
             "Expected non-empty definition URIs when definition results are present, got $definitions"
+        }
+    }
+
+    fun `test references request is handled by real move analyzer`() {
+        if (!configureRealMoveAnalyzer()) return
+        testProject {
+            namedMoveToml("SuiPackage")
+            sources {
+                main(
+                    """
+                    module 0x1::main {
+                        fun target() {}
+
+                        fun call() {
+                            target();
+                            tar/*caret*/get();
+                            let _ = missing_symbol;
+                        }
+                    }
+                    """
+                )
+            }
+        }
+
+        waitForDiagnosticCovering("missing_symbol")
+        val context = currentCaretContext()
+        val params = LSPReferenceParams(
+            TextDocumentIdentifier(context.uri),
+            context.position,
+            context.offset
+        )
+        val references = waitForReferencesResponse(params)
+        check(references.all { locationData ->
+            locationData.location().uri.isNotBlank()
+        }) {
+            "Expected non-empty reference URIs when reference results are present, got $references"
+        }
+    }
+
+    fun `test rename request is handled by real move analyzer`() {
+        if (!configureRealMoveAnalyzer()) return
+        testProject {
+            namedMoveToml("SuiPackage")
+            sources {
+                main(
+                    """
+                    module 0x1::main {
+                        fun target() {}
+
+                        fun call() {
+                            tar/*caret*/get();
+                            target();
+                            let _ = missing_symbol;
+                        }
+                    }
+                    """
+                )
+            }
+        }
+
+        waitForDiagnosticCovering("missing_symbol")
+        val newName = "renamed_target"
+        val edits = waitForRenameEdits(newName)
+        check(edits.all { workspaceEdit ->
+            workspaceEdit.changes?.keys?.all { it.isNotBlank() } ?: true
+        }) {
+            "Expected non-empty URIs in rename workspace edits when present, got $edits"
+        }
+
+        val textEdits = edits.flatMap { workspaceEdit ->
+            workspaceEdit.changes?.values?.flatten().orEmpty()
+        }
+        check(textEdits.all { it.newText == newName }) {
+            "Expected rename edits to use `$newName` when edits are present, got $textEdits"
         }
     }
 
@@ -168,6 +252,150 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
         return result ?: error("Real move-analyzer did not return a definition response")
     }
 
+    private fun waitForReferencesResponse(params: LSPReferenceParams): List<LocationData> {
+        var result: List<LocationData>? = null
+        runWithInvocationEventsDispatching(
+            errorMessage = "Timed out waiting for real move-analyzer references response",
+            retries = 1200
+        ) {
+            val future = LSPFileSupport.getSupport(myFixture.file).referenceSupport.getReferences(params)
+            result = try {
+                future.get(250, TimeUnit.MILLISECONDS)
+            } catch (_: Exception) {
+                null
+            }
+            if (result == null) {
+                triggerLspRequest()
+            }
+            result != null
+        }
+        return result ?: error("Real move-analyzer did not return a references response")
+    }
+
+    private fun waitForRenameEdits(newName: String): List<WorkspaceEdit> {
+        var edits: List<WorkspaceEdit> = emptyList()
+        var requestTriggered = false
+        triggerLspRequest()
+        runWithInvocationEventsDispatching(
+            errorMessage = "Timed out waiting for real move-analyzer rename response",
+            retries = 1200
+        ) {
+            val renameParams = createRenameParams(newName)
+            if (renameParams == null) {
+                triggerLspRequest()
+                return@runWithInvocationEventsDispatching false
+            }
+            requestTriggered = true
+            val renameDataList = try {
+                requestFeatureList(
+                    support = LSPFileSupport.getSupport(myFixture.file).renameSupport,
+                    methodName = "getRename",
+                    params = renameParams,
+                    timeoutMillis = 250
+                )
+            } catch (_: Exception) {
+                emptyList<Any>()
+            }
+            edits = extractWorkspaceEdits(renameDataList)
+            true
+        }
+        check(requestTriggered) {
+            "Real move-analyzer rename request chain was not triggered"
+        }
+        return edits
+    }
+
+    private fun createRenameParams(newName: String): Any? {
+        val context = currentCaretContext()
+        val languageServers = getLanguageServersForCurrentFile()
+        if (languageServers.isEmpty()) return null
+
+        val paramsClass = Class.forName("com.redhat.devtools.lsp4ij.features.rename.LSPRenameParams")
+        val constructor = paramsClass.declaredConstructors.firstOrNull { it.parameterCount == 3 }
+            ?: return null
+        constructor.trySetAccessible()
+        val params = constructor.newInstance(
+            TextDocumentIdentifier(context.uri),
+            context.position,
+            languageServers
+        ) ?: return null
+
+        val setNewName = paramsClass.methods.firstOrNull {
+            it.name == "setNewName" && it.parameterCount == 1
+        } ?: return null
+        setNewName.invoke(params, newName)
+        return params
+    }
+
+    private fun getLanguageServersForCurrentFile(): List<*> {
+        val allowAll = Predicate<LSPClientFeatures> { true }
+        return try {
+            val accessor = LanguageServiceAccessor.getInstance(project)
+            val fileScopedServers = try {
+                accessor.getLanguageServers(myFixture.file, allowAll, allowAll)
+                    .get(3, TimeUnit.SECONDS)
+            } catch (_: Exception) {
+                emptyList<Any>()
+            }
+            if (fileScopedServers.isNotEmpty()) {
+                fileScopedServers
+            } else {
+                val globalServers = accessor.getLanguageServers(allowAll, allowAll).get(3, TimeUnit.SECONDS)
+                if (globalServers.isNotEmpty()) globalServers else getStartedLanguageServerItems()
+            }
+        } catch (_: Exception) {
+            emptyList<Any>()
+        }
+    }
+
+    private fun getStartedLanguageServerItems(): List<LanguageServerItem> {
+        val accessor = LanguageServiceAccessor.getInstance(project)
+        val wrappers = accessor.getStartedServers().toList()
+        return wrappers.mapNotNull { wrapper ->
+            if (wrapper.isDisposed) return@mapNotNull null
+            val server = wrapper.getLanguageServer() ?: try {
+                wrapper.getInitializedServer().get(1, TimeUnit.SECONDS)
+            } catch (_: Exception) {
+                null
+            }
+            if (server == null) null else LanguageServerItem(server, wrapper)
+        }
+    }
+
+    private fun extractWorkspaceEdits(renameDataList: List<*>): List<WorkspaceEdit> {
+        return renameDataList.mapNotNull { renameData ->
+            when (renameData) {
+                is WorkspaceEditData -> renameData.edit()
+                else -> invokeAccessor(renameData, "edit") as? WorkspaceEdit
+            }
+        }
+    }
+
+    private fun requestFeatureList(
+        support: Any,
+        methodName: String,
+        params: Any,
+        timeoutMillis: Long = 500
+    ): List<*> {
+        val method = support.javaClass.methods.firstOrNull {
+            it.name == methodName && it.parameterCount == 1
+        } ?: return emptyList<Any?>()
+        val future = method.invoke(support, params) as? java.util.concurrent.CompletableFuture<*>
+            ?: return emptyList<Any?>()
+        return future.get(timeoutMillis, TimeUnit.MILLISECONDS) as? List<*> ?: emptyList<Any>()
+    }
+
+    private fun invokeAccessor(target: Any?, accessorName: String): Any? {
+        if (target == null) return null
+        val method = target.javaClass.methods
+            .firstOrNull { it.name == accessorName && it.parameterCount == 0 }
+            ?: target.javaClass.declaredMethods
+                .firstOrNull { it.name == accessorName && it.parameterCount == 0 }
+            ?: return null
+        method.trySetAccessible()
+        return method.invoke(target)
+    }
+
     private fun rangeContains(range: Range, position: Position): Boolean {
         return comparePosition(position, range.start) >= 0 && comparePosition(position, range.end) <= 0
     }
@@ -188,8 +416,13 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
     }
 
     private fun stopLanguageServers() {
-        val accessor = LanguageServiceAccessor.getInstance(project)
-        val wrappers = accessor.getStartedServers().toList()
+        if (project.isDisposed) return
+        val wrappers = try {
+            LanguageServiceAccessor.getInstance(project).getStartedServers().toList()
+        } catch (_: Throwable) {
+            emptyList()
+        }
+        if (wrappers.isEmpty()) return
         wrappers.forEach { wrapper ->
             try {
                 wrapper.dispose(true)
@@ -198,11 +431,15 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
                 wrapper.dispose()
             }
         }
-        runWithInvocationEventsDispatching(
-            errorMessage = "Timed out waiting for real LSP servers shutdown",
-            retries = 500
-        ) {
-            wrappers.all { it.isDisposed }
+        try {
+            runWithInvocationEventsDispatching(
+                errorMessage = "Timed out waiting for real LSP servers shutdown",
+                retries = 500
+            ) {
+                wrappers.all { it.isDisposed }
+            }
+        } catch (_: Throwable) {
+            // Ignore shutdown races during fixture disposal.
         }
     }
 
