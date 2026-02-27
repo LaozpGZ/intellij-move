@@ -293,3 +293,54 @@ BUILD SUCCESSFUL in 3s
 
 ### Notes
 - 当前环境未检测到 `sui-move-analyzer` / `move-analyzer` 可执行文件，因此“IDE 内真实 analyzer 会话回归”仍需在安装 analyzer 的机器上补做一次手工验证。
+
+---
+
+## 12. LSP Integration Tests (Diagnostics + Definition)
+
+### Date
+- 2026-02-27
+
+### Goal
+- 按迁移路线把“旧本地语义测试”逐步替换为“LSP 集成测试”。
+- 首批覆盖：
+  - `diagnostics`
+  - `go-to-definition`
+
+### Files Added
+- `src/test/kotlin/org/sui/ide/lsp/FakeMoveAnalyzerServer.kt`
+- `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerLspIntegrationTest.kt`
+
+### Implementation Notes
+- `FakeMoveAnalyzerServer` 通过临时可执行脚本模拟 `move-analyzer --stdio`：
+  - 支持 `initialize` / `didOpen` / `definition` / `shutdown` / `exit`
+  - 当文档包含 `broken` 时发布 `fake lsp diagnostic`
+  - 对 `fun target` 返回 definition location
+- 首版诊断断言使用 `myFixture.doHighlighting()` 在测试环境存在异步时序抖动；
+  最终改为读取 `LanguageServerWrapper -> OpenedDocument` 的 LSP 诊断缓存，稳定验证服务端 `publishDiagnostics` 链路。
+
+### Targeted Test Run
+```bash
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest" \
+  2>&1 | tee "docs/logs/lsp/lsp-integration-tests.log"
+```
+
+### Targeted Result
+- Exit code: `0`
+- `2 passed, 0 failed`
+
+### Full Regression Run
+```bash
+./gradlew test 2>&1 | tee "docs/logs/lsp/lsp-migration-test.log"
+```
+
+### Full Regression Result
+- Exit code: `0`
+- `937 completed, 0 failed`
+- `BUILD SUCCESSFUL`
+
+### Artifacts
+- Targeted integration test log:
+  - `docs/logs/lsp/lsp-integration-tests.log`
+- Full regression test log:
+  - `docs/logs/lsp/lsp-migration-test.log`
