@@ -5,6 +5,7 @@ import com.redhat.devtools.lsp4ij.LSPIJUtils
 import com.redhat.devtools.lsp4ij.LanguageServiceAccessor
 import com.redhat.devtools.lsp4ij.features.navigation.LSPDefinitionParams
 import com.redhat.devtools.lsp4ij.usages.LocationData
+import com.intellij.testFramework.common.ThreadLeakTracker
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
@@ -94,6 +95,7 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
 
         val executable = MoveAnalyzerPathResolver.resolveExecutable(project, configuredPath)
         if (executable == null) return false
+        registerLongRunningAnalyzerThreads(executable.toString())
 
         project.moveSettings.modifyTemporary(testRootDisposable) {
             it.moveAnalyzerEnabled = true
@@ -173,6 +175,16 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
     private fun comparePosition(a: Position, b: Position): Int {
         if (a.line != b.line) return a.line.compareTo(b.line)
         return a.character.compareTo(b.character)
+    }
+
+    private fun registerLongRunningAnalyzerThreads(executablePath: String) {
+        val commandThreadPrefix = "$executablePath "
+        ThreadLeakTracker.longRunningThreadCreated(
+            testRootDisposable,
+            commandThreadPrefix,
+            "BaseDataReader: error stream of $commandThreadPrefix",
+            "BaseDataReader: output stream of $commandThreadPrefix"
+        )
     }
 
     private fun stopLanguageServers() {
