@@ -56,7 +56,7 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
         }
     }
 
-    fun `test goto definition request is handled by real move analyzer`() {
+    fun `test goto definition resolves declaration from real move analyzer`() {
         if (!configureRealMoveAnalyzer()) return
         testProject {
             namedMoveToml("SuiPackage")
@@ -67,8 +67,7 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
                         fun target() {}
 
                         fun call() {
-                            tar/*caret*/get();
-                            let _ = missing_symbol;
+                            target/*caret*/();
                         }
                     }
                     """
@@ -76,20 +75,40 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
             }
         }
 
-        // Real analyzer may need one full symbolication pass; waiting for diagnostics ensures
-        // the current file has been analyzed before definition assertions.
-        waitForDiagnosticCovering("missing_symbol")
+        waitForLanguageServerReady()
 
         val uri = LSPIJUtils.toUriAsString(myFixture.file)
-        val offset = myFixture.caretOffset
-        val position = LSPIJUtils.toPosition(offset, myFixture.editor.document)
-        val params = LSPDefinitionParams(TextDocumentIdentifier(uri), position, offset)
+            ?: error("Failed to build file URI for `${myFixture.file.name}`")
+        val declarationOffset = myFixture.file.text.indexOf("fun target")
+        check(declarationOffset >= 0) { "Failed to locate declaration marker `fun target` in source" }
 
-        val definitions = waitForDefinitionResponse(params)
-        check(definitions.all { locationData ->
-            locationData.location().uri.isNotBlank()
-        }) {
-            "Expected non-empty definition URIs when definition results are present, got $definitions"
+        val callMarkerOffset = myFixture.file.text.indexOf("target();", declarationOffset + 1)
+        check(callMarkerOffset >= 0) { "Failed to locate call site `target();` in source" }
+        val candidateOffsets = (callMarkerOffset until callMarkerOffset + "target".length).toList()
+
+        val definitions = waitForDefinitionResponse(uri, candidateOffsets)
+        val localDefinitions = definitions.filter { locationData ->
+            locationData.location().uri == uri
+        }
+        check(localDefinitions.isNotEmpty()) {
+            "Expected at least one definition in current file `$uri`, got $definitions"
+        }
+
+        val targetOffset = myFixture.file.text.indexOf("target", declarationOffset)
+        check(targetOffset >= 0) { "Failed to locate declaration `target` in source" }
+        val expectedPosition = LSPIJUtils.toPosition(targetOffset, myFixture.editor.document)
+
+        val hasTargetDeclaration = localDefinitions.any { locationData ->
+            val location = locationData.location()
+            val range = location.range
+            val includesExpectedPosition =
+                comparePosition(expectedPosition, range.start) >= 0 &&
+                    comparePosition(expectedPosition, range.end) <= 0
+            val declarationText = runCatching { rangeText(range) }.getOrNull()
+            includesExpectedPosition || declarationText?.contains("target") == true
+        }
+        check(hasTargetDeclaration) {
+            "Expected definition hit on `target` declaration, got $localDefinitions"
         }
     }
 
@@ -232,24 +251,40 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
         }
     }
 
-    private fun waitForDefinitionResponse(params: LSPDefinitionParams): List<LocationData> {
-        var result: List<LocationData>? = null
+    private fun waitForDefinitionResponse(uri: String, offsets: List<Int>): List<LocationData> {
+        var result: List<LocationData> = emptyList()
         runWithInvocationEventsDispatching(
             errorMessage = "Timed out waiting for real move-analyzer definition response",
             retries = 1200
         ) {
-            val future = LSPFileSupport.getSupport(myFixture.file).definitionSupport.getDefinitions(params)
-            result = try {
-                future.get(250, TimeUnit.MILLISECONDS)
-            } catch (_: Exception) {
-                null
+            for (offset in offsets) {
+                val position = LSPIJUtils.toPosition(offset, myFixture.editor.document)
+                val params = LSPDefinitionParams(TextDocumentIdentifier(uri), position, offset)
+                val future = LSPFileSupport.getSupport(myFixture.file).definitionSupport.getDefinitions(params)
+                val definitions = try {
+                    future.get(250, TimeUnit.MILLISECONDS)
+                } catch (_: Exception) {
+                    emptyList()
+                }
+                if (definitions.isNotEmpty()) {
+                    result = definitions
+                    return@runWithInvocationEventsDispatching true
+                }
             }
-            if (result == null) {
-                triggerLspRequest()
-            }
-            result != null
+            triggerLspRequest()
+            false
         }
-        return result ?: error("Real move-analyzer did not return a definition response")
+        return result
+    }
+
+    private fun waitForLanguageServerReady() {
+        runWithInvocationEventsDispatching(
+            errorMessage = "Timed out waiting for real move-analyzer language server startup",
+            retries = 1200
+        ) {
+            triggerLspRequest()
+            getLanguageServersForCurrentFile().isNotEmpty()
+        }
     }
 
     private fun waitForReferencesResponse(params: LSPReferenceParams): List<LocationData> {
@@ -403,6 +438,24 @@ class MoveAnalyzerRealLspIntegrationTest : MvProjectTestBase() {
     private fun comparePosition(a: Position, b: Position): Int {
         if (a.line != b.line) return a.line.compareTo(b.line)
         return a.character.compareTo(b.character)
+    }
+
+    private fun rangeText(range: Range): String {
+        val document = myFixture.editor.document
+
+        fun lineStartOffset(line: Int): Int {
+            check(line in 0 until document.lineCount) {
+                "Line index out of bounds: $line (lineCount=${document.lineCount})"
+            }
+            return document.getLineStartOffset(line)
+        }
+
+        val startOffset = lineStartOffset(range.start.line) + range.start.character
+        val endOffset = lineStartOffset(range.end.line) + range.end.character
+        check(startOffset in 0..document.textLength && endOffset in 0..document.textLength && endOffset >= startOffset) {
+            "Invalid range offsets: start=$startOffset, end=$endOffset, textLength=${document.textLength}"
+        }
+        return document.charsSequence.subSequence(startOffset, endOffset).toString()
     }
 
     private fun registerLongRunningAnalyzerThreads(executablePath: String) {

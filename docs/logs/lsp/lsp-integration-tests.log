@@ -356,3 +356,206 @@ BUILD SUCCESSFUL in 17s
 [LSP Integration] real-analyzer references-rename opt-in stabilization (2026-02-27)
 - ./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest" -> BUILD SUCCESSFUL
 - Note: run command with temporary `ulimit -n 4096` to avoid local session FD noise
+Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.fullLine.yaml.jar
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :generateLexer UP-TO-DATE
+> Task :generateParser UP-TO-DATE
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava UP-TO-DATE
+> Task :initializeIntellijPlatformPlugin
+> Task :patchPluginXml UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :generateManifest UP-TO-DATE
+> Task :instrumentCode SKIPPED
+> Task :jar UP-TO-DATE
+> Task :processTestResources UP-TO-DATE
+> Task :composedJar UP-TO-DATE
+> Task :prepareTestSandbox UP-TO-DATE
+> Task :prepareTest
+> Task :compileTestKotlin
+> Task :compileTestJava NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :instrumentTestCode SKIPPED
+
+> Task :test
+[0.005s][warning][cds] Archived non-system classes are disabled because the java.system.class.loader property is specified (value = "com.intellij.util.lang.PathClassLoader"). To use archived non-system classes, this property must not be set
+
+MoveAnalyzerRealLspIntegrationTest > test goto definition resolves declaration from real move analyzer FAILED
+    java.lang.IllegalStateException at MoveAnalyzerRealLspIntegrationTest.kt:89
+
+4 tests completed, 1 failed
+
+> Task :test FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///Users/gz/Documents/GitHub/intellij-move/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+BUILD FAILED in 17s
+14 actionable tasks: 3 executed, 11 up-to-date
+Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.fullLine.yaml.jar
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :generateLexer UP-TO-DATE
+> Task :generateParser UP-TO-DATE
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava UP-TO-DATE
+> Task :initializeIntellijPlatformPlugin
+> Task :patchPluginXml UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :generateManifest UP-TO-DATE
+> Task :instrumentCode SKIPPED
+> Task :jar UP-TO-DATE
+> Task :processTestResources UP-TO-DATE
+> Task :composedJar UP-TO-DATE
+> Task :prepareTestSandbox UP-TO-DATE
+> Task :prepareTest
+> Task :compileTestKotlin
+> Task :compileTestJava NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :instrumentTestCode SKIPPED
+
+> Task :test
+[0.006s][warning][cds] Archived non-system classes are disabled because the java.system.class.loader property is specified (value = "com.intellij.util.lang.PathClassLoader"). To use archived non-system classes, this property must not be set
+
+MoveAnalyzerRealLspIntegrationTest > test goto definition resolves declaration from real move analyzer FAILED
+    java.lang.IllegalStateException at MoveAnalyzerRealLspIntegrationTest.kt:257
+
+4 tests completed, 1 failed
+
+> Task :test FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///Users/gz/Documents/GitHub/intellij-move/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+BUILD FAILED in 31s
+14 actionable tasks: 3 executed, 11 up-to-date
+Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.fullLine.yaml.jar
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :generateLexer UP-TO-DATE
+> Task :generateParser UP-TO-DATE
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava UP-TO-DATE
+> Task :initializeIntellijPlatformPlugin
+> Task :patchPluginXml UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :generateManifest UP-TO-DATE
+> Task :instrumentCode SKIPPED
+> Task :jar UP-TO-DATE
+> Task :processTestResources UP-TO-DATE
+> Task :composedJar UP-TO-DATE
+> Task :prepareTestSandbox UP-TO-DATE
+> Task :prepareTest
+> Task :compileTestKotlin
+> Task :compileTestJava NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :instrumentTestCode SKIPPED
+
+> Task :test
+[0.005s][warning][cds] Archived non-system classes are disabled because the java.system.class.loader property is specified (value = "com.intellij.util.lang.PathClassLoader"). To use archived non-system classes, this property must not be set
+
+MoveAnalyzerRealLspIntegrationTest > test goto definition resolves declaration from real move analyzer FAILED
+    java.lang.IllegalStateException at MoveAnalyzerRealLspIntegrationTest.kt:254
+
+MoveAnalyzerRealLspIntegrationTest > test references request is handled by real move analyzer FAILED
+    com.intellij.util.lang.CompoundRuntimeException at MoveAnalyzerRealLspIntegrationTest.kt:32
+        Caused by: java.lang.RuntimeException at MoveAnalyzerRealLspIntegrationTest.kt:32
+            Caused by: com.intellij.openapi.progress.ProcessCanceledException at ComponentManagerImpl.kt:686
+                Caused by: com.intellij.platform.instanceContainer.internal.ContainerDisposedException at InstanceContainerImpl.kt:60
+                    Caused by: com.intellij.platform.instanceContainer.internal.DisposalTrace at MoveAnalyzerRealLspIntegrationTest.kt:32
+
+4 tests completed, 2 failed
+
+> Task :test FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///Users/gz/Documents/GitHub/intellij-move/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+BUILD FAILED in 31s
+14 actionable tasks: 3 executed, 11 up-to-date
+Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.fullLine.yaml.jar
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :generateLexer UP-TO-DATE
+> Task :generateParser UP-TO-DATE
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava UP-TO-DATE
+> Task :initializeIntellijPlatformPlugin
+> Task :patchPluginXml UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :generateManifest UP-TO-DATE
+> Task :instrumentCode SKIPPED
+> Task :jar UP-TO-DATE
+> Task :processTestResources UP-TO-DATE
+> Task :composedJar UP-TO-DATE
+> Task :prepareTestSandbox UP-TO-DATE
+> Task :prepareTest
+
+> Task :compileTestKotlin FAILED
+e: file:///Users/gz/Documents/GitHub/intellij-move/src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerRealLspIntegrationTest.kt:88:53 Argument type mismatch: actual type is 'String?', but 'String' was expected.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileTestKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 4s
+13 actionable tasks: 2 executed, 11 up-to-date
+Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.fullLine.yaml.jar
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :generateLexer UP-TO-DATE
+> Task :generateParser UP-TO-DATE
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava UP-TO-DATE
+> Task :initializeIntellijPlatformPlugin
+> Task :patchPluginXml UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :generateManifest UP-TO-DATE
+> Task :instrumentCode SKIPPED
+> Task :jar UP-TO-DATE
+> Task :processTestResources UP-TO-DATE
+> Task :composedJar UP-TO-DATE
+> Task :prepareTestSandbox UP-TO-DATE
+> Task :prepareTest
+> Task :compileTestKotlin
+> Task :compileTestJava NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :instrumentTestCode SKIPPED
+
+> Task :test
+[0.005s][warning][cds] Archived non-system classes are disabled because the java.system.class.loader property is specified (value = "com.intellij.util.lang.PathClassLoader"). To use archived non-system classes, this property must not be set
+
+BUILD SUCCESSFUL in 18s
+14 actionable tasks: 3 executed, 11 up-to-date
+
+[LSP Integration] real-analyzer definition-hit assertion upgrade (2026-02-27)
+- ./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest" -> BUILD SUCCESSFUL
+- Scope: definition assertion upgraded from request-reachable to declaration-hit
