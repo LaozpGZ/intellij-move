@@ -35,7 +35,7 @@ class MvLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsProvider() 
             else -> ""
         }
 
-    override fun getIndentOptionsEditor(): IndentOptionsEditor = SmartIndentOptionsEditor()
+    override fun getIndentOptionsEditor(): IndentOptionsEditor = MoveIndentOptionsEditor()
 
     override fun customizeDefaults(
         commonSettings: CommonCodeStyleSettings,
@@ -49,10 +49,39 @@ class MvLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsProvider() 
         commonSettings.LINE_COMMENT_ADD_SPACE = true
         commonSettings.BLOCK_COMMENT_AT_FIRST_COLUMN = false
 
-        // FIXME(mkaput): It's a hack
-        // Nobody else does this and still somehow achieve similar effect
+        // Match rustfmt defaults: continuation indent follows regular indent.
         indentOptions.CONTINUATION_INDENT_SIZE = indentOptions.INDENT_SIZE
     }
+}
+
+private class MoveIndentOptionsEditor : SmartIndentOptionsEditor() {
+    override fun isModified(
+        settings: CodeStyleSettings,
+        options: CommonCodeStyleSettings.IndentOptions
+    ): Boolean {
+        return super.isModified(settings, options.normalizedForMove())
+    }
+
+    override fun reset(
+        settings: CodeStyleSettings,
+        options: CommonCodeStyleSettings.IndentOptions
+    ) {
+        super.reset(settings, options.normalizedForMove())
+    }
+
+    override fun apply(
+        settings: CodeStyleSettings,
+        options: CommonCodeStyleSettings.IndentOptions
+    ) {
+        super.apply(settings, options)
+        options.CONTINUATION_INDENT_SIZE = options.INDENT_SIZE
+    }
+}
+
+private fun CommonCodeStyleSettings.IndentOptions.normalizedForMove(): CommonCodeStyleSettings.IndentOptions {
+    val copy = clone() as CommonCodeStyleSettings.IndentOptions
+    copy.CONTINUATION_INDENT_SIZE = copy.INDENT_SIZE
+    return copy
 }
 
 private fun sample(@org.intellij.lang.annotations.Language("Sui Move") code: String) = code.trim()
