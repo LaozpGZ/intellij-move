@@ -97,6 +97,9 @@ abstract class MvTestBase : MvLightTestBase(),
         super.setUp()
 
         setupInspections()
+        project.moveSettings.modifyTemporary(testRootDisposable) {
+            it.moveAnalyzerEnabled = false
+        }
         val testResourcesPath = Paths.get(TestCase.testResourcesPath).toAbsolutePath().normalize().toString()
         VfsRootAccess.allowRootAccess(testRootDisposable, testResourcesPath)
 

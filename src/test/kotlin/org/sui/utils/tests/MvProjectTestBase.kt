@@ -15,6 +15,7 @@ import com.intellij.util.SystemProperties
 import com.intellij.util.ui.UIUtil
 import org.intellij.lang.annotations.Language
 import org.jetbrains.annotations.TestOnly
+import org.sui.cli.settings.moveSettings
 import org.sui.cli.moveProjectsService
 import org.sui.openapiext.toPsiDirectory
 import org.sui.openapiext.toPsiFile
@@ -33,6 +34,9 @@ abstract class MvProjectTestBase : CodeInsightFixtureTestCase<ModuleFixtureBuild
 
         val isDebugMode = this.findAnnotationInstance<DebugMode>()?.enabled ?: true
         setRegistryKey("org.sui.debug.enabled", isDebugMode)
+        project.moveSettings.modifyTemporary(testRootDisposable) {
+            it.moveAnalyzerEnabled = false
+        }
 
         this.handleCompilerV2Annotations(project)
     }

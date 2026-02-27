@@ -20,6 +20,14 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
 
 class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
+    override fun tearDown() {
+        try {
+            stopLanguageServers()
+        } finally {
+            super.tearDown()
+        }
+    }
+
     fun `test diagnostics are reported from move analyzer`() {
         configureMoveAnalyzer()
         testProject {
@@ -552,4 +560,24 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
             .firstOrNull { it.name == "getValue" && it.parameterCount == 0 }
             ?.invoke(valueHolder) as? String
     }
+
+    private fun stopLanguageServers() {
+        val accessor = LanguageServiceAccessor.getInstance(project)
+        val wrappers = accessor.getStartedServers().toList()
+        wrappers.forEach { wrapper ->
+            try {
+                wrapper.dispose(true)
+            } catch (_: Throwable) {
+                wrapper.stopAndDisable()
+                wrapper.dispose()
+            }
+        }
+        runWithInvocationEventsDispatching(
+            errorMessage = "Timed out waiting for LSP servers shutdown",
+            retries = 500
+        ) {
+            wrappers.all { it.isDisposed }
+        }
+    }
+
 }

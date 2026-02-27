@@ -238,6 +238,12 @@ allprojects {
             val includeLegacySemanticTests = project.findProperty("includeLegacySemanticTests")
                 ?.toString()
                 ?.toBooleanStrictOrNull() ?: false
+            val includeRealMoveAnalyzerTests = project.findProperty("includeRealMoveAnalyzerTests")
+                ?.toString()
+                ?.toBooleanStrictOrNull() ?: false
+
+            // Real analyzer tests are opt-in because they require local toolchain/runtime setup.
+            systemProperty("sui.moveAnalyzer.real.tests", includeRealMoveAnalyzerTests.toString())
 
             // After migrating Move semantic features to move-analyzer (LSP),
             // local semantic test suites are opt-in via -PincludeLegacySemanticTests=true.

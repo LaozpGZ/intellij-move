@@ -6,7 +6,7 @@ import java.nio.file.Files
 
 class MoveAnalyzerCommandProviderTest : MvProjectTestBase() {
     fun `test command line uses configured executable and stdio argument`() {
-        val executable = createExecutable()
+        val executable = createExecutable("sui-move-analyzer")
         project.moveSettings.modifyTemporary(testRootDisposable) {
             it.moveAnalyzerPath = executable.toString()
         }
@@ -25,8 +25,28 @@ class MoveAnalyzerCommandProviderTest : MvProjectTestBase() {
         }
     }
 
+    fun `test command line omits stdio argument for official move analyzer`() {
+        val executable = createExecutable("move-analyzer")
+        project.moveSettings.modifyTemporary(testRootDisposable) {
+            it.moveAnalyzerPath = executable.toString()
+        }
+        testProject {
+            namedMoveToml("SuiPackage")
+            sources { main("/*caret*/") }
+        }
+
+        val commandLine = MoveAnalyzerCommandProvider.createCommandLine(project)
+
+        check(commandLine.exePath == executable.toString()) {
+            "Unexpected executable path: ${commandLine.exePath}"
+        }
+        check(commandLine.parametersList.parameters.isEmpty()) {
+            "Expected no arguments for official move-analyzer, got ${commandLine.parametersList.parameters}"
+        }
+    }
+
     fun `test command line uses move project root as working directory`() {
-        val executable = createExecutable()
+        val executable = createExecutable("sui-move-analyzer")
         project.moveSettings.modifyTemporary(testRootDisposable) {
             it.moveAnalyzerPath = executable.toString()
         }
@@ -44,9 +64,9 @@ class MoveAnalyzerCommandProviderTest : MvProjectTestBase() {
         }
     }
 
-    private fun createExecutable(): java.nio.file.Path {
+    private fun createExecutable(fileName: String): java.nio.file.Path {
         val tempDir = Files.createTempDirectory("move-analyzer-command")
-        val executable = tempDir.resolve("sui-move-analyzer")
+        val executable = tempDir.resolve(fileName)
         Files.writeString(executable, "#!/usr/bin/env bash\nexit 0\n")
         executable.toFile().setExecutable(true)
         return executable
