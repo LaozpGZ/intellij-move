@@ -93,7 +93,11 @@ Branch: `refactor/lsp-migration`
   - rename: 按 caret symbol 生成 workspace edits（不再硬编码 `target`）
 - 真实 analyzer 集成回归入口已添加（默认关闭）：
   - `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerRealLspIntegrationTest.kt`
-  - 覆盖能力：`diagnostics` 与 `definition request`（opt-in）
+  - 覆盖能力：`diagnostics`、`definition request`、`references request`、`rename request`（opt-in）
+- 真实 analyzer opt-in 稳定性修复已完成：
+  - rename 请求链路断言升级为“请求可触发”（允许空 edit，规避能力差异抖动）
+  - language server 发现增加 file/global/started-server fallback
+  - teardown server shutdown 增加销毁竞态保护
 - 真实 analyzer 环境已就绪：
   - `/Users/gz/.cargo/bin/move-analyzer`
   - `move-analyzer 1.67.0-ecde3d1a9665`

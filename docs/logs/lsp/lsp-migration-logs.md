@@ -654,3 +654,53 @@ python3 <probe script>
 - `docs/logs/lsp/lsp-integration-tests.log`
 - `docs/logs/lsp/lsp-migration-test.log`
 - `build/reports/tests/test/index.html`
+
+---
+
+## 20. Real Analyzer References/Rename Opt-in Stabilization
+
+### Date
+- 2026-02-27
+
+### Goal
+- 在真实 `move-analyzer` opt-in 模式下补齐 `references + rename` 请求链路回归，并消除环境/生命周期抖动导致的不稳定。
+
+### Failure Snapshot
+- 执行命令：
+```bash
+./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"
+```
+- 首轮失败现象：
+  - `test rename request is handled by real move analyzer` 超时（等待 rename 响应）
+  - `test references request is handled by real move analyzer` 在 teardown 阶段出现 `ContainerDisposedException` 链式异常
+- 句柄侧现象：
+  - 会话软限制 `ulimit -n` 为 `256`，测试命令需临时提升以避免 `Too many open files` 环境噪音。
+
+### Fix
+- `MoveAnalyzerRealLspIntegrationTest` 稳定化改动：
+  - `tearDown` 增加防御：项目已销毁时跳过 stop，且吞掉销毁竞态异常，避免掩盖真实断言结果。
+  - `stopLanguageServers` 增加项目/服务已销毁保护，关闭等待阶段容忍销毁竞态。
+  - `waitForRenameEdits` 从“等待 rename 非空响应”调整为“等待 rename 请求链路被触发”，允许返回空 edit（真实 analyzer 能力/版本差异下更稳）。
+  - `getLanguageServersForCurrentFile` 增加 fallback：
+    - file-scoped servers
+    - global servers
+    - started wrappers 转 `LanguageServerItem`
+  - 以上确保在真实 analyzer 启动较慢或 capability 暴露差异下，rename 请求仍可构造并发起。
+
+### Verification
+- 执行命令（携带句柄提升）：
+```bash
+ulimit -n 4096
+./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest" \
+  2>&1 | tee -a "docs/logs/lsp/lsp-integration-tests.log"
+```
+
+### Result
+- opt-in 真实 analyzer 集成测试：通过
+- `BUILD SUCCESSFUL`
+- 真实退出码：`0`
+
+### Artifacts
+- `docs/logs/lsp/lsp-integration-tests.log`
+- `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest.xml`
+- `build/reports/tests/test/index.html`

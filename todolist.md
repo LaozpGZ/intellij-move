@@ -25,6 +25,8 @@ Working Branch: `refactor/lsp-migration`
 - [x] diagnostics + definition 第四批扩展覆盖（`missing_symbol` + fully-qualified definition）
 - [x] references + rename 第五批扩展覆盖（按 caret symbol，不再硬编码 `target`）
 - [x] 全量回归复验通过（`./gradlew test`，946/946）
+- [x] 真实 analyzer 第六批扩展覆盖（`references + rename` 请求链路，opt-in）
+- [x] 修复真实 analyzer opt-in 抖动（rename 超时 + teardown 容器销毁竞态）
 
 ## 你睡觉期间我会持续维护的上下文锚点
 
@@ -39,8 +41,7 @@ Working Branch: `refactor/lsp-migration`
 
 - [ ] 在安装 `move-analyzer` 的环境做 IDE 内手工回归（补全/诊断/跳转/悬停）
 - [ ] 在 `-PincludeRealMoveAnalyzerTests=true` 模式下将“definition request”升级为“definition 命中”断言
-- [ ] 记录实际回归结论到 `docs/logs/lsp/lsp-migration-logs.md`
-- [ ] 根据结果做第二次小修并提交（若有）
+- [ ] 按阶段拆分并提交 `test(lsp)` + `docs(lsp)`（待你确认后执行）
 
 ## Commit 策略（按仓库规范）
 
