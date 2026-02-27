@@ -23,6 +23,7 @@ object FakeMoveAnalyzerServer {
     private val SCRIPT = """
         #!/usr/bin/env python3
         import json
+        import re
         import sys
         
         open_docs = {}
@@ -59,6 +60,47 @@ object FakeMoveAnalyzerServer {
             char = offset if last_nl == -1 else offset - last_nl - 1
             return line, char
 
+        def to_offset(text, line, char):
+            if line < 0 or char < 0:
+                return None
+            current_line = 0
+            current_char = 0
+            for idx, c in enumerate(text):
+                if current_line == line and current_char == char:
+                    return idx
+                if c == "\n":
+                    current_line += 1
+                    current_char = 0
+                else:
+                    current_char += 1
+            if current_line == line and current_char == char:
+                return len(text)
+            return None
+
+        def symbol_at_position(text, line, char):
+            offset = to_offset(text, line, char)
+            if offset is None or not text:
+                return None
+            if offset >= len(text):
+                offset = max(0, len(text) - 1)
+
+            def is_ident_char(ch):
+                return ch.isalnum() or ch == "_"
+
+            if not is_ident_char(text[offset]):
+                if offset == 0 or not is_ident_char(text[offset - 1]):
+                    return None
+                offset -= 1
+
+            start = offset
+            while start > 0 and is_ident_char(text[start - 1]):
+                start -= 1
+
+            end = offset + 1
+            while end < len(text) and is_ident_char(text[end]):
+                end += 1
+            return text[start:end]
+
         def find_symbol_locations(uri, text, symbol):
             locations = []
             cursor = 0
@@ -76,22 +118,50 @@ object FakeMoveAnalyzerServer {
                 })
                 cursor = idx + len(symbol)
             return locations
+
+        def find_function_definitions(symbol):
+            if not symbol:
+                return []
+            pattern = re.compile(r"\b(?:public\s+)?(?:entry\s+)?(?:native\s+)?fun\s+" + re.escape(symbol) + r"\b")
+            definitions = []
+            for uri, text in open_docs.items():
+                for match in pattern.finditer(text):
+                    name_idx = text.find(symbol, match.start(), match.end())
+                    if name_idx < 0:
+                        continue
+                    line, char = to_line_char(text, name_idx)
+                    definitions.append({
+                        "uri": uri,
+                        "range": {
+                            "start": {"line": line, "character": char},
+                            "end": {"line": line, "character": char + len(symbol)}
+                        }
+                    })
+            return definitions
         
         def publish_diagnostics(uri, text):
-            target = "broken"
-            idx = text.find(target)
             diagnostics = []
-            if idx >= 0:
-                line, char = to_line_char(text, idx)
-                diagnostics.append({
-                    "range": {
-                        "start": {"line": line, "character": char},
-                        "end": {"line": line, "character": char + len(target)}
-                    },
-                    "severity": 1,
-                    "source": "fake-move-analyzer",
-                    "message": "fake lsp diagnostic"
-                })
+            diagnostic_targets = [
+                ("broken", "fake lsp diagnostic"),
+                ("missing_symbol", "fake unresolved symbol diagnostic"),
+            ]
+            for target, message in diagnostic_targets:
+                cursor = 0
+                while True:
+                    idx = text.find(target, cursor)
+                    if idx < 0:
+                        break
+                    line, char = to_line_char(text, idx)
+                    diagnostics.append({
+                        "range": {
+                            "start": {"line": line, "character": char},
+                            "end": {"line": line, "character": char + len(target)}
+                        },
+                        "severity": 1,
+                        "source": "fake-move-analyzer",
+                        "message": message
+                    })
+                    cursor = idx + len(target)
             send({
                 "jsonrpc": "2.0",
                 "method": "textDocument/publishDiagnostics",
@@ -136,28 +206,32 @@ object FakeMoveAnalyzerServer {
                     open_docs[uri] = text
                     publish_diagnostics(uri, text)
                 continue
+
+            if method == "textDocument/didChange":
+                params = message.get("params", {})
+                td = params.get("textDocument", {})
+                uri = td.get("uri")
+                changes = params.get("contentChanges", [])
+                if uri and changes:
+                    latest_text = changes[-1].get("text", "")
+                    open_docs[uri] = latest_text
+                    publish_diagnostics(uri, latest_text)
+                continue
         
             if method == "textDocument/definition":
                 params = message.get("params", {})
                 td = params.get("textDocument", {})
                 uri = td.get("uri")
                 text = open_docs.get(uri, "")
-        
-                result = []
-                marker = "fun target"
-                marker_idx = text.find(marker)
-                if marker_idx >= 0 and uri:
-                    name_idx = text.find("target", marker_idx)
-                    if name_idx >= 0:
-                        line, char = to_line_char(text, name_idx)
-                        result = [{
-                            "uri": uri,
-                            "range": {
-                                "start": {"line": line, "character": char},
-                                "end": {"line": line, "character": char + len("target")}
-                            }
-                        }]
-        
+
+                position = params.get("position", {})
+                symbol = symbol_at_position(
+                    text,
+                    position.get("line", 0),
+                    position.get("character", 0),
+                )
+                result = find_function_definitions(symbol)
+
                 send({"jsonrpc": "2.0", "id": message["id"], "result": result})
                 continue
 

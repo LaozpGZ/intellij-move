@@ -57,6 +57,35 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
         }
     }
 
+    fun `test unresolved symbol diagnostics are reported from move analyzer`() {
+        configureMoveAnalyzer()
+        testProject {
+            namedMoveToml("SuiPackage")
+            sources {
+                main(
+                    """
+                    module 0x1::main {
+                        fun call() {
+                            let _ = missing_symbol/*caret*/;
+                        }
+                    }
+                    """
+                )
+            }
+        }
+
+        val diagnostic = waitForLspDiagnostic("fake unresolved symbol diagnostic")
+        val expectedStart = myFixture.file.text.indexOf("missing_symbol")
+        check(expectedStart >= 0) { "Failed to locate `missing_symbol` in source" }
+        val expectedPosition = LSPIJUtils.toPosition(expectedStart, myFixture.editor.document)
+        check(diagnostic.range.start.line == expectedPosition.line) {
+            "Unexpected diagnostic line: ${diagnostic.range.start.line}, expected: ${expectedPosition.line}"
+        }
+        check(diagnostic.range.start.character == expectedPosition.character) {
+            "Unexpected diagnostic character: ${diagnostic.range.start.character}, expected: ${expectedPosition.character}"
+        }
+    }
+
     fun `test goto definition uses move analyzer result`() {
         configureMoveAnalyzer()
         testProject {
@@ -93,6 +122,54 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
 
         val targetOffset = myFixture.file.text.indexOf("target")
         check(targetOffset >= 0) { "Failed to locate declaration `target` in source" }
+        val expectedPosition = LSPIJUtils.toPosition(targetOffset, myFixture.editor.document)
+
+        check(location.range.start.line == expectedPosition.line) {
+            "Unexpected definition line: ${location.range.start.line}, expected: ${expectedPosition.line}"
+        }
+        check(location.range.start.character == expectedPosition.character) {
+            "Unexpected definition character: ${location.range.start.character}, expected: ${expectedPosition.character}"
+        }
+    }
+
+    fun `test goto definition resolves fully-qualified function call`() {
+        configureMoveAnalyzer()
+        testProject {
+            namedMoveToml("SuiPackage")
+            sources {
+                main(
+                    """
+                    module 0x1::main {
+                        public fun compute_value() {}
+
+                        fun call() {
+                            0x1::main::compute/*caret*/_value();
+                        }
+                    }
+                    """
+                )
+            }
+        }
+
+        val uri = LSPIJUtils.toUriAsString(myFixture.file)
+        val offset = myFixture.caretOffset
+        val position = LSPIJUtils.toPosition(offset, myFixture.editor.document)
+        val params = LSPDefinitionParams(TextDocumentIdentifier(uri), position, offset)
+
+        val definitions = waitForDefinitions(params)
+        check(definitions.size == 1) {
+            "Expected exactly one definition result, got ${definitions.size}: $definitions"
+        }
+
+        val location = definitions.single().location()
+        check(location.uri == uri) {
+            "Expected definition uri `$uri`, got `${location.uri}`"
+        }
+
+        val markerOffset = myFixture.file.text.indexOf("fun compute_value")
+        check(markerOffset >= 0) { "Failed to locate declaration marker `fun compute_value` in source" }
+        val targetOffset = myFixture.file.text.indexOf("compute_value", markerOffset)
+        check(targetOffset >= 0) { "Failed to locate declaration `compute_value` in source" }
         val expectedPosition = LSPIJUtils.toPosition(targetOffset, myFixture.editor.document)
 
         check(location.range.start.line == expectedPosition.line) {
