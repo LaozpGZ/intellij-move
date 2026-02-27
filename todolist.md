@@ -1,6 +1,6 @@
 # TODO List (LSP Migration)
 
-Last Update: 2026-02-27  
+Last Update: 2026-02-27
 Owner: Codex + User  
 Working Branch: `refactor/lsp-migration`
 
@@ -18,7 +18,10 @@ Working Branch: `refactor/lsp-migration`
 - [x] 第一批 LSP 集成测试落地（`diagnostics + definition`，`2/2`）
 - [x] 第二批 LSP 集成测试落地（`completion + hover`，`2/2`）
 - [x] 第三批 LSP 集成测试落地（`references + rename`，`2/2`）
-- [x] 全量回归复验通过（`./gradlew test`，941/941）
+- [x] 修复官方 `move-analyzer` 启动参数兼容（`move-analyzer` 不再附加 `--stdio`）
+- [x] 新增真实 analyzer 回归入口（默认关闭，`-PincludeRealMoveAnalyzerTests=true` 开启）
+- [x] 测试基座隔离环境差异（默认关闭 `moveAnalyzerEnabled`，避免本机工具链影响非 LSP 用例）
+- [x] 全量回归复验通过（`./gradlew test`，944/944）
 
 ## 你睡觉期间我会持续维护的上下文锚点
 
@@ -32,6 +35,7 @@ Working Branch: `refactor/lsp-migration`
 ## 下一步执行队列
 
 - [ ] 在安装 `move-analyzer` 的环境做 IDE 内手工回归（补全/诊断/跳转/悬停）
+- [ ] 在 `-PincludeRealMoveAnalyzerTests=true` 模式下补齐“definition 命中”断言
 - [ ] 记录实际回归结论到 `docs/logs/lsp/lsp-migration-logs.md`
 - [ ] 根据结果做第二次小修并提交（若有）
 

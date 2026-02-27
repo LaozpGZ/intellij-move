@@ -1,3 +1,5 @@
+[LSP Integration] command-provider
+Starting a Gradle Daemon, 1 stopped Daemon could not be reused, use --status for details
 Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.fullLine.yaml.jar
 > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :generateLexer UP-TO-DATE
@@ -11,17 +13,69 @@ Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.
 > Task :generateManifest UP-TO-DATE
 > Task :instrumentCode SKIPPED
 > Task :jar UP-TO-DATE
+> Task :compileTestKotlin UP-TO-DATE
+> Task :compileTestJava NO-SOURCE
 > Task :processTestResources UP-TO-DATE
+> Task :testClasses UP-TO-DATE
+> Task :instrumentTestCode SKIPPED
 > Task :composedJar UP-TO-DATE
 > Task :prepareTestSandbox UP-TO-DATE
 > Task :prepareTest
-> Task :compileTestKotlin
+> Task :test FROM-CACHE
+
+BUILD SUCCESSFUL in 7s
+14 actionable tasks: 1 executed, 1 from cache, 12 up-to-date
+[LSP Integration] fake-analyzer
+Starting a Gradle Daemon, 2 stopped Daemons could not be reused, use --status for details
+Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.fullLine.yaml.jar
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :generateLexer UP-TO-DATE
+> Task :generateParser UP-TO-DATE
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava UP-TO-DATE
+> Task :initializeIntellijPlatformPlugin
+> Task :patchPluginXml UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :generateManifest UP-TO-DATE
+> Task :instrumentCode SKIPPED
+> Task :jar UP-TO-DATE
+> Task :compileTestKotlin UP-TO-DATE
 > Task :compileTestJava NO-SOURCE
+> Task :processTestResources UP-TO-DATE
 > Task :testClasses UP-TO-DATE
 > Task :instrumentTestCode SKIPPED
+> Task :composedJar UP-TO-DATE
+> Task :prepareTestSandbox UP-TO-DATE
+> Task :prepareTest
+> Task :test FROM-CACHE
 
-> Task :test
-[0.005s][warning][cds] Archived non-system classes are disabled because the java.system.class.loader property is specified (value = "com.intellij.util.lang.PathClassLoader"). To use archived non-system classes, this property must not be set
+BUILD SUCCESSFUL in 7s
+14 actionable tasks: 1 executed, 1 from cache, 12 up-to-date
+[LSP Integration] real-analyzer(default-disabled)
+Starting a Gradle Daemon, 3 stopped Daemons could not be reused, use --status for details
+Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.fullLine.yaml.jar
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :generateLexer UP-TO-DATE
+> Task :generateParser UP-TO-DATE
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava UP-TO-DATE
+> Task :initializeIntellijPlatformPlugin
+> Task :patchPluginXml UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :generateManifest UP-TO-DATE
+> Task :instrumentCode SKIPPED
+> Task :jar UP-TO-DATE
+> Task :compileTestKotlin UP-TO-DATE
+> Task :compileTestJava NO-SOURCE
+> Task :processTestResources UP-TO-DATE
+> Task :testClasses UP-TO-DATE
+> Task :instrumentTestCode SKIPPED
+> Task :composedJar UP-TO-DATE
+> Task :prepareTestSandbox UP-TO-DATE
+> Task :prepareTest
+> Task :test FROM-CACHE
 
-BUILD SUCCESSFUL in 10s
-14 actionable tasks: 3 executed, 11 up-to-date
+BUILD SUCCESSFUL in 7s
+14 actionable tasks: 1 executed, 1 from cache, 12 up-to-date

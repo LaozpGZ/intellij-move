@@ -142,6 +142,8 @@
   - 默认测试模式使用迁移闸门
   - 需要回看旧本地语义时显式执行：
     - `./gradlew test -PincludeLegacySemanticTests=true`
+  - 需要执行真实 `move-analyzer` 回归时显式执行：
+    - `./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`
 
 ## 11. Definition of Done (DoD)
 

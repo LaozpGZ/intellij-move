@@ -13,6 +13,12 @@
 - 当前任务板：[`todolist.md`](../todolist.md)
 - 路径迁移映射：[`docs/FILE_MAP.md`](./FILE_MAP.md)
 
+## LSP 迁移快捷命令
+
+- 默认迁移模式回归：`./gradlew test`
+- 启用旧本地语义测试回归：`./gradlew test -PincludeLegacySemanticTests=true`
+- 启用真实 analyzer 回归：`./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`
+
 ## 主题目录导航
 
 ### `logs/`

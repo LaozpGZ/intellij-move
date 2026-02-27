@@ -33,7 +33,9 @@ Branch: `refactor/lsp-migration`
 - 新增 `MoveAnalyzerPathResolver`
   - 路径优先级：项目配置 -> PATH -> 常见默认目录
 - 新增 `MoveAnalyzerCommandProvider`
-  - 统一 `--stdio` 启动参数
+  - 启动参数兼容：
+    - `sui-move-analyzer`：附加 `--stdio`
+    - `move-analyzer`：不附加参数（默认 stdio）
   - 自动设置工作目录（Move project root / project base path）
 - 新增 `MoveAnalyzerLanguageServerFactory`
   - 接入 LSP4IJ
@@ -67,17 +69,24 @@ Branch: `refactor/lsp-migration`
 - 旧本地语义测试（annotator/inspection/completion/hints/docs 等）默认排除。
 - 如需回看旧语义行为，可显式执行：
   - `./gradlew test -PincludeLegacySemanticTests=true`
+- 真实 `move-analyzer` 回归测试默认关闭（避免对本地工具链环境强耦合）：
+  - `./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`
 
 ## 4. 验证结果
 
 - `./gradlew compileKotlin`：通过
 - `./gradlew buildPlugin`：通过
+- `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerCommandProviderTest"`：通过（`3 passed`）
 - `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"`：通过（`6 passed`）
-- `./gradlew test`（迁移默认模式）：通过（`941 passed`）
+- `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`：通过（默认模式）
+- `./gradlew test`（迁移默认模式）：通过（`944 passed`）
 - 第一、二、三批 LSP 集成测试已完成：
   - `src/test/kotlin/org/sui/ide/lsp/FakeMoveAnalyzerServer.kt`
   - `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerLspIntegrationTest.kt`
   - 覆盖能力：`diagnostics`、`go-to-definition`、`completion`、`hover`、`references`、`rename`
+- 真实 analyzer 集成回归入口已添加（默认关闭）：
+  - `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerRealLspIntegrationTest.kt`
+  - 覆盖能力：`diagnostics` 与 `definition request`（opt-in）
 - 真实 analyzer 环境已就绪：
   - `/Users/gz/.cargo/bin/move-analyzer`
   - `move-analyzer 1.67.0-ecde3d1a9665`
@@ -92,5 +101,6 @@ Branch: `refactor/lsp-migration`
 
 - 在真实 Sui Move 项目中做手工回归：
   - completion / diagnostics / go-to-definition / hover
+- 把 `MoveAnalyzerRealLspIntegrationTest` 从“definition request”提升到“definition result 命中”断言
 - 对“高亮小问题”继续做词法 token 映射精修
 - 视反馈决定是否进一步收敛本地 refactoring/navigation 扩展点

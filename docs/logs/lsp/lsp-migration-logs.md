@@ -459,3 +459,63 @@ move-analyzer 1.67.0-ecde3d1a9665
   - `docs/logs/lsp/lsp-integration-tests.log`
 - Full regression test log:
   - `docs/logs/lsp/lsp-migration-test.log`
+
+---
+
+## 15. Real Analyzer Migration Follow-up (Command Compat + Test Isolation)
+
+### Date
+- 2026-02-27
+
+### Goal
+- 在已安装官方 `move-analyzer` 的机器上继续推进 LSP 迁移：
+  - 修复启动参数兼容问题
+  - 增加真实 analyzer 回归入口（diagnostics + definition request）
+  - 保证默认 `./gradlew test` 不受本机工具链差异影响
+
+### Findings
+- 官方 `move-analyzer`（`1.67.0-ecde3d1a9665`）不接受 `--stdio`：
+  - `move-analyzer --help` 仅显示 `--help/--version`
+  - `move-analyzer --stdio` 报错 `unexpected argument '--stdio'`
+
+### Changes
+- `MoveAnalyzerCommandProvider` 启动参数改为按可执行文件名兼容：
+  - `sui-move-analyzer` -> `--stdio`
+  - `move-analyzer` -> 无额外参数
+- `MoveAnalyzerCommandProviderTest` 增加 `move-analyzer` 无参数断言。
+- 新增 `MoveAnalyzerRealLspIntegrationTest`（opt-in）：
+  - 真实 analyzer `diagnostics`
+  - 真实 analyzer `definition` 请求链路
+- 测试基座环境隔离：
+  - `MvProjectTestBase` / `MvTestBase` 默认 `moveAnalyzerEnabled=false`
+  - 避免“本机安装 analyzer 导致非 LSP 用例被动拉起 LSP”。
+- Gradle 增加真实回归开关：
+  - `-PincludeRealMoveAnalyzerTests=true` -> 设置 `sui.moveAnalyzer.real.tests=true`
+
+### Verification Commands
+```bash
+./gradlew compileKotlin
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerCommandProviderTest"
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"
+./gradlew test
+```
+
+### Verification Result
+- `compileKotlin`: pass
+- `MoveAnalyzerCommandProviderTest`: pass
+- `MoveAnalyzerLspIntegrationTest`: pass
+- `MoveAnalyzerRealLspIntegrationTest`（默认不开启真实模式）: pass
+- `./gradlew test`: pass
+  - `944 tests, 0 failures`
+
+### Artifacts
+- LSP integration log:
+  - `docs/logs/lsp/lsp-integration-tests.log`
+- Full test report:
+  - `build/reports/tests/test/index.html`
+
+### Notes
+- 真实 analyzer 回归目前为“显式开关”模式：
+  - `./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`
+- 下一步将继续把 real 模式断言从“definition request 可达”提升到“definition result 命中”。
