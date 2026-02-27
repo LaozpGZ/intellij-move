@@ -4,6 +4,7 @@
 
 团队统一协作流程（SOP、Issue 模板、脚本命令）请见：
 - `docs/guides/ai-collaboration-playbook.md`
+- 文档导航首页：`docs/README.md`
 
 ## 安装
 

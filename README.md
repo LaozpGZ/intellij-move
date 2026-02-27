@@ -6,6 +6,7 @@
 
 For issue-driven AI collaboration workflow (SOP, templates, scripts), see:
 - `docs/guides/ai-collaboration-playbook.md`
+- Docs navigation home: `docs/README.md`
 
 
 ## Installation
