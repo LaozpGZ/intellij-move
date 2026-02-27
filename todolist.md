@@ -17,17 +17,17 @@ Working Branch: `refactor/lsp-migration`
 
 ## 你睡觉期间我会持续维护的上下文锚点
 
-- 计划文档：`docs/lsp-migration-plan.md`
-- 执行日志：`docs/lsp-migration-logs.md`
-- 打包原始日志：`docs/lsp-migration-build.log`
-- 编译原始日志：`docs/lsp-migration-compile.log`
-- 测试原始日志：`docs/lsp-migration-test.log`
+- 计划文档：`docs/plans/lsp-migration-plan.md`
+- 执行日志：`docs/logs/lsp/lsp-migration-logs.md`
+- 打包原始日志：`docs/logs/lsp/lsp-migration-build.log`
+- 编译原始日志：`docs/logs/lsp/lsp-migration-compile.log`
+- 测试原始日志：`docs/logs/lsp/lsp-migration-test.log`
 
 ## 下一步执行队列
 
 - [ ] 在样例项目做 LSP 功能回归（补全/诊断/跳转/悬停）
 - [ ] 增加 LSP 集成测试，逐步替换旧本地语义测试
-- [ ] 记录实际回归结论到 `docs/lsp-migration-logs.md`
+- [ ] 记录实际回归结论到 `docs/logs/lsp/lsp-migration-logs.md`
 - [ ] 根据结果做第二次小修并提交（若有）
 
 ## Commit 策略（按仓库规范）

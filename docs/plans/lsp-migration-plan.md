@@ -74,10 +74,10 @@ Branch: `refactor/lsp-migration`
 - `./gradlew buildPlugin`：通过
 - `./gradlew test`（迁移默认模式）：通过（`930 passed`）
 - 详细执行日志见：
-  - `docs/lsp-migration-logs.md`
-  - `docs/lsp-migration-build.log`
-  - `docs/lsp-migration-compile.log`
-  - `docs/lsp-migration-test.log`
+  - `docs/logs/lsp/lsp-migration-logs.md`
+  - `docs/logs/lsp/lsp-migration-build.log`
+  - `docs/logs/lsp/lsp-migration-compile.log`
+  - `docs/logs/lsp/lsp-migration-test.log`
 
 ## 5. 后续待办（下一阶段）
 

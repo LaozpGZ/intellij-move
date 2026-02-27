@@ -9,7 +9,7 @@
   - 新增 feature override 没有完整 UI 暴露：设置模型里已有 enableMacroFunctions/enableTypeKeyword/requirePublicStruct/requireLetMut，但配置页仅展示旧的几个开关。见 src/main/
     kotlin/org/sui/cli/settings/MvProjectSettingsService.kt:95、src/main/kotlin/org/sui/cli/settings/PerProjectSuiConfigurable.kt:47、src/main/kotlin/org/sui/cli/settings/
     PerProjectAptosConfigurable.kt:47。
-  - 质量门禁还差全量回归：你文档把 ./gradlew test 全量通过列为强制项，当前主要是定向回归。见 docs/testing-checklist.md:26、docs/testing-checklist.md:85。
+  - 质量门禁还差全量回归：你文档把 ./gradlew test 全量通过列为强制项，当前主要是定向回归。见 docs/guides/testing-checklist.md:26、docs/guides/testing-checklist.md:85。
 
   应尽快补齐（P1，强烈建议）
 

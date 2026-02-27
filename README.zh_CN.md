@@ -3,7 +3,7 @@
 ## 团队协作手册（可复用）
 
 团队统一协作流程（SOP、Issue 模板、脚本命令）请见：
-- `docs/ai-collaboration-playbook.md`
+- `docs/guides/ai-collaboration-playbook.md`
 
 ## 安装
 

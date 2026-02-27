@@ -2,14 +2,14 @@
 set -euo pipefail
 
 # Usage:
-#   GH_REPO="LaozpGZ/intellij-move" bash docs/sync-wiki-home.sh
+#   GH_REPO="LaozpGZ/intellij-move" bash docs/guides/sync-wiki-home.sh
 
 REPO="${GH_REPO:-}"
 if [[ -z "$REPO" ]]; then
   REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
 fi
 
-PLAYBOOK_URL="https://github.com/${REPO}/blob/master/docs/ai-collaboration-playbook.md"
+PLAYBOOK_URL="https://github.com/${REPO}/blob/master/docs/guides/ai-collaboration-playbook.md"
 WIKI_URL="https://github.com/${REPO}.wiki.git"
 TMP_DIR=$(mktemp -d /tmp/wiki-sync.XXXXXX)
 

@@ -5,7 +5,7 @@
 ## Team Collaboration Playbook
 
 For issue-driven AI collaboration workflow (SOP, templates, scripts), see:
-- `docs/ai-collaboration-playbook.md`
+- `docs/guides/ai-collaboration-playbook.md`
 
 
 ## Installation

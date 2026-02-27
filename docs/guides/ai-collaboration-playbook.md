@@ -114,8 +114,8 @@ This issue belongs to the Sui Move 2024 execution board. Keep implementation ali
 
 ## 5. 本仓库已落地的可复用资产
 
-- 缺口矩阵：`docs/sui-move-2024-remaining-gaps-matrix.md`
-- Issue 模板总表：`docs/sui-move-2024-issue-templates.md`
+- 缺口矩阵：`docs/issues/sui-move-2024-remaining-gaps-matrix.md`
+- Issue 模板总表：`docs/issues/sui-move-2024-issue-templates.md`
 - Issue body 目录：`docs/github-issues/sui-move-2024/`
 - 批量建单脚本：`docs/github-issues/sui-move-2024/create_issues.sh`
 - Checklist 批量评论脚本：`docs/github-issues/sui-move-2024/add_checklist_comment.sh`
@@ -193,7 +193,7 @@ GH_REPO="LaozpGZ/intellij-move" bash "docs/github-issues/sui-move-2024/add_check
 当仓库启用 Wiki 后，可用以下命令把协作手册入口同步到 Wiki `Home.md`：
 
 ```bash
-GH_REPO="LaozpGZ/intellij-move" bash "docs/sync-wiki-home.sh"
+GH_REPO="LaozpGZ/intellij-move" bash "docs/guides/sync-wiki-home.sh"
 ```
 
 > 若首次执行提示 Wiki 仓库不可用，请先在网页打开并初始化一次：
