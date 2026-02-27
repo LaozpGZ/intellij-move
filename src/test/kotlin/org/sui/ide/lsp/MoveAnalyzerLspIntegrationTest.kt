@@ -12,6 +12,7 @@ import com.redhat.devtools.lsp4ij.client.features.LSPClientFeatures
 import com.redhat.devtools.lsp4ij.usages.LocationData
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.WorkspaceEdit
 import org.sui.cli.settings.moveSettings
@@ -253,10 +254,12 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
                     """
                     module 0x1::main {
                         fun target() {}
+                        fun compute_value() {}
                         
                         fun call() {
                             target();
-                            tar/*caret*/get();
+                            compute_value();
+                            compute/*caret*/_value();
                         }
                     }
                     """
@@ -272,13 +275,21 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
         )
         val references = waitForReferences(params)
 
-        check(references.size >= 3) {
-            "Expected at least 3 references (1 declaration + usages), got ${references.size}: $references"
+        check(references.size == 3) {
+            "Expected exactly 3 references (1 declaration + 2 usages), got ${references.size}: $references"
         }
 
-        val declarationOffset = myFixture.file.text.indexOf("target")
-        check(declarationOffset >= 0) { "Failed to locate declaration `target` in source" }
-        val declarationPosition = LSPIJUtils.toPosition(declarationOffset, myFixture.editor.document)
+        check(references.all { reference ->
+            rangeText(reference.location().range) == "compute_value"
+        }) {
+            "Expected references to point to `compute_value` only, got $references"
+        }
+
+        val declarationOffset = myFixture.file.text.indexOf("fun compute_value")
+        check(declarationOffset >= 0) { "Failed to locate declaration marker `fun compute_value` in source" }
+        val symbolOffset = myFixture.file.text.indexOf("compute_value", declarationOffset)
+        check(symbolOffset >= 0) { "Failed to locate declaration `compute_value` in source" }
+        val declarationPosition = LSPIJUtils.toPosition(symbolOffset, myFixture.editor.document)
 
         check(references.any {
             val range = it.location().range
@@ -297,9 +308,12 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
                     """
                     module 0x1::main {
                         fun target() {}
+                        fun compute_value() {}
                         
                         fun call() {
-                            tar/*caret*/get();
+                            target();
+                            compute/*caret*/_value();
+                            compute_value();
                         }
                     }
                     """
@@ -307,17 +321,22 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
             }
         }
 
-        val newName = "renamed_target"
+        val newName = "renamed_compute_value"
         val uri = currentCaretContext().uri
         val workspaceEdits = waitForRenameEdits(newName)
         val textEdits = workspaceEdits
             .flatMap { it.changes?.get(uri).orEmpty() }
 
-        check(textEdits.size >= 2) {
-            "Expected rename edits for declaration + usage, got ${textEdits.size}: $textEdits"
+        check(textEdits.size == 3) {
+            "Expected rename edits for declaration + 2 usages, got ${textEdits.size}: $textEdits"
         }
         check(textEdits.all { it.newText == newName }) {
             "Expected all rename edits to use `$newName`, got $textEdits"
+        }
+        check(textEdits.all { textEdit ->
+            rangeText(textEdit.range) == "compute_value"
+        }) {
+            "Expected rename edits to target `compute_value` only, got $textEdits"
         }
     }
 
@@ -636,6 +655,24 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
         return valueHolder.javaClass.methods
             .firstOrNull { it.name == "getValue" && it.parameterCount == 0 }
             ?.invoke(valueHolder) as? String
+    }
+
+    private fun rangeText(range: Range): String {
+        val document = myFixture.editor.document
+
+        fun lineStartOffset(line: Int): Int {
+            check(line in 0 until document.lineCount) {
+                "Line index out of bounds: $line (lineCount=${document.lineCount})"
+            }
+            return document.getLineStartOffset(line)
+        }
+
+        val startOffset = lineStartOffset(range.start.line) + range.start.character
+        val endOffset = lineStartOffset(range.end.line) + range.end.character
+        check(startOffset in 0..document.textLength && endOffset in 0..document.textLength && endOffset >= startOffset) {
+            "Invalid range offsets: start=$startOffset, end=$endOffset, textLength=${document.textLength}"
+        }
+        return document.charsSequence.subSequence(startOffset, endOffset).toString()
     }
 
     private fun stopLanguageServers() {

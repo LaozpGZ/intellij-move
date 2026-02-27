@@ -241,7 +241,17 @@ object FakeMoveAnalyzerServer {
                 uri = td.get("uri")
                 text = open_docs.get(uri, "")
 
-                result = find_symbol_locations(uri, text, "target") if uri else []
+                position = params.get("position", {})
+                symbol = symbol_at_position(
+                    text,
+                    position.get("line", 0),
+                    position.get("character", 0),
+                )
+
+                result = []
+                if symbol:
+                    for opened_uri, opened_text in open_docs.items():
+                        result.extend(find_symbol_locations(opened_uri, opened_text, symbol))
                 send({"jsonrpc": "2.0", "id": message["id"], "result": result})
                 continue
 
@@ -287,12 +297,18 @@ object FakeMoveAnalyzerServer {
                 uri = td.get("uri")
                 text = open_docs.get(uri, "")
 
-                locations = find_symbol_locations(uri, text, "target") if uri else []
+                position = params.get("position", {})
+                symbol = symbol_at_position(
+                    text,
+                    position.get("line", 0),
+                    position.get("character", 0),
+                )
+                locations = find_symbol_locations(uri, text, symbol) if uri and symbol else []
                 result = None
                 if locations:
                     result = {
                         "range": locations[0]["range"],
-                        "placeholder": "target"
+                        "placeholder": symbol
                     }
                 send({"jsonrpc": "2.0", "id": message["id"], "result": result})
                 continue
@@ -304,13 +320,24 @@ object FakeMoveAnalyzerServer {
                 text = open_docs.get(uri, "")
                 new_name = params.get("newName", "renamed_target")
 
-                locations = find_symbol_locations(uri, text, "target") if uri else []
-                text_edits = [{
-                    "range": loc["range"],
-                    "newText": new_name
-                } for loc in locations]
+                position = params.get("position", {})
+                symbol = symbol_at_position(
+                    text,
+                    position.get("line", 0),
+                    position.get("character", 0),
+                )
+                changes = {}
+                if symbol:
+                    for opened_uri, opened_text in open_docs.items():
+                        locations = find_symbol_locations(opened_uri, opened_text, symbol)
+                        if not locations:
+                            continue
+                        changes[opened_uri] = [{
+                            "range": loc["range"],
+                            "newText": new_name
+                        } for loc in locations]
 
-                result = {"changes": {uri: text_edits}} if uri else {"changes": {}}
+                result = {"changes": changes}
                 send({"jsonrpc": "2.0", "id": message["id"], "result": result})
                 continue
         
