@@ -88,6 +88,9 @@ Branch: `refactor/lsp-migration`
 - 新增 diagnostics/definition 扩展覆盖（第四批，fake analyzer）：
   - diagnostics: `missing_symbol` marker
   - definition: fully-qualified function call (`0x1::main::compute_value`)
+- 新增 references/rename 扩展覆盖（第五批，fake analyzer）：
+  - references: 按 caret symbol 返回引用（不再硬编码 `target`）
+  - rename: 按 caret symbol 生成 workspace edits（不再硬编码 `target`）
 - 真实 analyzer 集成回归入口已添加（默认关闭）：
   - `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerRealLspIntegrationTest.kt`
   - 覆盖能力：`diagnostics` 与 `definition request`（opt-in）

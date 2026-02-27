@@ -619,3 +619,38 @@ python3 <probe script>
 - `docs/logs/lsp/lsp-integration-tests.log`
 - `docs/logs/lsp/lsp-migration-test.log`
 - `build/reports/tests/test/index.html`
+
+---
+
+## 19. LSP References/Rename Symbol-Aware Migration (Fake Analyzer)
+
+### Date
+- 2026-02-27
+
+### Goal
+- 将 fake analyzer 的 `references/rename` 从硬编码 `target` 改为“按光标符号解析”，让集成测试覆盖真实迁移行为。
+
+### Changes
+- `FakeMoveAnalyzerServer`：
+  - `textDocument/references`：基于 caret position 解析 symbol，并在已打开文档集合中汇总匹配位置。
+  - `textDocument/prepareRename`：基于 caret symbol 生成动态 placeholder 与 range。
+  - `textDocument/rename`：基于 caret symbol 构建 `WorkspaceEdit.changes`（不再绑定 `target`）。
+- `MoveAnalyzerLspIntegrationTest`：
+  - references 用例改为 `compute_value` 场景（同时保留 `target` 干扰项），校验只返回 `compute_value` 的 3 个位置（声明 + 2 处调用）。
+  - rename 用例改为 `compute_value` 场景，校验只改 `compute_value`（3 处），且新名字统一。
+
+### Verification Commands
+```bash
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"
+./gradlew test
+```
+
+### Verification Result
+- 定向 LSP 集成测试：通过
+- 全量迁移模式测试：通过
+  - `946 tests, 0 failures`
+
+### Artifacts
+- `docs/logs/lsp/lsp-integration-tests.log`
+- `docs/logs/lsp/lsp-migration-test.log`
+- `build/reports/tests/test/index.html`
