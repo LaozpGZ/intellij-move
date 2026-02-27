@@ -249,3 +249,47 @@ BUILD SUCCESSFUL in 3s
 - Test log (migrated path): `docs/logs/lsp/lsp-migration-test.log`
 - Plan: `docs/plans/lsp-migration-plan.md`
 - TODO tracker: `todolist.md`
+
+---
+
+## 11. LSP Smoke Regression (Automated)
+
+### Date
+- 2026-02-27
+
+### Goal
+- 将“LSP 回归”从人工口述检查升级为可执行的自动化烟测，覆盖：
+  - move-analyzer 路径解析优先级（配置路径）
+  - LSP 启动命令构造（`--stdio` + working directory）
+  - LSP enablement 开关行为（settings 与 factory 同步）
+
+### Test Classes Added
+- `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerPathResolverTest.kt`
+- `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerCommandProviderTest.kt`
+- `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerLanguageServerFactoryTest.kt`
+
+### Targeted Test Run
+```bash
+./gradlew test \
+  --tests "org.sui.ide.lsp.MoveAnalyzerPathResolverTest" \
+  --tests "org.sui.ide.lsp.MoveAnalyzerCommandProviderTest" \
+  --tests "org.sui.ide.lsp.MoveAnalyzerLanguageServerFactoryTest" \
+  2>&1 | tee "docs/logs/lsp/lsp-lsp-tests.log"
+```
+
+### Targeted Result
+- Exit code: `0`
+- `5 passed, 0 failed`
+
+### Full Regression Run
+```bash
+./gradlew test 2>&1 | tee "docs/logs/lsp/lsp-migration-test.log"
+```
+
+### Full Regression Result
+- Exit code: `0`
+- `935 completed, 0 failed`
+- `BUILD SUCCESSFUL in 42s`
+
+### Notes
+- 当前环境未检测到 `sui-move-analyzer` / `move-analyzer` 可执行文件，因此“IDE 内真实 analyzer 会话回归”仍需在安装 analyzer 的机器上补做一次手工验证。
