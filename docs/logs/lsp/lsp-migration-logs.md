@@ -344,3 +344,118 @@ BUILD SUCCESSFUL in 3s
   - `docs/logs/lsp/lsp-integration-tests.log`
 - Full regression test log:
   - `docs/logs/lsp/lsp-migration-test.log`
+
+---
+
+## 14. LSP Integration Tests (References + Rename) + Real Analyzer Ready
+
+### Date
+- 2026-02-27
+
+### Goal
+- 完成第三批 LSP 集成测试替换，覆盖：
+  - `references`
+  - `rename`
+- 确认真实 `move-analyzer` 已安装，进入“可做真实项目回归”的阶段。
+
+### Changes
+- `FakeMoveAnalyzerServer` 扩展支持：
+  - `textDocument/references`
+  - `textDocument/prepareRename`
+  - `textDocument/rename`
+  - `initialize.capabilities` 增加 `referencesProvider`、`renameProvider`
+- `MoveAnalyzerLspIntegrationTest` 新增用例：
+  - `test references use move analyzer result`
+  - `test rename uses move analyzer workspace edit`
+- rename 断言要点：
+  - 校验返回 `WorkspaceEdit` 包含 declaration + usage 的批量 `TextEdit`
+  - 校验 `newText` 与目标 rename 名称一致
+- 由于 `LSPRenameParams` 在 LSP4IJ 中是 package-private，测试侧通过反射构造 params 并发起 `renameSupport.getRename` 请求。
+
+### Targeted Test Run
+```bash
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest" \
+  2>&1 | tee "docs/logs/lsp/lsp-integration-tests.log"
+```
+
+### Targeted Result
+- Exit code: `0`
+- `6 passed, 0 failed`
+
+### Full Regression Run
+```bash
+./gradlew test 2>&1 | tee "docs/logs/lsp/lsp-migration-test.log"
+```
+
+### Full Regression Result
+- Exit code: `0`
+- `941 completed, 0 failed`
+- `BUILD SUCCESSFUL in 45s`
+
+### Real Analyzer Installed
+```bash
+/Users/gz/.cargo/bin/move-analyzer --version
+```
+
+```text
+move-analyzer 1.67.0-ecde3d1a9665
+```
+
+### Artifacts
+- Targeted integration test log:
+  - `docs/logs/lsp/lsp-integration-tests.log`
+- Full regression test log:
+  - `docs/logs/lsp/lsp-migration-test.log`
+
+---
+
+## 13. LSP Integration Tests (Completion + Hover)
+
+### Date
+- 2026-02-27
+
+### Goal
+- 完成第二批 LSP 集成测试替换，覆盖：
+  - `completion`
+  - `hover`
+- 与第一批能力合并后，`MoveAnalyzerLspIntegrationTest` 覆盖：
+  - `diagnostics` / `definition` / `completion` / `hover`
+
+### Changes
+- 扩展 fake analyzer 协议能力：
+  - `textDocument/completion`
+  - `textDocument/hover`
+  - `initialize.capabilities` 增加 `completionProvider` 与 `hoverProvider`
+- 增加/更新集成测试断言：
+  - completion 断言返回项包含 `target`
+  - hover 断言包含 `fake hover from move-analyzer`
+- 为降低异步抖动增加稳定化处理：
+  - 在等待 loop 中主动触发 LSP 预热请求
+  - completion/hover 使用短超时轮询
+  - diagnostics 等待重试次数提升
+
+### Targeted Test Run
+```bash
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest" \
+  2>&1 | tee "docs/logs/lsp/lsp-integration-tests.log"
+```
+
+### Targeted Result
+- Exit code: `0`
+- `4 passed, 0 failed`
+
+### Full Regression Run
+```bash
+./gradlew test 2>&1 | tee "docs/logs/lsp/lsp-migration-test.log"
+```
+
+### Full Regression Result
+- Exit code: `0`
+- `939 completed, 0 failed`
+- `BUILD SUCCESSFUL in 43s`
+
+### Artifacts
+- Targeted integration test log:
+  - `docs/logs/lsp/lsp-integration-tests.log`
+- Full regression test log:
+  - `docs/logs/lsp/lsp-migration-test.log`

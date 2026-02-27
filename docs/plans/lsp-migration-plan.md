@@ -72,12 +72,15 @@ Branch: `refactor/lsp-migration`
 
 - `./gradlew compileKotlin`：通过
 - `./gradlew buildPlugin`：通过
-- `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"`：通过（`2 passed`）
-- `./gradlew test`（迁移默认模式）：通过（`937 passed`）
-- 第一批 LSP 集成测试已完成：
+- `./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"`：通过（`6 passed`）
+- `./gradlew test`（迁移默认模式）：通过（`941 passed`）
+- 第一、二、三批 LSP 集成测试已完成：
   - `src/test/kotlin/org/sui/ide/lsp/FakeMoveAnalyzerServer.kt`
   - `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerLspIntegrationTest.kt`
-  - 覆盖能力：`diagnostics`、`go-to-definition`
+  - 覆盖能力：`diagnostics`、`go-to-definition`、`completion`、`hover`、`references`、`rename`
+- 真实 analyzer 环境已就绪：
+  - `/Users/gz/.cargo/bin/move-analyzer`
+  - `move-analyzer 1.67.0-ecde3d1a9665`
 - 详细执行日志见：
   - `docs/logs/lsp/lsp-migration-logs.md`
   - `docs/logs/lsp/lsp-integration-tests.log`
@@ -89,7 +92,5 @@ Branch: `refactor/lsp-migration`
 
 - 在真实 Sui Move 项目中做手工回归：
   - completion / diagnostics / go-to-definition / hover
-- 增加第二批 LSP 集成测试：completion / hover
-- 增加第三批 LSP 集成测试：references / rename
 - 对“高亮小问题”继续做词法 token 映射精修
 - 视反馈决定是否进一步收敛本地 refactoring/navigation 扩展点

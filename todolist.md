@@ -13,10 +13,12 @@ Working Branch: `refactor/lsp-migration`
 - [x] 构建校验通过（`compileKotlin` / `buildPlugin`）
 - [x] 迁移日志沉淀到 Markdown
 - [x] 迁移期测试策略落地（默认排除旧语义测试，可显式恢复）
-- [x] 测试校验通过（`./gradlew test`，930/930）
+- [x] 测试校验通过（`./gradlew test`，941/941）
 - [x] 新增 LSP 自动化烟测（路径解析/命令构造/启停开关，`5/5`）
 - [x] 第一批 LSP 集成测试落地（`diagnostics + definition`，`2/2`）
-- [x] 全量回归复验通过（`./gradlew test`，937/937）
+- [x] 第二批 LSP 集成测试落地（`completion + hover`，`2/2`）
+- [x] 第三批 LSP 集成测试落地（`references + rename`，`2/2`）
+- [x] 全量回归复验通过（`./gradlew test`，941/941）
 
 ## 你睡觉期间我会持续维护的上下文锚点
 
@@ -30,8 +32,6 @@ Working Branch: `refactor/lsp-migration`
 ## 下一步执行队列
 
 - [ ] 在安装 `move-analyzer` 的环境做 IDE 内手工回归（补全/诊断/跳转/悬停）
-- [ ] 增加第二批 LSP 集成测试（`completion + hover`）
-- [ ] 增加第三批 LSP 集成测试（`references + rename`）
 - [ ] 记录实际回归结论到 `docs/logs/lsp/lsp-migration-logs.md`
 - [ ] 根据结果做第二次小修并提交（若有）
 

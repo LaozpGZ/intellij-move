@@ -9,7 +9,7 @@
 - LSP 迁移日志：[`docs/logs/lsp/lsp-migration-logs.md`](./logs/lsp/lsp-migration-logs.md)
 - LSP 原始测试日志：[`docs/logs/lsp/lsp-migration-test.log`](./logs/lsp/lsp-migration-test.log)
 - LSP 自动化烟测日志：[`docs/logs/lsp/lsp-lsp-tests.log`](./logs/lsp/lsp-lsp-tests.log)
-- LSP 集成测试日志（diagnostics+definition）：[`docs/logs/lsp/lsp-integration-tests.log`](./logs/lsp/lsp-integration-tests.log)
+- LSP 集成测试日志（diagnostics+definition+completion+hover+references+rename）：[`docs/logs/lsp/lsp-integration-tests.log`](./logs/lsp/lsp-integration-tests.log)
 - 当前任务板：[`todolist.md`](../todolist.md)
 - 路径迁移映射：[`docs/FILE_MAP.md`](./FILE_MAP.md)
 

@@ -23,5 +23,5 @@ Following 1 plugins could not be created: plugins/fullLine/lib/modules/intellij.
 > Task :test
 [0.005s][warning][cds] Archived non-system classes are disabled because the java.system.class.loader property is specified (value = "com.intellij.util.lang.PathClassLoader"). To use archived non-system classes, this property must not be set
 
-BUILD SUCCESSFUL in 8s
+BUILD SUCCESSFUL in 10s
 14 actionable tasks: 3 executed, 11 up-to-date
