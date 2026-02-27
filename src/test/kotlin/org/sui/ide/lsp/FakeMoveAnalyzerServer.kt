@@ -58,6 +58,24 @@ object FakeMoveAnalyzerServer {
             last_nl = text.rfind("\n", 0, offset)
             char = offset if last_nl == -1 else offset - last_nl - 1
             return line, char
+
+        def find_symbol_locations(uri, text, symbol):
+            locations = []
+            cursor = 0
+            while True:
+                idx = text.find(symbol, cursor)
+                if idx < 0:
+                    break
+                line, char = to_line_char(text, idx)
+                locations.append({
+                    "uri": uri,
+                    "range": {
+                        "start": {"line": line, "character": char},
+                        "end": {"line": line, "character": char + len(symbol)}
+                    }
+                })
+                cursor = idx + len(symbol)
+            return locations
         
         def publish_diagnostics(uri, text):
             target = "broken"
@@ -93,7 +111,14 @@ object FakeMoveAnalyzerServer {
                     "result": {
                         "capabilities": {
                             "textDocumentSync": 1,
-                            "definitionProvider": True
+                            "definitionProvider": True,
+                            "referencesProvider": True,
+                            "hoverProvider": True,
+                            "renameProvider": {"prepareProvider": True},
+                            "completionProvider": {
+                                "resolveProvider": False,
+                                "triggerCharacters": [".", ":"]
+                            }
                         },
                         "serverInfo": {"name": "fake-move-analyzer", "version": "0.0.1"}
                     }
@@ -133,6 +158,85 @@ object FakeMoveAnalyzerServer {
                             }
                         }]
         
+                send({"jsonrpc": "2.0", "id": message["id"], "result": result})
+                continue
+
+            if method == "textDocument/references":
+                params = message.get("params", {})
+                td = params.get("textDocument", {})
+                uri = td.get("uri")
+                text = open_docs.get(uri, "")
+
+                result = find_symbol_locations(uri, text, "target") if uri else []
+                send({"jsonrpc": "2.0", "id": message["id"], "result": result})
+                continue
+
+            if method == "textDocument/completion":
+                params = message.get("params", {})
+                td = params.get("textDocument", {})
+                uri = td.get("uri")
+                text = open_docs.get(uri, "")
+
+                result = []
+                if "tar" in text:
+                    result = [{
+                        "label": "target",
+                        "kind": 3,
+                        "detail": "fake completion from move-analyzer",
+                        "insertText": "target"
+                    }]
+
+                send({"jsonrpc": "2.0", "id": message["id"], "result": result})
+                continue
+
+            if method == "textDocument/hover":
+                params = message.get("params", {})
+                td = params.get("textDocument", {})
+                uri = td.get("uri")
+                text = open_docs.get(uri, "")
+
+                result = None
+                if "target" in text:
+                    result = {
+                        "contents": {
+                            "kind": "markdown",
+                            "value": "fake hover from move-analyzer"
+                        }
+                    }
+
+                send({"jsonrpc": "2.0", "id": message["id"], "result": result})
+                continue
+
+            if method == "textDocument/prepareRename":
+                params = message.get("params", {})
+                td = params.get("textDocument", {})
+                uri = td.get("uri")
+                text = open_docs.get(uri, "")
+
+                locations = find_symbol_locations(uri, text, "target") if uri else []
+                result = None
+                if locations:
+                    result = {
+                        "range": locations[0]["range"],
+                        "placeholder": "target"
+                    }
+                send({"jsonrpc": "2.0", "id": message["id"], "result": result})
+                continue
+
+            if method == "textDocument/rename":
+                params = message.get("params", {})
+                td = params.get("textDocument", {})
+                uri = td.get("uri")
+                text = open_docs.get(uri, "")
+                new_name = params.get("newName", "renamed_target")
+
+                locations = find_symbol_locations(uri, text, "target") if uri else []
+                text_edits = [{
+                    "range": loc["range"],
+                    "newText": new_name
+                } for loc in locations]
+
+                result = {"changes": {uri: text_edits}} if uri else {"changes": {}}
                 send({"jsonrpc": "2.0", "id": message["id"], "result": result})
                 continue
         
