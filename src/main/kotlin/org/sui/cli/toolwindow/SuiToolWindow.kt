@@ -18,24 +18,31 @@ import org.sui.cli.moveProjectsService
 import javax.swing.JComponent
 
 class SuiToolWindowFactory : ToolWindowFactory, DumbAware {
+    override fun isApplicable(project: Project): Boolean = !project.isDefault
+
+    override fun shouldBeAvailable(project: Project): Boolean = project.hasMoveProject
+
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         if (!project.moveProjectsService.hasAtLeastOneValidProject) {
             project.moveProjectsService
                 .scheduleProjectsRefresh("Sui Tool Window opened")
         }
 
-        val toolwindowPanel = SuiToolWindowPanel(project)
+        val toolwindowPanel = SuiToolWindowPanel(project) { hasProjects ->
+            toolWindow.setAvailable(hasProjects)
+        }
         val tab = ContentFactory.getInstance()
             .createContent(toolwindowPanel, "", false)
         toolWindow.contentManager.addContent(tab)
+        toolWindow.setAvailable(project.hasMoveProject)
     }
-
-    // TODO: isApplicable() and initializeToolWindow() cannot be copied from intellij-rust in 241,
-    //       implement it instead with ExternalToolWindowManager later
 }
 
-private class SuiToolWindowPanel(project: Project) : SimpleToolWindowPanel(true, false) {
-    private val suiTab = SuiToolWindow(project)
+private class SuiToolWindowPanel(
+    project: Project,
+    onAvailabilityChanged: (Boolean) -> Unit
+) : SimpleToolWindowPanel(true, false) {
+    private val suiTab = SuiToolWindow(project, onAvailabilityChanged)
 
     init {
         toolbar = suiTab.toolbar.component
@@ -50,7 +57,10 @@ private class SuiToolWindowPanel(project: Project) : SimpleToolWindowPanel(true,
     }
 }
 
-class SuiToolWindow(private val project: Project) {
+class SuiToolWindow(
+    private val project: Project,
+    private val onAvailabilityChanged: (Boolean) -> Unit
+) {
 
     val toolbar: ActionToolbar = run {
         val actionManager = ActionManager.getInstance()
@@ -78,11 +88,14 @@ class SuiToolWindow(private val project: Project) {
             subscribe(MoveProjectsService.MOVE_PROJECTS_TOPIC, MoveProjectsService.MoveProjectsListener { _, projects ->
                 invokeLater {
                     projectStructure.updateMoveProjects(projects.toList())
+                    onAvailabilityChanged(projects.isNotEmpty())
                 }
             })
         }
         invokeLater {
-            projectStructure.updateMoveProjects(project.moveProjectsService.allProjects.toList())
+            val currentProjects = project.moveProjectsService.allProjects.toList()
+            projectStructure.updateMoveProjects(currentProjects)
+            onAvailabilityChanged(currentProjects.isNotEmpty())
         }
     }
 

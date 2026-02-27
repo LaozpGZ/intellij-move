@@ -19,24 +19,31 @@ import org.sui.cli.moveProjectsService
 import javax.swing.JComponent
 
 class AptosToolWindowFactory : ToolWindowFactory, DumbAware {
+    override fun isApplicable(project: Project): Boolean = !project.isDefault
+
+    override fun shouldBeAvailable(project: Project): Boolean = project.hasMoveProject
+
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         if (!project.moveProjectsService.hasAtLeastOneValidProject) {
             project.moveProjectsService
                 .scheduleProjectsRefresh("Aptos Tool Window opened")
         }
 
-        val toolwindowPanel = AptosToolWindowPanel(project)
+        val toolwindowPanel = AptosToolWindowPanel(project) { hasProjects ->
+            toolWindow.setAvailable(hasProjects)
+        }
         val tab = ContentFactory.getInstance()
             .createContent(toolwindowPanel, "", false)
         toolWindow.contentManager.addContent(tab)
+        toolWindow.setAvailable(project.hasMoveProject)
     }
-
-    // TODO: isApplicable() and initializeToolWindow() cannot be copied from intellij-rust in 241,
-    //       implement it instead with ExternalToolWindowManager later
 }
 
-private class AptosToolWindowPanel(project: Project) : SimpleToolWindowPanel(true, false) {
-    private val aptosTab = AptosToolWindow(project)
+private class AptosToolWindowPanel(
+    project: Project,
+    onAvailabilityChanged: (Boolean) -> Unit
+) : SimpleToolWindowPanel(true, false) {
+    private val aptosTab = AptosToolWindow(project, onAvailabilityChanged)
 
     init {
         toolbar = aptosTab.toolbar.component
@@ -51,7 +58,10 @@ private class AptosToolWindowPanel(project: Project) : SimpleToolWindowPanel(tru
     }
 }
 
-class AptosToolWindow(private val project: Project) {
+class AptosToolWindow(
+    private val project: Project,
+    private val onAvailabilityChanged: (Boolean) -> Unit
+) {
 
     val toolbar: ActionToolbar = run {
         val actionManager = ActionManager.getInstance()
@@ -79,11 +89,14 @@ class AptosToolWindow(private val project: Project) {
             subscribe(MoveProjectsService.MOVE_PROJECTS_TOPIC, MoveProjectsListener { _, projects ->
                 invokeLater {
                     projectStructure.updateMoveProjects(projects.toList())
+                    onAvailabilityChanged(projects.isNotEmpty())
                 }
             })
         }
         invokeLater {
-            projectStructure.updateMoveProjects(project.moveProjectsService.allProjects.toList())
+            val currentProjects = project.moveProjectsService.allProjects.toList()
+            projectStructure.updateMoveProjects(currentProjects)
+            onAvailabilityChanged(currentProjects.isNotEmpty())
         }
     }
 
