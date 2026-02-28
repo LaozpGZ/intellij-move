@@ -34,6 +34,7 @@ Working Branch: `refactor/lsp-hardening`
 - [x] 命令工作目录策略改为确定性（单项目根目录，多项目回退 `project.basePath`）
 - [x] LSP 相关测试补强（resolver/command/settings sync + integration 抗抖）
 - [x] Move 2024 + 宏 + 高亮专项测试基线沉淀（`testMove2024HighlightMacroSuite`）
+- [x] MoveEdition/MoveLanguageFeatures 语义规则单测补齐并纳入专项基线
 
 ## 你睡觉期间我会持续维护的上下文锚点
 
