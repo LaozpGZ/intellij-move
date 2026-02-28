@@ -1,7 +1,6 @@
 package org.sui.ide.annotator
 
 import com.intellij.lang.annotation.AnnotationHolder
-import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import org.sui.cli.settings.moveLanguageFeatures
@@ -43,7 +42,6 @@ val HAS_DROP_ABILITY_TYPES = INTEGER_TYPE_IDENTIFIERS + PRIMITIVE_BUILTIN_TYPE_I
 )
 class HighlightingAnnotator : MvAnnotatorBase() {
     override fun annotateInternal(element: PsiElement, holder: AnnotationHolder) {
-        if (DumbService.isDumb(element.project)) return
         val color = when {
             element is LeafPsiElement -> highlightLeaf(element)
             element is MvLitExpr && element.text.startsWith("@") -> MvColor.ADDRESS
@@ -62,7 +60,8 @@ class HighlightingAnnotator : MvAnnotatorBase() {
         return when {
             leafType == IDENTIFIER -> highlightIdentifier(parent)
             leafType == HEX_INTEGER_LITERAL -> MvColor.NUMBER
-            parent is MvAssertMacroExpr || parent is MvMacroCallExpr -> MvColor.MACRO
+            parent is MvMethodCall && parent.excl == element -> MvColor.MACRO
+            parent is MvAssertMacroExpr || parent is MvAssertBangExpr || parent is MvMacroCallExpr -> MvColor.MACRO
             parent is MvCopyExpr
                     && element.text == "copy" -> MvColor.KEYWORD
             else -> null
@@ -70,7 +69,9 @@ class HighlightingAnnotator : MvAnnotatorBase() {
     }
 
     private fun highlightIdentifier(element: MvElement): MvColor? {
-        if (element is MvAssertMacroExpr || element is MvMacroCallExpr) return MvColor.MACRO
+        if (element is MvAssertMacroExpr || element is MvAssertBangExpr || element is MvMacroCallExpr) {
+            return MvColor.MACRO
+        }
         if (element is MvAbility) return MvColor.ABILITY
         if (element is MvTypeParameter) return MvColor.TYPE_PARAMETER
         if (element is MvItemSpecTypeParameter) return MvColor.TYPE_PARAMETER
@@ -85,6 +86,7 @@ class HighlightingAnnotator : MvAnnotatorBase() {
         if (element is MvStruct) return MvColor.STRUCT
         if (element is MvNamedFieldDecl) return MvColor.FIELD
         if (element is MvStructDotField) return MvColor.FIELD
+        if (element is MvMethodCall && element.excl != null) return MvColor.MACRO
         if (element is MvMethodCall && element.project.moveLanguageFeatures.receiverStyleFunctions) return MvColor.METHOD_CALL
         if (element is MvPatFieldFull) return MvColor.FIELD
         if (element is MvPatField) return MvColor.FIELD
@@ -155,6 +157,7 @@ class HighlightingAnnotator : MvAnnotatorBase() {
                     else -> MvColor.FUNCTION_CALL
                 }
             }
+            is MvMacroCallExpr -> MvColor.MACRO
             is MvStructLitExpr -> MvColor.STRUCT
             is MvPatStruct -> MvColor.STRUCT
             is MvPathExpr -> {

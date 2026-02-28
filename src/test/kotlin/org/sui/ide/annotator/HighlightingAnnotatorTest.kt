@@ -1,6 +1,7 @@
 package org.sui.ide.annotator
 
 import org.sui.ide.colors.MvColor
+import org.sui.ide.inspections.fixes.CompilerV2Feat.MACRO_FUNCTIONS
 import org.sui.ide.inspections.fixes.CompilerV2Feat.RECEIVER_STYLE_FUNCTIONS
 import org.sui.ide.inspections.fixes.CompilerV2Feat.RESOURCE_CONTROL
 import org.sui.utils.tests.CompilerV2Features
@@ -229,6 +230,19 @@ class HighlightingAnnotatorTest : AnnotatorTestCase(HighlightingAnnotator::class
     """
     )
 
+    @CompilerV2Features(MACRO_FUNCTIONS)
+    fun `test builtin macro calls are highlighted`() = checkHighlighting(
+        """
+    module 0x1::M {
+        fun m() {
+            let _ = <MACRO>option</MACRO><MACRO>!</MACRO>(1);
+            let _ = <MACRO>result</MACRO><MACRO>!</MACRO>(1, 2);
+            let _ = <MACRO>bcs</MACRO><MACRO>!</MACRO>(1);
+        }
+    }
+    """
+    )
+
     fun `test integer highlighting`() = checkHighlighting(
         """
     module 0x1::main {
@@ -335,6 +349,22 @@ class HighlightingAnnotatorTest : AnnotatorTestCase(HighlightingAnnotator::class
             }
         }        
     """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS, MACRO_FUNCTIONS)
+    fun `test method macro call is highlighted`() = checkHighlighting(
+        """
+        module 0x1::m {
+            struct S has copy, drop { value: u64 }
+            public macro fun wrap(self: &S, value: u64): u64 {
+                value
+            }
+            fun main(s: S) {
+                let wrapped = s.<MACRO>wrap</MACRO><MACRO>!</MACRO>(1);
+                wrapped;
+            }
+        }
+        """
     )
 
     fun `test do not highlight methods if compiler v1`() = checkHighlighting(
