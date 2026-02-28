@@ -744,3 +744,16 @@ ulimit -n 4096
 - `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerRealLspIntegrationTest.kt`
 - `docs/logs/lsp/lsp-integration-tests.log`
 - `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest.xml`
+
+---
+
+## 22. LSP Hardening Follow-up (2026-02-28)
+
+- 新分支：`refactor/lsp-hardening`
+- 计划：`docs/plans/lsp-hardening-plan.md`
+- 执行日志：`docs/logs/lsp/2026-02-28-lsp-hardening.md`
+- 范围：
+  - 路径解析来源结构化（`CONFIGURED/PATH/CARGO_HOME/SUI_HOME/UNRESOLVED`）
+  - 设置变更热同步（`moveAnalyzerEnabled/moveAnalyzerPath`）
+  - 工作目录策略确定性化（单项目 vs 多项目）
+  - LSP 定向回归补强

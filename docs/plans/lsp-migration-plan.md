@@ -114,3 +114,14 @@ Branch: `refactor/lsp-migration`
   - completion / diagnostics / go-to-definition / hover
 - 对“高亮小问题”继续做词法 token 映射精修
 - 视反馈决定是否进一步收敛本地 refactoring/navigation 扩展点
+
+## 6. 2026-02-28 硬化阶段（已启动）
+
+- 执行分支：`refactor/lsp-hardening`
+- 硬化计划文档：`docs/plans/lsp-hardening-plan.md`
+- 硬化执行日志：`docs/logs/lsp/2026-02-28-lsp-hardening.md`
+- 范围：
+  - 路径解析来源结构化与可观测
+  - 设置变更热同步（启停/路径）
+  - 多 Move 项目工作目录策略确定性
+  - LSP 定向回归测试补强

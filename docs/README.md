@@ -6,7 +6,9 @@
 ## 快速入口
 
 - LSP 迁移计划：[`docs/plans/lsp-migration-plan.md`](./plans/lsp-migration-plan.md)
+- LSP 硬化计划：[`docs/plans/lsp-hardening-plan.md`](./plans/lsp-hardening-plan.md)
 - LSP 迁移日志：[`docs/logs/lsp/lsp-migration-logs.md`](./logs/lsp/lsp-migration-logs.md)
+- LSP 硬化日志：[`docs/logs/lsp/2026-02-28-lsp-hardening.md`](./logs/lsp/2026-02-28-lsp-hardening.md)
 - LSP 原始测试日志：[`docs/logs/lsp/lsp-migration-test.log`](./logs/lsp/lsp-migration-test.log)
 - LSP 自动化烟测日志：[`docs/logs/lsp/lsp-lsp-tests.log`](./logs/lsp/lsp-lsp-tests.log)
 - LSP 集成测试日志（diagnostics+definition+completion+hover+references+rename）：[`docs/logs/lsp/lsp-integration-tests.log`](./logs/lsp/lsp-integration-tests.log)
@@ -27,12 +29,14 @@
 - 日推进日志：[`docs/logs/daily/`](./logs/daily/)
 - LSP 专项日志：[`docs/logs/lsp/`](./logs/lsp/)
 - LSP 主日志：[`docs/logs/lsp/lsp-migration-logs.md`](./logs/lsp/lsp-migration-logs.md)
+- LSP 硬化日志：[`docs/logs/lsp/2026-02-28-lsp-hardening.md`](./logs/lsp/2026-02-28-lsp-hardening.md)
 - LSP 集成测试日志：[`docs/logs/lsp/lsp-integration-tests.log`](./logs/lsp/lsp-integration-tests.log)
 
 ### `plans/`
 
 - 计划总目录：[`docs/plans/`](./plans/)
 - LSP 迁移计划：[`lsp-migration-plan.md`](./plans/lsp-migration-plan.md)
+- LSP 硬化计划：[`lsp-hardening-plan.md`](./plans/lsp-hardening-plan.md)
 - Move 2024 计划：[`move-2024-implementation-plan.md`](./plans/move-2024-implementation-plan.md)
 - 历史总 TODO：[`2026-01-todo.md`](./plans/2026-01-todo.md)
 

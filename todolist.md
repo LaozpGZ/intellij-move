@@ -1,8 +1,8 @@
 # TODO List (LSP Migration)
 
-Last Update: 2026-02-27
+Last Update: 2026-02-28
 Owner: Codex + User  
-Working Branch: `refactor/lsp-migration`
+Working Branch: `refactor/lsp-hardening`
 
 ## 当前阶段
 
@@ -28,11 +28,18 @@ Working Branch: `refactor/lsp-migration`
 - [x] 真实 analyzer 第六批扩展覆盖（`references + rename` 请求链路，opt-in）
 - [x] 修复真实 analyzer opt-in 抖动（rename 超时 + teardown 容器销毁竞态）
 - [x] 真实 analyzer definition 升级为“命中声明”强断言（opt-in）
+- [x] LSP 路径解析结构化（命中来源：`CONFIGURED/PATH/CARGO_HOME/SUI_HOME/UNRESOLVED`）
+- [x] 设置页展示 move-analyzer 命中来源（`Resolved from`）
+- [x] LSP 设置热同步服务（`moveAnalyzerEnabled/moveAnalyzerPath` 变更触发启停）
+- [x] 命令工作目录策略改为确定性（单项目根目录，多项目回退 `project.basePath`）
+- [x] LSP 相关测试补强（resolver/command/settings sync + integration 抗抖）
 
 ## 你睡觉期间我会持续维护的上下文锚点
 
 - 计划文档：`docs/plans/lsp-migration-plan.md`
+- 硬化计划：`docs/plans/lsp-hardening-plan.md`
 - 执行日志：`docs/logs/lsp/lsp-migration-logs.md`
+- 硬化日志：`docs/logs/lsp/2026-02-28-lsp-hardening.md`
 - 打包原始日志：`docs/logs/lsp/lsp-migration-build.log`
 - 编译原始日志：`docs/logs/lsp/lsp-migration-compile.log`
 - 测试原始日志：`docs/logs/lsp/lsp-migration-test.log`
@@ -41,7 +48,8 @@ Working Branch: `refactor/lsp-migration`
 ## 下一步执行队列
 
 - [ ] 在安装 `move-analyzer` 的环境做 IDE 内手工回归（补全/诊断/跳转/悬停）
-- [ ] 按阶段拆分并提交 `test(lsp)` + `docs(lsp)`（待你确认后执行）
+- [ ] 在多 Move 项目 workspace 做手工验证（工作目录回退到 `project.basePath`）
+- [ ] 评估是否将 `org.sui.ide.lsp.*` 全量套件中的偶发销毁期抖动继续收敛（非功能阻塞）
 
 ## Commit 策略（按仓库规范）
 
