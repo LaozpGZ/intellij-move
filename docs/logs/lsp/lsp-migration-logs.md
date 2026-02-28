@@ -801,3 +801,27 @@ ulimit -n 8192
   - 回归矩阵通过（代表类 + 全组 + 子组）
 - 待继续：
   - 若后续继续收敛，优先关注手工 IDE 场景回归（completion/diagnostics/definition）。
+
+---
+
+## 24. IDE Manual Regression Assets Prepared (2026-02-28)
+
+### Goal
+- 为真实 IDE 回归提供可直接执行的 checklist 与统一日志模板，减少执行偏差并支持中断接力。
+
+### Changes
+- 新增手工回归清单：
+  - `docs/guides/lsp-ide-manual-regression-checklist.md`
+  - 覆盖单项目 + 多项目 workspace 的 14 个用例（completion/diagnostics/definition/hover/references/rename/Move 2024 宏）。
+- 新增手工回归日志模板：
+  - `docs/logs/lsp/2026-02-28-ide-manual-regression-template.md`
+  - 包含元信息、case 结果矩阵、缺陷记录和结论字段。
+- 新增执行日志草稿：
+  - `docs/logs/lsp/2026-02-28-ide-manual-regression.md`
+  - 当前状态 `IN_PROGRESS`，用于逐项填充 14 个手工用例结果。
+- 索引同步：
+  - `docs/README.md` 增加 checklist 与模板入口。
+  - `todolist.md` 增加“checklist + 模板沉淀”完成项，并把下一步队列绑定到新清单路径。
+
+### Next
+- 按 checklist 执行真实 IDE 手工回归，并将结果落盘到模板文档。

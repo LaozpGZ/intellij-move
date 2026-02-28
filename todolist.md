@@ -36,6 +36,7 @@ Working Branch: `refactor/lsp-hardening`
 - [x] Move 2024 + 宏 + 高亮专项测试基线沉淀（`testMove2024HighlightMacroSuite`）
 - [x] MoveEdition/MoveLanguageFeatures 语义规则单测补齐并纳入专项基线
 - [x] legacy inspections 链路回归修复（fallback 实例化 + 分级回填，`inspections.*` 全绿）
+- [x] IDE 手工回归 checklist + 日志模板沉淀（单项目/多项目 workspace）
 
 ## 你睡觉期间我会持续维护的上下文锚点
 
@@ -43,6 +44,7 @@ Working Branch: `refactor/lsp-hardening`
 - 硬化计划：`docs/plans/lsp-hardening-plan.md`
 - 执行日志：`docs/logs/lsp/lsp-migration-logs.md`
 - 硬化日志：`docs/logs/lsp/2026-02-28-lsp-hardening.md`
+- IDE 手工回归日志：`docs/logs/lsp/2026-02-28-ide-manual-regression.md`
 - 打包原始日志：`docs/logs/lsp/lsp-migration-build.log`
 - 编译原始日志：`docs/logs/lsp/lsp-migration-compile.log`
 - 测试原始日志：`docs/logs/lsp/lsp-migration-test.log`
@@ -50,7 +52,7 @@ Working Branch: `refactor/lsp-hardening`
 
 ## 下一步执行队列
 
-- [ ] 在安装 `move-analyzer` 的环境做 IDE 内手工回归（补全/诊断/跳转/悬停）
+- [ ] 按 `docs/guides/lsp-ide-manual-regression-checklist.md` 执行 IDE 手工回归（补全/诊断/跳转/悬停）
 - [ ] 在多 Move 项目 workspace 做手工验证（工作目录回退到 `project.basePath`）
 - [ ] 评估是否将 `org.sui.ide.lsp.*` 全量套件中的偶发销毁期抖动继续收敛（非功能阻塞）
 - [ ] 评估是否将 Move 2024 语法错误类（annotator）迁移为 LSP 侧等价回归

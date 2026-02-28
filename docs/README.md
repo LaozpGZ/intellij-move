@@ -12,6 +12,9 @@
 - LSP 原始测试日志：[`docs/logs/lsp/lsp-migration-test.log`](./logs/lsp/lsp-migration-test.log)
 - LSP 自动化烟测日志：[`docs/logs/lsp/lsp-lsp-tests.log`](./logs/lsp/lsp-lsp-tests.log)
 - LSP 集成测试日志（diagnostics+definition+completion+hover+references+rename）：[`docs/logs/lsp/lsp-integration-tests.log`](./logs/lsp/lsp-integration-tests.log)
+- IDE 手工回归清单：[`docs/guides/lsp-ide-manual-regression-checklist.md`](./guides/lsp-ide-manual-regression-checklist.md)
+- IDE 手工回归日志模板：[`docs/logs/lsp/2026-02-28-ide-manual-regression-template.md`](./logs/lsp/2026-02-28-ide-manual-regression-template.md)
+- IDE 手工回归执行日志：[`docs/logs/lsp/2026-02-28-ide-manual-regression.md`](./logs/lsp/2026-02-28-ide-manual-regression.md)
 - 当前任务板：[`todolist.md`](../todolist.md)
 - 路径迁移映射：[`docs/FILE_MAP.md`](./FILE_MAP.md)
 
@@ -32,6 +35,8 @@
 - LSP 主日志：[`docs/logs/lsp/lsp-migration-logs.md`](./logs/lsp/lsp-migration-logs.md)
 - LSP 硬化日志：[`docs/logs/lsp/2026-02-28-lsp-hardening.md`](./logs/lsp/2026-02-28-lsp-hardening.md)
 - LSP 集成测试日志：[`docs/logs/lsp/lsp-integration-tests.log`](./logs/lsp/lsp-integration-tests.log)
+- IDE 手工回归日志模板：[`docs/logs/lsp/2026-02-28-ide-manual-regression-template.md`](./logs/lsp/2026-02-28-ide-manual-regression-template.md)
+- IDE 手工回归执行日志：[`docs/logs/lsp/2026-02-28-ide-manual-regression.md`](./logs/lsp/2026-02-28-ide-manual-regression.md)
 
 ### `plans/`
 
@@ -59,6 +64,7 @@
 - 指南总目录：[`docs/guides/`](./guides/)
 - 协作手册：[`ai-collaboration-playbook.md`](./guides/ai-collaboration-playbook.md)
 - 测试检查单：[`testing-checklist.md`](./guides/testing-checklist.md)
+- IDE 手工回归清单：[`lsp-ide-manual-regression-checklist.md`](./guides/lsp-ide-manual-regression-checklist.md)
 - 安装指南：[`install-plugin.md`](./guides/install-plugin.md)
 
 ## 其他目录
