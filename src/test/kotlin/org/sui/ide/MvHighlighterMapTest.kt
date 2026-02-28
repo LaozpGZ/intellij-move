@@ -5,8 +5,18 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import org.sui.ide.colors.MvColor
 import org.sui.lang.MvElementTypes.*
+import org.sui.lang.MoveParserDefinition.Companion.BLOCK_COMMENT
+import org.sui.lang.MoveParserDefinition.Companion.EOL_COMMENT
+import org.sui.lang.core.MOVE_KEYWORDS
 
 class MvHighlighterMapTest {
+    @Test
+    fun `all move keywords are mapped to keyword color`() {
+        MOVE_KEYWORDS.types.forEach { keyword ->
+            assertEquals(MvColor.KEYWORD, MvHighlighter.map(keyword))
+        }
+    }
+
     @Test
     fun `move 2024 keywords are mapped to keyword color`() {
         assertEquals(MvColor.KEYWORD, MvHighlighter.map(MACRO))
@@ -25,5 +35,12 @@ class MvHighlighterMapTest {
     @Test
     fun `plain identifier has no direct syntax color mapping`() {
         assertNull(MvHighlighter.map(IDENTIFIER))
+    }
+
+    @Test
+    fun `comments and bool literals keep expected colors`() {
+        assertEquals(MvColor.BLOCK_COMMENT, MvHighlighter.map(BLOCK_COMMENT))
+        assertEquals(MvColor.EOL_COMMENT, MvHighlighter.map(EOL_COMMENT))
+        assertEquals(MvColor.KEYWORD, MvHighlighter.map(BOOL_LITERAL))
     }
 }
