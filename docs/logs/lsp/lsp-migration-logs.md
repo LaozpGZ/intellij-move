@@ -757,3 +757,47 @@ ulimit -n 4096
   - 设置变更热同步（`moveAnalyzerEnabled/moveAnalyzerPath`）
   - 工作目录策略确定性化（单项目 vs 多项目）
   - LSP 定向回归补强
+
+---
+
+## 23. Legacy Inspections Regression Recovery (2026-02-28)
+
+### Background
+- 在迁移模式下执行 legacy inspections 时出现大面积失败。
+- 首轮症状：
+  - `Unregistered inspections requested: [org.sui.ide.inspections.InvalidModuleDeclarationInspection]`
+  - 后续在 fallback 后出现统一级别漂移：预期 `error`，实际 `warning`。
+
+### Root Cause
+- 迁移期间 inspections 扩展点从 `plugin.xml` 下线后，`InspectionTestUtil.instantiateTools(...)` 对未注册 inspection 直接抛错。
+- 仅靠反射 fallback 实例化会丢失 inspection profile 的默认级别元数据，导致部分规则被降级为 `warning`。
+
+### Fix
+- 文件：`src/test/kotlin/org/sui/utils/tests/annotation/MvAnnotationTestFixture.kt`
+- 处理策略：
+  - 对 `Unregistered inspections requested` 异常启用测试态 fallback（反射实例化 inspection）。
+  - 仅对确认为 `ERROR` 语义的 inspection 在 fallback 路径回填分级：
+    - `MvUnresolvedReferenceInspection`
+    - `PhantomTypeParameterInspection`
+  - 其他 inspection 保持默认级别，避免把命名类 warning 误升为 error。
+
+### Verification
+```bash
+ulimit -n 8192
+./gradlew test -PincludeLegacySemanticTests=true --tests "org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest" --tests "org.sui.ide.inspections.imports.AutoImportFixTest" --tests "org.sui.ide.inspections.PhantomTypeParameterInspectionTest" --tests "org.sui.ide.inspections.MvConstNamingInspectionTest" --no-daemon
+./gradlew test -PincludeLegacySemanticTests=true --tests "org.sui.ide.inspections.*" --no-daemon
+./gradlew test -PincludeLegacySemanticTests=true --tests "org.sui.ide.inspections.fixes.*" --tests "org.sui.ide.inspections.compilerV2.*" --no-daemon
+```
+
+### Result
+- 代表类烟测：`85 tests, 0 failures`
+- inspections 全组：`415 tests, 0 failures`
+- fixes + compilerV2 子组：`56 tests, 0 failures`
+
+### Handoff Snapshot
+- 当前分支：`refactor/lsp-hardening`
+- 已完成：
+  - legacy inspections 基座链路恢复（未注册 inspection fallback + 精确分级回填）
+  - 回归矩阵通过（代表类 + 全组 + 子组）
+- 待继续：
+  - 若后续继续收敛，优先关注手工 IDE 场景回归（completion/diagnostics/definition）。

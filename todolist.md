@@ -35,6 +35,7 @@ Working Branch: `refactor/lsp-hardening`
 - [x] LSP 相关测试补强（resolver/command/settings sync + integration 抗抖）
 - [x] Move 2024 + 宏 + 高亮专项测试基线沉淀（`testMove2024HighlightMacroSuite`）
 - [x] MoveEdition/MoveLanguageFeatures 语义规则单测补齐并纳入专项基线
+- [x] legacy inspections 链路回归修复（fallback 实例化 + 分级回填，`inspections.*` 全绿）
 
 ## 你睡觉期间我会持续维护的上下文锚点
 
