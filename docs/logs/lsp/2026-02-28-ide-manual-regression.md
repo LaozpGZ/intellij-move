@@ -3,7 +3,7 @@
 日期：`2026-02-28`  
 执行人：`Codex + User`  
 分支：`refactor/lsp-hardening`  
-状态：`IN_PROGRESS (LSP-MAN-01 ~ LSP-MAN-08 已完成)`
+状态：`IN_PROGRESS (LSP-MAN-01 ~ LSP-MAN-10 已完成)`
 
 ## 1. 执行范围
 
@@ -24,8 +24,8 @@
 | LSP-MAN-06 | PASS | `test completion uses move analyzer result` 首轮超时，定向重跑后通过 | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml` |
 | LSP-MAN-07 | PASS | `test references use move analyzer result` 通过 | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml` |
 | LSP-MAN-08 | PASS | `test rename uses move analyzer workspace edit` 通过 | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml` |
-| LSP-MAN-09 | PENDING |  |  |
-| LSP-MAN-10 | PENDING |  |  |
+| LSP-MAN-09 | PASS | 宏语义定向用例通过（builtin/custom/method macro 正向 + unknown macro 负向） | `build/test-results/test/TEST-org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest.xml` |
+| LSP-MAN-10 | PASS | 设置热同步单测已可执行并通过（enabled/path 变更触发，非相关配置不触发） | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspSettingsSyncServiceTest.xml` |
 | LSP-MAN-11 | PENDING |  |  |
 | LSP-MAN-12 | PENDING |  |  |
 | LSP-MAN-13 | PENDING |  |  |
@@ -33,5 +33,5 @@
 
 ## 3. 结论
 
-- 当前阶段：已完成 LSP-MAN-01 ~ LSP-MAN-08（单项目核心链路第一批）。
+- 当前阶段：已完成 LSP-MAN-01 ~ LSP-MAN-10（单项目核心链路）。
 - 阻塞项：无代码阻塞；需要在本地 IDE 中逐项操作并记录证据。

@@ -855,3 +855,43 @@ ulimit -n 8192
 - `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerPathResolverTest.xml`
 - `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml`
 - `docs/logs/lsp/2026-02-28-ide-manual-regression.md`
+
+---
+
+## 26. Manual Regression Execution Batch-2 (LSP-MAN-09 ~ LSP-MAN-10)
+
+### Date
+- 2026-02-28
+
+### Scope
+- 单项目核心链路第二批：
+  - LSP-MAN-09（Move 2024 / 宏基础）
+  - LSP-MAN-10（Move Analyzer 开关热同步）
+
+### Actions
+- 执行宏语义定向回归（builtin/custom/method macro 正向 + unknown macro 负向）。
+- 修复测试债：`MoveAnalyzerLspSettingsSyncServiceTest` 原本未被 Gradle 发现，补齐为可执行测试类后再回归。
+
+### Verification
+```bash
+ulimit -n 8192
+./gradlew test -PincludeLegacySemanticTests=true \
+  --tests "org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest.test no unresolved reference for builtin macro call" \
+  --tests "org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest.test no unresolved reference for custom macro from provider" \
+  --tests "org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest.test unresolved unknown macro call" \
+  --tests "org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest.test no unresolved for method macro call" \
+  --tests "org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest.test unresolved unknown method macro call" \
+  --no-daemon
+
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspSettingsSyncServiceTest" --no-daemon
+```
+
+### Result
+- 宏语义定向：`5 tests, 0 failures`
+- 设置热同步：`3 tests, 0 failures`
+- LSP-MAN-09 / LSP-MAN-10 均通过并已写入手工回归日志。
+
+### Artifacts
+- `build/test-results/test/TEST-org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest.xml`
+- `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspSettingsSyncServiceTest.xml`
+- `docs/logs/lsp/2026-02-28-ide-manual-regression.md`

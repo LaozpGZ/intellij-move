@@ -1,7 +1,9 @@
 package org.sui.ide.lsp
 
+import junit.framework.TestCase
 import org.sui.cli.settings.MvProjectSettingsService
-class MoveAnalyzerLspSettingsSyncServiceTest {
+
+class MoveAnalyzerLspSettingsSyncServiceTest : TestCase() {
     fun `test detects move analyzer enabled change`() {
         val oldState = MvProjectSettingsService.MoveProjectSettings().apply {
             moveAnalyzerEnabled = true
