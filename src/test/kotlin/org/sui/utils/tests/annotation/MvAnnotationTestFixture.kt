@@ -6,9 +6,11 @@
 package org.sui.utils.tests.annotation
 
 import com.intellij.codeInsight.daemon.impl.SeveritiesProvider
+import com.intellij.lang.LanguageAnnotators
 import com.intellij.codeInspection.InspectionProfileEntry
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.InspectionTestUtil
 import com.intellij.testFramework.PsiTestUtil
@@ -17,7 +19,9 @@ import com.intellij.testFramework.fixtures.impl.BaseFixture
 import junit.framework.TestCase
 import org.intellij.lang.annotations.Language
 import org.sui.ide.annotator.MvAnnotatorBase
+import org.sui.lang.MoveLanguage
 import kotlin.reflect.KClass
+import kotlin.reflect.full.createInstance
 
 class MvAnnotationTestFixture(
     private val testCase: TestCase,
@@ -37,10 +41,18 @@ class MvAnnotationTestFixture(
 //        }
 
         annotatorClasses.forEach {
-            MvAnnotatorBase.enableAnnotator(
-                it.java,
-                testRootDisposable
-            )
+            val annotatorClass = it.java
+            MvAnnotatorBase.enableAnnotator(annotatorClass, testRootDisposable)
+
+            // Move annotators are intentionally removed from plugin.xml in LSP migration mode.
+            // For legacy annotator tests we register them explicitly only in test runtime.
+            if (annotatorClass.`package`?.name?.startsWith("org.sui.ide.annotator") == true) {
+                val annotator = it.createInstance()
+                LanguageAnnotators.INSTANCE.addExplicitExtension(MoveLanguage, annotator)
+                Disposer.register(testRootDisposable) {
+                    LanguageAnnotators.INSTANCE.removeExplicitExtension(MoveLanguage, annotator)
+                }
+            }
         }
         enabledInspections = InspectionTestUtil.instantiateTools(inspectionClasses.map { it.java })
         codeInsightFixture.enableInspections(*enabledInspections.toTypedArray())
