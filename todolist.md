@@ -55,7 +55,7 @@ Working Branch: `refactor/lsp-hardening`
 - [ ] 按 `docs/guides/lsp-ide-manual-regression-checklist.md` 执行 IDE 手工回归（补全/诊断/跳转/悬停）
 - [x] IDE 手工回归第一批完成：`LSP-MAN-01 ~ LSP-MAN-08`
 - [x] IDE 手工回归第二批完成：`LSP-MAN-09 ~ LSP-MAN-10`
-- [ ] 在多 Move 项目 workspace 做手工验证（工作目录回退到 `project.basePath`）
+- [x] IDE 手工回归第三批完成：`LSP-MAN-11 ~ LSP-MAN-14`（多项目 workspace）
 - [ ] 评估是否将 `org.sui.ide.lsp.*` 全量套件中的偶发销毁期抖动继续收敛（非功能阻塞）
 - [ ] 评估是否将 Move 2024 语法错误类（annotator）迁移为 LSP 侧等价回归
 

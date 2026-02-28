@@ -3,14 +3,14 @@
 日期：`2026-02-28`  
 执行人：`Codex + User`  
 分支：`refactor/lsp-hardening`  
-状态：`IN_PROGRESS (LSP-MAN-01 ~ LSP-MAN-10 已完成)`
+状态：`DONE (LSP-MAN-01 ~ LSP-MAN-14 已完成)`
 
 ## 1. 执行范围
 
 - 参考清单：`docs/guides/lsp-ide-manual-regression-checklist.md`
 - 本次覆盖：
-  - 单项目：`PARTIAL`
-  - 多项目 workspace：`PENDING`
+  - 单项目：`PASS`
+  - 多项目 workspace：`PASS`
 
 ## 2. Case 结果
 
@@ -26,12 +26,13 @@
 | LSP-MAN-08 | PASS | `test rename uses move analyzer workspace edit` 通过 | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml` |
 | LSP-MAN-09 | PASS | 宏语义定向用例通过（builtin/custom/method macro 正向 + unknown macro 负向） | `build/test-results/test/TEST-org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest.xml` |
 | LSP-MAN-10 | PASS | 设置热同步单测已可执行并通过（enabled/path 变更触发，非相关配置不触发） | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspSettingsSyncServiceTest.xml` |
-| LSP-MAN-11 | PENDING |  |  |
-| LSP-MAN-12 | PENDING |  |  |
-| LSP-MAN-13 | PENDING |  |  |
-| LSP-MAN-14 | PENDING |  |  |
+| LSP-MAN-11 | PASS | `test diagnostics are reported in multi-project workspace for active project` 通过 | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml` |
+| LSP-MAN-12 | PASS | `test goto definition in multi-project workspace resolves active project declaration` 通过 | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml` |
+| LSP-MAN-13 | PASS | `test references in multi-project workspace stay within active project` 通过 | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml` |
+| LSP-MAN-14 | PASS | `test rename in multi-project workspace updates active project only` 通过；首轮出现 teardown 容器销毁竞态，重跑通过 | `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml` |
 
 ## 3. 结论
 
-- 当前阶段：已完成 LSP-MAN-01 ~ LSP-MAN-10（单项目核心链路）。
-- 阻塞项：无代码阻塞；需要在本地 IDE 中逐项操作并记录证据。
+- 当前阶段：已完成 LSP-MAN-01 ~ LSP-MAN-14（单项目 + 多项目 workspace）。
+- 观测项：`LSP-MAN-11~14` 首轮出现一次 teardown 容器销毁竞态（`ContainerDisposedException`），定向重跑后稳定通过。
+- 阻塞项：无。

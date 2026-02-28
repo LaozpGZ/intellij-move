@@ -895,3 +895,49 @@ ulimit -n 8192
 - `build/test-results/test/TEST-org.sui.ide.inspections.MvUnresolvedReferenceInspectionTest.xml`
 - `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspSettingsSyncServiceTest.xml`
 - `docs/logs/lsp/2026-02-28-ide-manual-regression.md`
+
+---
+
+## 27. Manual Regression Execution Batch-3 (LSP-MAN-11 ~ LSP-MAN-14)
+
+### Date
+- 2026-02-28
+
+### Scope
+- 多项目 workspace 回归：
+  - LSP-MAN-11 diagnostics
+  - LSP-MAN-12 goto definition
+  - LSP-MAN-13 references
+  - LSP-MAN-14 rename
+
+### Root Cause & Fix
+- 首轮执行 4 条用例全部超时，日志出现大量 `Invalid working directory`。
+- 根因：多项目场景下 `MoveAnalyzerCommandProvider` 固定回退 `project.basePath`，测试环境中该路径可能不存在，导致 LSP 进程无法启动。
+- 修复：
+  - `MoveAnalyzerCommandProvider.resolveWorkingDirectory(...)` 仅返回存在的目录；
+  - 多项目且 `project.basePath` 无效时，回退到 move roots 的公共祖先目录（再兜底首个有效 root）；
+  - 新增单测覆盖 invalid base path 场景。
+
+### Verification
+```bash
+ulimit -n 8192
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerCommandProviderTest" --no-daemon
+./gradlew test \
+  --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.test diagnostics are reported in multi-project workspace for active project" \
+  --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.test goto definition in multi-project workspace resolves active project declaration" \
+  --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.test references in multi-project workspace stay within active project" \
+  --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.test rename in multi-project workspace updates active project only" \
+  --no-daemon
+```
+
+### Result
+- `MoveAnalyzerCommandProviderTest`：通过。
+- 多项目 4 用例：首轮 `3/4`（1 条 teardown 容器销毁竞态），重跑后 `4/4` 通过。
+- 当前 `LSP-MAN-11 ~ LSP-MAN-14` 状态：全部 PASS。
+
+### Artifacts
+- `src/main/kotlin/org/sui/ide/lsp/MoveAnalyzerCommandProvider.kt`
+- `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerCommandProviderTest.kt`
+- `src/test/kotlin/org/sui/ide/lsp/MoveAnalyzerLspIntegrationTest.kt`
+- `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml`
+- `docs/logs/lsp/2026-02-28-ide-manual-regression.md`
