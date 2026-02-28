@@ -234,7 +234,31 @@ allprojects {
             }
         }
 
-        withType<Test> {
+        val move2024HighlightMacroSuitePatterns = listOf(
+            "org.sui.ide.MvHighlighterMapTest",
+            "org.sui.lang.parser.CompleteParsingTest",
+            "org.sui.lang.types.OptionResultMacroTypeTest",
+        )
+        val move2024HighlightMacroSuiteRequested = gradle.startParameter.taskNames.any {
+            it == "testMove2024HighlightMacroSuite" || it.endsWith(":testMove2024HighlightMacroSuite")
+        }
+        if (move2024HighlightMacroSuiteRequested) {
+            named<Test>("test") {
+                filter {
+                    move2024HighlightMacroSuitePatterns.forEach { pattern ->
+                        includeTestsMatching(pattern)
+                    }
+                }
+            }
+        }
+
+        register("testMove2024HighlightMacroSuite") {
+            group = "verification"
+            description = "Runs Move 2024 + macro lexical/parser/type baseline suite."
+            dependsOn(named("test"))
+        }
+
+        withType<Test>().configureEach {
             val includeLegacySemanticTests = project.findProperty("includeLegacySemanticTests")
                 ?.toString()
                 ?.toBooleanStrictOrNull() ?: false
@@ -247,7 +271,7 @@ allprojects {
 
             // After migrating Move semantic features to move-analyzer (LSP),
             // local semantic test suites are opt-in via -PincludeLegacySemanticTests=true.
-            if (!includeLegacySemanticTests) {
+            if (name == "test" && !includeLegacySemanticTests && !move2024HighlightMacroSuiteRequested) {
                 filter {
                     excludeTestsMatching("org.sui.ide.annotator.*")
                     excludeTestsMatching("org.sui.ide.inspections.*")

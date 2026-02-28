@@ -1,5 +1,6 @@
 package org.sui.lang.parser
 
+import org.sui.ide.inspections.fixes.CompilerV2Feat.MACRO_FUNCTIONS
 import org.sui.ide.inspections.fixes.CompilerV2Feat.RESOURCE_CONTROL
 import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.parser.MvParsingTestCase
@@ -58,6 +59,7 @@ class CompleteParsingTest : MvParsingTestCase("complete") {
     fun `test generics`() = doTest()
     fun `test annotated literals`() = doTest()
 
+    @CompilerV2Features(MACRO_FUNCTIONS)
     fun `test macros`() = doTest()
     fun `test loops`() = doTest()
     fun `test break values`() = doTest()

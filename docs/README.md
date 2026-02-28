@@ -18,6 +18,7 @@
 ## LSP 迁移快捷命令
 
 - 默认迁移模式回归：`./gradlew test`
+- Move 2024 + 宏 + 高亮（词法/解析/类型）专项基线：`./gradlew testMove2024HighlightMacroSuite`
 - 启用旧本地语义测试回归：`./gradlew test -PincludeLegacySemanticTests=true`
 - 启用真实 analyzer 回归：`./gradlew test -PincludeRealMoveAnalyzerTests=true --tests "org.sui.ide.lsp.MoveAnalyzerRealLspIntegrationTest"`
 

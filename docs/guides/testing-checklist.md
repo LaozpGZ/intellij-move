@@ -95,6 +95,16 @@
 ./gradlew test
 ```
 
+### 6.3 Move 2024 + 宏 + 高亮专项基线（迁移模式）
+
+- [ ] 涉及 Move 2024 / 宏 / 高亮词法映射改动时，执行并通过：
+
+```bash
+./gradlew testMove2024HighlightMacroSuite
+```
+
+- [ ] 若上述专项失败，先修复专项，再执行 `./gradlew test`。
+
 ---
 
 ## 7. 覆盖率与“功能已实现”判定规则
