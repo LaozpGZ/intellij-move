@@ -238,6 +238,7 @@ allprojects {
             "org.sui.ide.MvHighlighterMapTest",
             "org.sui.lang.parser.CompleteParsingTest",
             "org.sui.lang.types.OptionResultMacroTypeTest",
+            "org.sui.ide.annotator.MvSyntaxErrorAnnotatorMacroParamNameTest",
         )
         val move2024HighlightMacroSuiteRequested = gradle.startParameter.taskNames.any {
             it == "testMove2024HighlightMacroSuite" || it.endsWith(":testMove2024HighlightMacroSuite")
