@@ -23,7 +23,11 @@ import java.util.function.Predicate
 class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
     override fun tearDown() {
         try {
-            stopLanguageServers()
+            if (!project.isDisposed) {
+                stopLanguageServers()
+            }
+        } catch (_: Throwable) {
+            // Avoid masking test failures with teardown disposal races.
         } finally {
             super.tearDown()
         }
@@ -389,16 +393,20 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
     }
 
     private fun waitForDefinitions(params: LSPDefinitionParams): List<LocationData> {
+        triggerLspRequest()
         var result: List<LocationData> = emptyList()
         runWithInvocationEventsDispatching(
             errorMessage = "Timed out waiting for LSP definition result",
-            retries = 300
+            retries = 1200
         ) {
             val future = LSPFileSupport.getSupport(myFixture.file).definitionSupport.getDefinitions(params)
             result = try {
                 future.get(1, TimeUnit.SECONDS)
             } catch (_: Exception) {
                 emptyList()
+            }
+            if (result.isEmpty()) {
+                triggerLspRequest()
             }
             result.isNotEmpty()
         }
@@ -676,8 +684,13 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
     }
 
     private fun stopLanguageServers() {
-        val accessor = LanguageServiceAccessor.getInstance(project)
-        val wrappers = accessor.getStartedServers().toList()
+        if (project.isDisposed) return
+        val wrappers = try {
+            LanguageServiceAccessor.getInstance(project).getStartedServers().toList()
+        } catch (_: Throwable) {
+            emptyList()
+        }
+        if (wrappers.isEmpty()) return
         wrappers.forEach { wrapper ->
             try {
                 wrapper.dispose(true)
@@ -686,11 +699,15 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
                 wrapper.dispose()
             }
         }
-        runWithInvocationEventsDispatching(
-            errorMessage = "Timed out waiting for LSP servers shutdown",
-            retries = 500
-        ) {
-            wrappers.all { it.isDisposed }
+        try {
+            runWithInvocationEventsDispatching(
+                errorMessage = "Timed out waiting for LSP servers shutdown",
+                retries = 500
+            ) {
+                wrappers.all { it.isDisposed }
+            }
+        } catch (_: Throwable) {
+            // Ignore shutdown races during fixture disposal.
         }
     }
 

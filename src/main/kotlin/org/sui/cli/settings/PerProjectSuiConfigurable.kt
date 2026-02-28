@@ -30,10 +30,19 @@ class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui")
             "Choose move-analyzer executable",
         )
         val moveAnalyzerVersionLabel = VersionLabel(configurableDisposable, versionUpdateListener = null)
+        val moveAnalyzerSourceLabel = TextOrErrorLabel(null)
 
         fun updateMoveAnalyzerVersion(pathText: String? = moveAnalyzerPathField.text) {
-            val resolvedPath = MoveAnalyzerPathResolver.resolveExecutable(project, pathText?.blankToNull())
-            moveAnalyzerVersionLabel.updateAndNotifyListeners(resolvedPath)
+            val resolution = MoveAnalyzerPathResolver.resolveDetailed(project, pathText?.blankToNull())
+            moveAnalyzerVersionLabel.updateAndNotifyListeners(resolution.path)
+            val sourceText = when (resolution.source) {
+                MoveAnalyzerPathResolver.ResolutionSource.CONFIGURED -> "Configured path"
+                MoveAnalyzerPathResolver.ResolutionSource.PATH -> "PATH"
+                MoveAnalyzerPathResolver.ResolutionSource.CARGO_HOME -> "~/.cargo/bin"
+                MoveAnalyzerPathResolver.ResolutionSource.SUI_HOME -> "~/.sui/bin"
+                MoveAnalyzerPathResolver.ResolutionSource.UNRESOLVED -> "Not found"
+            }
+            moveAnalyzerSourceLabel.setText(sourceText, errorHighlighting = resolution.source == MoveAnalyzerPathResolver.ResolutionSource.UNRESOLVED)
         }
 
         moveAnalyzerPathField.childComponent.document.addDocumentListener(
@@ -160,6 +169,9 @@ class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui")
                     }
                     row("Resolved version:") {
                         cell(moveAnalyzerVersionLabel)
+                    }
+                    row("Resolved from:") {
+                        cell(moveAnalyzerSourceLabel)
                     }
                 }
             }

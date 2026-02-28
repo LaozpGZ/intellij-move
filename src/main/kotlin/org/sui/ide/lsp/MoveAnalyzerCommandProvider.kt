@@ -1,17 +1,21 @@
 package org.sui.ide.lsp
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import org.sui.cli.MoveProjectsService
+import org.sui.openapiext.common.isUnitTestMode
 import org.sui.stdext.toPathOrNull
 import java.nio.file.Path
 
 object MoveAnalyzerCommandProvider {
     private const val STDIO_ARG: String = "--stdio"
     private val LEGACY_STDIO_COMPAT_NAMES: Set<String> = setOf("sui-move-analyzer", "sui-move-analyzer.exe")
+    private val LOG = logger<MoveAnalyzerCommandProvider>()
 
     fun createCommandLine(project: Project): GeneralCommandLine {
-        val executable = MoveAnalyzerPathResolver.resolveExecutable(project)?.toString()
+        val resolution = MoveAnalyzerPathResolver.resolveDetailed(project)
+        val executable = resolution.path?.toString()
             ?: MoveAnalyzerPathResolver.defaultExecutableName()
 
         val commandLine = GeneralCommandLine(executable)
@@ -19,7 +23,14 @@ object MoveAnalyzerCommandProvider {
         if (launchArgs.isNotEmpty()) {
             commandLine.withParameters(launchArgs)
         }
-        resolveWorkingDirectory(project)?.let { commandLine.withWorkDirectory(it.toString()) }
+        val workDir = resolveWorkingDirectory(project)
+        workDir?.let { commandLine.withWorkDirectory(it.toString()) }
+        logCommandDecisionIfNeeded(
+            executable = executable,
+            launchArgs = launchArgs,
+            workDir = workDir,
+            resolutionSource = resolution.source,
+        )
         return commandLine
     }
 
@@ -39,7 +50,31 @@ object MoveAnalyzerCommandProvider {
 
     private fun resolveWorkingDirectory(project: Project): Path? {
         val moveProjectsService = project.getService(MoveProjectsService::class.java)
-        val moveProjectPath = moveProjectsService?.allProjects?.firstOrNull()?.contentRootPath
-        return moveProjectPath ?: project.basePath?.toPathOrNull()
+        val moveProjectPaths = moveProjectsService?.allProjects.orEmpty()
+            .mapNotNull { it.contentRootPath }
+        val projectBasePath = project.basePath?.toPathOrNull()
+        return resolveWorkingDirectory(moveProjectPaths, projectBasePath)
+    }
+
+    internal fun resolveWorkingDirectory(moveProjectPaths: List<Path>, projectBasePath: Path?): Path? {
+        val uniqueProjectPaths = moveProjectPaths.distinct()
+        return when {
+            uniqueProjectPaths.size == 1 -> uniqueProjectPaths.single()
+            uniqueProjectPaths.size > 1 -> projectBasePath
+            else -> projectBasePath
+        }
+    }
+
+    private fun logCommandDecisionIfNeeded(
+        executable: String,
+        launchArgs: List<String>,
+        workDir: Path?,
+        resolutionSource: MoveAnalyzerPathResolver.ResolutionSource,
+    ) {
+        if (isUnitTestMode) return
+        LOG.info(
+            "move-analyzer command: executable=$executable, args=$launchArgs, " +
+                "workDir=${workDir ?: "<null>"}, source=$resolutionSource"
+        )
     }
 }

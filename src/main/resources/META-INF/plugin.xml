@@ -82,6 +82,7 @@
                         serviceImplementation="org.sui.lang.core.psi.MvPsiManagerImpl"/>
 
         <projectService serviceImplementation="org.sui.cli.settings.MvProjectSettingsService"/>
+        <projectService serviceImplementation="org.sui.ide.lsp.MoveAnalyzerLspSettingsSyncService"/>
 
         <!--specificallytosupportnamedaddressesintests,doesnothinginnon-testenvironment-->
         <projectService serviceInterface="org.sui.cli.tests.NamedAddressService"
