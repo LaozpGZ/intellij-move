@@ -80,6 +80,23 @@ class MoveAnalyzerCommandProviderTest : MvProjectTestBase() {
         }
     }
 
+    fun `test working directory falls back to common root when project base is invalid in multi-project setup`() {
+        val workspaceRoot = Files.createTempDirectory("move-project-workspace")
+        val rootA = Files.createDirectories(workspaceRoot.resolve("project-a"))
+        val rootB = Files.createDirectories(workspaceRoot.resolve("project-b"))
+        val missingProjectBase = workspaceRoot.resolve("missing-project-base")
+
+        val resolved = MoveAnalyzerCommandProvider.resolveWorkingDirectory(
+            moveProjectPaths = listOf(rootA, rootB),
+            projectBasePath = missingProjectBase,
+        )
+
+        check(resolved == workspaceRoot) {
+            "Expected existing common workspace root when project base is invalid. " +
+                "expected=$workspaceRoot actual=$resolved"
+        }
+    }
+
     fun `test working directory falls back to project base when no move root detected`() {
         val projectBase = Files.createTempDirectory("move-project-base")
 

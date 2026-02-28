@@ -344,6 +344,228 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
         }
     }
 
+    fun `test diagnostics are reported in multi-project workspace for active project`() {
+        configureMoveAnalyzer()
+        testProject {
+            dir("project-a") {
+                namedMoveToml("PackageA")
+                sources {
+                    main(
+                        """
+                        module 0x1::main {
+                            fun call() {
+                                let _ = broken/*caret*/;
+                            }
+                        }
+                        """
+                    )
+                }
+            }
+            dir("project-b") {
+                namedMoveToml("PackageB")
+                sources {
+                    main(
+                        """
+                        module 0x2::other {
+                            fun stable() {}
+                        }
+                        """
+                    )
+                }
+            }
+        }
+
+        val diagnostic = waitForLspDiagnostic("fake lsp diagnostic")
+        val expectedStart = myFixture.file.text.indexOf("broken")
+        check(expectedStart >= 0) { "Failed to locate `broken` in active project source" }
+        val expectedPosition = LSPIJUtils.toPosition(expectedStart, myFixture.editor.document)
+        check(diagnostic.range.start.line == expectedPosition.line) {
+            "Unexpected diagnostic line in multi-project workspace: ${diagnostic.range.start.line}, expected: ${expectedPosition.line}"
+        }
+        check(diagnostic.range.start.character == expectedPosition.character) {
+            "Unexpected diagnostic character in multi-project workspace: ${diagnostic.range.start.character}, expected: ${expectedPosition.character}"
+        }
+    }
+
+    fun `test goto definition in multi-project workspace resolves active project declaration`() {
+        configureMoveAnalyzer()
+        testProject {
+            dir("project-a") {
+                namedMoveToml("PackageA")
+                sources {
+                    main(
+                        """
+                        module 0x1::main {
+                            fun compute_value() {}
+
+                            fun call() {
+                                compute/*caret*/_value();
+                            }
+                        }
+                        """
+                    )
+                }
+            }
+            dir("project-b") {
+                namedMoveToml("PackageB")
+                sources {
+                    main(
+                        """
+                        module 0x2::main {
+                            fun compute_value() {}
+                        }
+                        """
+                    )
+                }
+            }
+        }
+
+        val context = currentCaretContext()
+        val params = LSPDefinitionParams(TextDocumentIdentifier(context.uri), context.position, context.offset)
+        val definitions = waitForDefinitions(params)
+
+        check(definitions.size == 1) {
+            "Expected exactly one definition result in multi-project workspace, got ${definitions.size}: $definitions"
+        }
+        val location = definitions.single().location()
+        check(location.uri == context.uri) {
+            "Expected definition from active project file `${context.uri}`, got `${location.uri}`"
+        }
+
+        val declarationOffset = myFixture.file.text.indexOf("fun compute_value")
+        check(declarationOffset >= 0) { "Failed to locate declaration marker `fun compute_value` in active project source" }
+        val symbolOffset = myFixture.file.text.indexOf("compute_value", declarationOffset)
+        check(symbolOffset >= 0) { "Failed to locate declaration `compute_value` in active project source" }
+        val declarationPosition = LSPIJUtils.toPosition(symbolOffset, myFixture.editor.document)
+
+        check(location.range.start.line == declarationPosition.line) {
+            "Unexpected definition line in multi-project workspace: ${location.range.start.line}, expected: ${declarationPosition.line}"
+        }
+        check(location.range.start.character == declarationPosition.character) {
+            "Unexpected definition character in multi-project workspace: ${location.range.start.character}, expected: ${declarationPosition.character}"
+        }
+    }
+
+    fun `test references in multi-project workspace stay within active project`() {
+        configureMoveAnalyzer()
+        testProject {
+            dir("project-a") {
+                namedMoveToml("PackageA")
+                sources {
+                    main(
+                        """
+                        module 0x1::main {
+                            fun compute_value() {}
+
+                            fun call() {
+                                compute_value();
+                                compute/*caret*/_value();
+                            }
+                        }
+                        """
+                    )
+                }
+            }
+            dir("project-b") {
+                namedMoveToml("PackageB")
+                sources {
+                    main(
+                        """
+                        module 0x2::main {
+                            fun compute_value() {}
+
+                            fun other() {
+                                compute_value();
+                            }
+                        }
+                        """
+                    )
+                }
+            }
+        }
+
+        val context = currentCaretContext()
+        val params = LSPReferenceParams(
+            TextDocumentIdentifier(context.uri),
+            context.position,
+            context.offset
+        )
+        val references = waitForReferences(params)
+
+        check(references.size == 3) {
+            "Expected references from active project only (1 declaration + 2 usages), got ${references.size}: $references"
+        }
+        check(references.all { it.location().uri == context.uri }) {
+            "Expected references to stay in active project file `${context.uri}`, got $references"
+        }
+        check(references.all { reference ->
+            rangeText(reference.location().range) == "compute_value"
+        }) {
+            "Expected references to point to `compute_value` only, got $references"
+        }
+    }
+
+    fun `test rename in multi-project workspace updates active project only`() {
+        configureMoveAnalyzer()
+        testProject {
+            dir("project-a") {
+                namedMoveToml("PackageA")
+                sources {
+                    main(
+                        """
+                        module 0x1::main {
+                            fun compute_value() {}
+
+                            fun call() {
+                                compute/*caret*/_value();
+                                compute_value();
+                            }
+                        }
+                        """
+                    )
+                }
+            }
+            dir("project-b") {
+                namedMoveToml("PackageB")
+                sources {
+                    main(
+                        """
+                        module 0x2::main {
+                            fun compute_value() {}
+
+                            fun other() {
+                                compute_value();
+                            }
+                        }
+                        """
+                    )
+                }
+            }
+        }
+
+        val context = currentCaretContext()
+        val newName = "renamed_compute_value"
+        val workspaceEdits = waitForRenameEdits(newName)
+        val changedUris = workspaceEdits.flatMap { it.changes?.keys.orEmpty() }.distinct()
+
+        check(changedUris == listOf(context.uri)) {
+            "Expected rename edits only for active project file `${context.uri}`, got $changedUris"
+        }
+
+        val textEdits = workspaceEdits.flatMap { it.changes?.get(context.uri).orEmpty() }
+        check(textEdits.size == 3) {
+            "Expected rename edits for active project declaration + 2 usages, got ${textEdits.size}: $textEdits"
+        }
+        check(textEdits.all { it.newText == newName }) {
+            "Expected all rename edits to use `$newName`, got $textEdits"
+        }
+        check(textEdits.all { textEdit ->
+            rangeText(textEdit.range) == "compute_value"
+        }) {
+            "Expected rename edits to target `compute_value` in active project only, got $textEdits"
+        }
+    }
+
     private fun configureMoveAnalyzer() {
         val executable = FakeMoveAnalyzerServer.createExecutable()
         project.moveSettings.modifyTemporary(testRootDisposable) {

@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project
 import org.sui.cli.MoveProjectsService
 import org.sui.openapiext.common.isUnitTestMode
 import org.sui.stdext.toPathOrNull
+import java.nio.file.Files
 import java.nio.file.Path
 
 object MoveAnalyzerCommandProvider {
@@ -58,11 +59,28 @@ object MoveAnalyzerCommandProvider {
 
     internal fun resolveWorkingDirectory(moveProjectPaths: List<Path>, projectBasePath: Path?): Path? {
         val uniqueProjectPaths = moveProjectPaths.distinct()
+            .map { it.normalize() }
+            .filter { Files.isDirectory(it) }
+        val normalizedProjectBasePath = projectBasePath?.normalize()?.takeIf { Files.isDirectory(it) }
         return when {
             uniqueProjectPaths.size == 1 -> uniqueProjectPaths.single()
-            uniqueProjectPaths.size > 1 -> projectBasePath
-            else -> projectBasePath
+            uniqueProjectPaths.size > 1 -> normalizedProjectBasePath
+                ?: findCommonAncestor(uniqueProjectPaths)
+                ?: uniqueProjectPaths.firstOrNull()
+            else -> normalizedProjectBasePath
         }
+    }
+
+    private fun findCommonAncestor(paths: List<Path>): Path? {
+        if (paths.isEmpty()) return null
+        var common = paths.first().normalize()
+        for (path in paths.drop(1)) {
+            val normalized = path.normalize()
+            while (!normalized.startsWith(common)) {
+                common = common.parent ?: return null
+            }
+        }
+        return common
     }
 
     private fun logCommandDecisionIfNeeded(
