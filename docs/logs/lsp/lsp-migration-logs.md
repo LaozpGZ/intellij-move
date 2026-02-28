@@ -825,3 +825,33 @@ ulimit -n 8192
 
 ### Next
 - 按 checklist 执行真实 IDE 手工回归，并将结果落盘到模板文档。
+
+---
+
+## 25. Manual Regression Execution Batch-1 (LSP-MAN-01 ~ LSP-MAN-08)
+
+### Date
+- 2026-02-28
+
+### Scope
+- 单项目核心链路第一批：
+  - LSP-MAN-01 ~ LSP-MAN-04（路径来源 / diagnostics / definition / fully-qualified definition）
+  - LSP-MAN-05 ~ LSP-MAN-08（hover / completion / references / rename）
+
+### Verification
+```bash
+ulimit -n 8192
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerPathResolverTest" --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest" --no-daemon
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.test completion uses move analyzer result" --no-daemon
+./gradlew test --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest" --no-daemon
+```
+
+### Result
+- `MoveAnalyzerPathResolverTest`: `7 tests, 0 failures`
+- `MoveAnalyzerLspIntegrationTest`: `8 tests, 0 failures`（重跑后稳定通过）
+- 观测：completion 用例出现过一次超时抖动（`Timed out waiting for LSP completion result`），定向重跑后通过。
+
+### Artifacts
+- `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerPathResolverTest.xml`
+- `build/test-results/test/TEST-org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest.xml`
+- `docs/logs/lsp/2026-02-28-ide-manual-regression.md`
