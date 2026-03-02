@@ -144,7 +144,7 @@ class ChooseSuiCliPanel(versionUpdateListener: (() -> Unit)?) : Disposable {
 //                    row {
 //                        comment(
 //                            "Bundled version is not available for MacOS. Refer to the " +
-//                                    "<a href=\"https://aptos.dev/tools/aptos-cli/install-cli/install-cli-mac\">Official Aptos CLI docs</a> " +
+//                                    "<a href=\"https://docs.sui.io/references/cli/install\">Official Sui CLI docs</a> " +
 //                                    "on how to install it on your platform."
 //                        )
 //                            .visible(!SuiExecType.isPreCompiledSupportedForThePlatform)
@@ -165,11 +165,11 @@ class ChooseSuiCliPanel(versionUpdateListener: (() -> Unit)?) : Disposable {
                     row("--version :") { cell(versionLabel) }
 //                    row {
 //                        comment(
-//                            "Bundled version of the Aptos CLI can be outdated. Refer to the " +
-//                                    "<a href=\"https://aptos.dev/tools/aptos-cli/install-cli\">Official Aptos CLI docs</a> " +
+//                            "Bundled version of the Sui CLI can be outdated. Refer to the " +
+//                                    "<a href=\"https://docs.sui.io/references/cli\">Official Sui CLI docs</a> " +
 //                                    "on how to install and update new version for your platform."
 //                        )
-//                            .visible(AptosExecType.isPreCompiledSupportedForThePlatform)
+//                            .visible(SuiExecType.isPreCompiledSupportedForThePlatform)
 //                    }
                 }
             }

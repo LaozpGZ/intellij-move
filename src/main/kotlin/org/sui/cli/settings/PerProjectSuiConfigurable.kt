@@ -73,7 +73,7 @@ class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui")
 //                        checkBox("Set Compiler V2 flags for CLI")
 //                            .comment(
 //                                "Adds `--compiler-version v2 --language-version 2.0` " +
-//                                        "to all generated Aptos CLI commands"
+//                                        "to all generated Sui CLI commands"
 //                            )
 //                            .bindSelected(state::addCompilerV2CLIFlags)
 //                    }
@@ -208,7 +208,7 @@ class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui")
                     it.requirePublicStruct = state.requirePublicStruct
                     it.requireLetMut = state.requireLetMut
                     it.addCompilerV2CLIFlags = state.addCompilerV2CLIFlags
-//                    it.fetchAptosDeps = state.fetchAptosDeps
+//                    it.fetchSuiDeps = state.fetchSuiDeps
                     it.fetchSuiDeps = state.fetchSuiDeps
                     it.moveAnalyzerEnabled = state.moveAnalyzerEnabled
                     it.moveAnalyzerPath = moveAnalyzerPathField.text.blankToNull()
@@ -249,6 +249,6 @@ class PerProjectSuiConfigurable(val project: Project) : BoundConfigurable("Sui")
 
 //    override fun disposeUIResources() {
 //        super.disposeUIResources()
-//        Disposer.dispose(chooseAptosCliPanel)
+//        Disposer.dispose(chooseSuiCliPanel)
 //    }
 }

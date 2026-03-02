@@ -25,7 +25,6 @@ class SuiSdksSettingsService :
         var sdksDir: String? by string(defaultValue = DEFAULT_SDKS_DIR)
 
         var suiSdkPaths: MutableList<String> by list()
-        var aptosSdkPaths: MutableList<String> by list()
 
         fun copy(): SuiSdksSettings {
             val state = SuiSdksSettings()

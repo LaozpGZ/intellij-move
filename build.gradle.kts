@@ -298,13 +298,10 @@ allprojects {
             systemProperty("org.sui.debug.enabled", true)
             systemProperty("org.sui.types.highlight.unknown.as.error", true)
 //            systemProperty("org.move.external.linter.max.duration", 30)  // 30 ms
-//            systemProperty("org.move.aptos.bundled.force.unsupported", true)
 //            systemProperty("idea.log.debug.categories", "org.move.cli")
         }
 
         prepareSandboxTask {
-            // dependsOn("downloadAptosBinaries")
-            // copyDownloadedAptosBinaries(this)
         }
     }
 

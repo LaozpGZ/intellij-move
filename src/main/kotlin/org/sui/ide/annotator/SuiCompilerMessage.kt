@@ -4,17 +4,15 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.util.TextRange
 import org.jetbrains.annotations.TestOnly
 
-data class AptosCompilerMessage(
+data class SuiCompilerMessage(
     val message: String,
     val severityLevel: String,
-    val spans: List<AptosCompilerSpan>
+    val spans: List<SuiCompilerSpan>
 ) {
-    val mainSpan: AptosCompilerSpan?
+    val mainSpan: SuiCompilerSpan?
         get() {
             val validSpan = spans.filter { it.isValid() }.firstOrNull { it.isPrimary } ?: return null
             return validSpan
-//            return generateSequence(validSpan) { it.expansion?.span }.last()
-//                .takeIf { it.isValid() && !it.file_name.startsWith("<") }
         }
 
     fun toTestString(): String {
@@ -28,12 +26,12 @@ data class AptosCompilerMessage(
             severityLevel: String,
             filename: String,
             location: String,
-        ): AptosCompilerMessage {
+        ): SuiCompilerMessage {
             val match =
                 Regex("""\[\((?<lineStart>\d+), (?<columnStart>\d+)\), \((?<lineEnd>\d+), (?<columnEnd>\d+)\)]""")
                     .find(location) ?: error("invalid string")
             val (lineStart, colStart, lineEnd, colEnd) = match.destructured
-            val span = AptosCompilerSpan(
+            val span = SuiCompilerSpan(
                 filename,
                 lineStart.toInt(),
                 lineEnd.toInt(),
@@ -42,24 +40,19 @@ data class AptosCompilerMessage(
                 true,
                 null
             )
-            return AptosCompilerMessage(message, severityLevel, listOf(span))
+            return SuiCompilerMessage(message, severityLevel, listOf(span))
         }
     }
 }
 
-// https://doc.rust-lang.org/nightly/nightly-rustc/syntax/json/struct.DiagnosticSpan.html
-data class AptosCompilerSpan(
+data class SuiCompilerSpan(
     val filename: String,
     val lineStart: Int,
     val lineEnd: Int,
     val columnStart: Int,
     val columnEnd: Int,
     val isPrimary: Boolean,
-//    val text: List<String>,
     val label: String?,
-//    val suggested_replacement: String?,
-//    val suggestion_applicability: Applicability?,
-//    val expansion: Expansion?
 ) {
     fun toTextRange(document: Document): TextRange? {
         val startOffset = toOffset(document, lineStart, columnStart)

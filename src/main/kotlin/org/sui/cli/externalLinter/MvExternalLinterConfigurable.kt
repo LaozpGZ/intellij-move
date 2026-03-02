@@ -35,7 +35,7 @@ class MvExternalLinterConfigurable(val project: Project) : BoundConfigurable("Ex
         row("Additional arguments:") {
             fullWidthCell(additionalArguments)
                 .resizableColumn()
-                .comment("Additional arguments to pass to <b>aptos move compile</b> command")
+                .comment("Additional arguments to pass to <b>sui move build</b> command")
                 .bind(
                     componentGet = { it.text },
                     componentSet = { component, value -> component.text = value },

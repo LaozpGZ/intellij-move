@@ -29,13 +29,6 @@ class SuiBuildTaskRunner : ProjectTaskRunner() {
             project.suiCommandConfigurationsSettings()
                 .find { (it.configuration as SuiCommandConfiguration).command == "move build" }
                 ?: ProjectInitializationSteps.createDefaultCompileConfiguration(project, false)
-//        val compileConfiguration =
-//            project.aptosCommandConfigurations().find { it.command.startsWith("move compile") }
-////            project.aptosBuildRunConfigurations().firstOrNull()
-//                ?: ProjectInitialization.createDefaultCompileConfiguration(project, false)
-//        val configurationSettings =
-//            project.runManager.findConfigurationByName(compileConfiguration.name)
-//                ?: return resolvedPromise(TaskRunnerResults.ABORTED)
         project.runManager.selectedConfiguration = compileConfigurationWithSettings
 
         val environment = ExecutionEnvironmentBuilder.createOrNull(
@@ -52,4 +45,3 @@ class SuiBuildTaskRunner : ProjectTaskRunner() {
         }
     }
 }
-

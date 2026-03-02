@@ -28,8 +28,8 @@ import org.jetbrains.annotations.Nls
 import org.sui.cli.externalLinter.RsExternalLinterWidget
 import org.sui.cli.externalLinter.externalLinterSettings
 import org.sui.cli.externalLinter.parseCompilerErrors
-import org.sui.cli.runConfigurations.aptos.Aptos
-import org.sui.cli.runConfigurations.aptos.AptosCompileArgs
+import org.sui.cli.runConfigurations.sui.Sui
+import org.sui.cli.runConfigurations.sui.SuiCompileArgs
 import org.sui.ide.annotator.RsExternalLinterFilteredMessage.Companion.filterMessage
 import org.sui.ide.annotator.RsExternalLinterUtils.TEST_MESSAGE
 import org.sui.ide.notifications.logOrShowBalloon
@@ -59,13 +59,13 @@ object RsExternalLinterUtils {
      * @see PsiModificationTracker.MODIFICATION_COUNT
      */
     fun checkLazily(
-        aptosCli: Aptos,
+        suiCli: Sui,
         project: Project,
         workingDirectory: Path,
-        args: AptosCompileArgs
+        args: SuiCompileArgs
     ): Lazy<RsExternalLinterResult?> {
         checkReadAccessAllowed()
-        return externalLinterLazyResultCache.getOrPut(project, Key(aptosCli, workingDirectory, args)) {
+        return externalLinterLazyResultCache.getOrPut(project, Key(suiCli, workingDirectory, args)) {
             // We want to run external linter in background thread and *without* read action.
             // And also we want to cache result of external linter because it is cargo package-global,
             // but annotator can be invoked separately for each file.
@@ -84,15 +84,15 @@ object RsExternalLinterUtils {
             lazy {
                 // This code will be executed out of read action in background thread
                 if (!isUnitTestMode) checkReadAccessNotAllowed()
-                checkWrapped(aptosCli, project, args)
+                checkWrapped(suiCli, project, args)
             }
         }
     }
 
     private fun checkWrapped(
-        aptosCli: Aptos,
+        suiCli: Sui,
         project: Project,
-        args: AptosCompileArgs
+        args: SuiCompileArgs
     ): RsExternalLinterResult? {
         val widget = WriteAction.computeAndWait<RsExternalLinterWidget?, Throwable> {
             saveAllDocumentsAsTheyAre()
@@ -106,7 +106,7 @@ object RsExternalLinterUtils {
 
                 override fun run(indicator: ProgressIndicator) {
                     widget?.inProgress = true
-                    future.complete(check(aptosCli, args))
+                    future.complete(check(suiCli, args))
                 }
 
                 override fun onFinished() {
@@ -118,13 +118,13 @@ object RsExternalLinterUtils {
     }
 
     private fun check(
-        aptosCli: Aptos,
-        aptosCompileArgs: AptosCompileArgs
+        suiCli: Sui,
+        suiCompileArgs: SuiCompileArgs
     ): RsExternalLinterResult? {
         ProgressManager.checkCanceled()
         val started = Instant.now()
-        val output = aptosCli
-            .checkProject(aptosCompileArgs)
+        val output = suiCli
+            .checkProject(suiCompileArgs)
             .unwrapOrElse { e ->
                 LOG.error(e)
                 return null
@@ -139,9 +139,9 @@ object RsExternalLinterUtils {
     }
 
     private data class Key(
-        val aptosCli: Aptos,
+        val suiCli: Sui,
         val workingDirectory: Path,
-        val args: AptosCompileArgs
+        val args: SuiCompileArgs
     )
 
     private val externalLinterLazyResultCache =
@@ -198,8 +198,8 @@ fun MutableList<HighlightInfo>.addHighlightsForFile(
 //                val lint = message.lint
 //                val actions =  if (element != null && lint != null) createSuppressFixes(element, lint) else emptyArray()
 //                val options = convertBatchToSuppressIntentionActions(actions).toList()
-//                val displayName = "Aptos external linter"
-//                val key = HighlightDisplayKey.findOrRegister(APTOS_EXTERNAL_LINTER_ID, displayName)
+//                val displayName = "Sui external linter"
+//                val key = HighlightDisplayKey.findOrRegister(SUI_EXTERNAL_LINTER_ID, displayName)
 //                highlightBuilder.registerFix(fix, options, displayName, fix.textRange, key)
 //            }
 
@@ -215,11 +215,11 @@ private fun convertSeverity(severity: HighlightSeverity): HighlightInfoType = wh
     else -> HighlightInfoType.INFORMATION
 }
 
-private const val APTOS_EXTERNAL_LINTER_ID: String = "AptosExternalLinterOptions"
+private const val SUI_EXTERNAL_LINTER_ID: String = "SuiExternalLinterOptions"
 
 class RsExternalLinterResult(commandOutput: List<String>, val executionTime: Long) {
 
-    val messages: List<AptosCompilerMessage> = parseCompilerErrors(commandOutput)
+    val messages: List<SuiCompilerMessage> = parseCompilerErrors(commandOutput)
 }
 
 private data class RsExternalLinterFilteredMessage(
@@ -236,7 +236,7 @@ private data class RsExternalLinterFilteredMessage(
         fun filterMessage(
             file: PsiFile,
             document: Document,
-            message: AptosCompilerMessage,
+            message: SuiCompilerMessage,
             skipErrorsKnownToIde: Boolean,
         ): RsExternalLinterFilteredMessage? {
 //            if (message.message.startsWith("aborting due to") || message.message.startsWith("cannot continue")) {
@@ -386,4 +386,3 @@ private fun formatMessage(message: String): String {
         else it.lines.joinToString("<br>")
     }
 }
-

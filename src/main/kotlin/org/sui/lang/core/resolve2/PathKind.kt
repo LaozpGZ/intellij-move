@@ -16,7 +16,7 @@ sealed class PathKind {
 
     abstract val ns: Set<Namespace>
 
-    // aptos_std:: where aptos_std is a existing named address in a project
+    // named_addr:: where named_addr is an existing named address in a project
     data class NamedAddress(val address: Address.Named): PathKind() {
         override val ns: Set<Namespace> get() = NONE
     }
@@ -35,7 +35,7 @@ sealed class PathKind {
         val qualifier: MvPath,
         override val ns: Set<Namespace>
     ): PathKind() {
-        // `0x1:foo` or `aptos_framework::foo` (where aptos_framework is known named address)
+        // `0x1:foo` or `named_addr::foo` (where named_addr is a known named address)
         class Module(path: MvPath, qualifier: MvPath, ns: Set<Namespace>, val address: Address):
             QualifiedPath(path, qualifier, ns)
 
@@ -43,7 +43,7 @@ sealed class PathKind {
         class ModuleItem(path: MvPath, qualifier: MvPath, ns: Set<Namespace>):
             QualifiedPath(path, qualifier, ns)
 
-        // bar in `0x1::foo::bar` or `aptos_std::foo::bar` (where aptos_std is known named address)
+        // bar in `0x1::foo::bar` or `named_addr::foo::bar` (where named_addr is a known named address)
         class FQModuleItem(path: MvPath, qualifier: MvPath, ns: Set<Namespace>):
             QualifiedPath(path, qualifier, ns)
 
@@ -123,7 +123,7 @@ fun MvPath.pathKind(isCompletion: Boolean = false): PathKind {
                 val address = Address.Value(qualifierPathAddress.text)
                 return PathKind.QualifiedPath.Module(this, qualifier, MODULES, address)
             }
-            // aptos_framework::bar
+            // named_addr::bar
             //                  ^
             moveProject != null && qualifierItemName != null -> {
                 val namedAddress = moveProject.getNamedAddressTestAware(qualifierItemName)

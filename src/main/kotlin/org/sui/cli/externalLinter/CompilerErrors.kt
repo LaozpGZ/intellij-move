@@ -1,9 +1,9 @@
 package org.sui.cli.externalLinter
 
-import org.sui.ide.annotator.AptosCompilerMessage
-import org.sui.ide.annotator.AptosCompilerSpan
+import org.sui.ide.annotator.SuiCompilerMessage
+import org.sui.ide.annotator.SuiCompilerSpan
 
-fun parseCompilerErrors(outputLines: List<String>): List<AptosCompilerMessage> {
+fun parseCompilerErrors(outputLines: List<String>): List<SuiCompilerMessage> {
     val errorLists = splitErrors(outputLines)
     val messages = errorLists.map(::errorLinesToCompilerMessage)
     return messages
@@ -31,11 +31,11 @@ private fun splitErrors(outputLines: List<String>): List<List<String>> {
     return errorLists
 }
 
-private fun errorLinesToCompilerMessage(errorLines: List<String>): AptosCompilerMessage {
+private fun errorLinesToCompilerMessage(errorLines: List<String>): SuiCompilerMessage {
     val messageLine = errorLines.first()
     val (_, message) = ERROR_START_RE.find(messageLine)!!.destructured
     val spans = splitSpans(errorLines)
-    return AptosCompilerMessage(message, "error", spans)
+    return SuiCompilerMessage(message, "error", spans)
 }
 
 private val FILE_POSITION_RE =
@@ -43,7 +43,7 @@ private val FILE_POSITION_RE =
 private val ERROR_UNDERLINE_RE =
     Regex("""^\s*│[^\^]*(\^{2,})""")
 
-private fun splitSpans(errorLines: List<String>): List<AptosCompilerSpan> {
+private fun splitSpans(errorLines: List<String>): List<SuiCompilerSpan> {
     val filePositionMatch =
         errorLines.firstNotNullOfOrNull { FILE_POSITION_RE.find(it) } ?: return emptyList()
     val (fileName, lineStart, columnStart) = filePositionMatch.destructured
@@ -52,7 +52,7 @@ private fun splitSpans(errorLines: List<String>): List<AptosCompilerSpan> {
         ?.groupValues?.get(1)
         ?.length ?: 1
     return listOf(
-        AptosCompilerSpan(
+        SuiCompilerSpan(
             fileName,
             lineStart = lineStart.toInt(),
             lineEnd = lineStart.toInt(),

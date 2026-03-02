@@ -26,11 +26,11 @@ sealed class TomlDependency {
 
         override fun localPath(): Path {
             val home = SystemProperties.getUserHome()
-            // TODO: add choice based on selected blockchain
-            val dirNameAptos = dirNameAptos(repo, rev)
-            val aptosPath = Paths.get(home, ".move", dirNameAptos, subdir)
-            if (Files.exists(aptosPath)) {
-                return aptosPath
+            // Support legacy cache naming and current Sui naming.
+            val dirNameLegacy = dirNameLegacy(repo, rev)
+            val legacyPath = Paths.get(home, ".move", dirNameLegacy, subdir)
+            if (Files.exists(legacyPath)) {
+                return legacyPath
             } else {
                 val dirNameSui = dirNameSui(repo, rev)
                 val suiPath = Paths.get(home, ".move", dirNameSui, subdir)
@@ -39,10 +39,10 @@ sealed class TomlDependency {
         }
 
         companion object {
-            fun dirNameAptos(repo: String, rev: String): String {
+            fun dirNameLegacy(repo: String, rev: String): String {
                 val sanitizedRepoName = repo.replace(Regex("[/:.@]"), "_")
-                val aptosRevName = rev.replace("/", "_")
-                return "${sanitizedRepoName}_$aptosRevName"
+                val legacyRevName = rev.replace("/", "_")
+                return "${sanitizedRepoName}_$legacyRevName"
             }
 
             fun dirNameSui(repo: String, rev: String): String {

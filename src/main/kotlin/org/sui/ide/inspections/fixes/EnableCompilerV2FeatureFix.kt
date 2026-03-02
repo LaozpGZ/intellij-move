@@ -28,7 +28,7 @@ class EnableCompilerV2FeatureFix(
     DiagnosticIntentionFix<PsiElement>(element) {
 
     override fun getText(): String =
-        "Enable ${feature.title.quote()} feature of Aptos Move V2 Compiler in the settings"
+        "Enable ${feature.title.quote()} feature of Move V2 compiler in the settings"
 
     override fun invoke(project: Project, file: PsiFile, element: PsiElement) {
         @Suppress("UnstableApiUsage")

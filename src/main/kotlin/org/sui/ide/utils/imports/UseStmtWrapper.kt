@@ -53,10 +53,7 @@ val COMPARATOR_FOR_ITEMS_IN_USE_GROUP: Comparator<MvUseSpeck> =
 private fun getWithinGroupLevel(namedAddress: String?): Int =
     when (namedAddress?.lowercase()) {
         "std" -> 0
-        "aptos_std" -> 1
-        "aptos_framework" -> 2
-        "aptos_token" -> 3
-        else -> 4
+        else -> 1
     }
 
 private fun getBetweenGroupsLevel(namedAddress: String?, moveProject: MoveProject?): Int {
@@ -67,7 +64,7 @@ private fun getBetweenGroupsLevel(namedAddress: String?, moveProject: MoveProjec
     val currentPackageAddresses =
         moveProject?.currentPackageAddresses()?.keys.orEmpty().map { it.lowercase() }
     return when (name) {
-        "std", "aptos_std", "aptos_framework", "aptos_token" -> 1
+        "std" -> 1
         !in currentPackageAddresses -> 2
         else -> 3
     }

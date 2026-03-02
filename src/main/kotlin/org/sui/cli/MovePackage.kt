@@ -2,7 +2,6 @@ package org.sui.cli
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.sui.cli.manifest.AptosConfigYaml
 import org.sui.cli.manifest.MoveToml
 import org.sui.cli.manifest.SuiConfigYaml
 import org.sui.lang.core.psi.MvElement
@@ -11,7 +10,6 @@ import org.sui.lang.toNioPathOrNull
 import org.sui.openapiext.common.isLightTestFile
 import org.sui.openapiext.common.isUnitTestFile
 import org.sui.openapiext.common.isUnitTestMode
-import org.sui.openapiext.pathAsPath
 import org.sui.openapiext.resolveExisting
 import org.sui.openapiext.toPsiFile
 import org.toml.lang.psi.TomlFile
@@ -94,22 +92,6 @@ data class MovePackage(
     val testsFolder: VirtualFile? get() = contentRoot.takeIf { it.isValid }?.findChild("tests")
     val scriptsFolder: VirtualFile? get() = contentRoot.takeIf { it.isValid }?.findChild("scripts")
 
-    val aptosConfigYaml: AptosConfigYaml?
-        get() {
-            var root: VirtualFile? = contentRoot
-            while (true) {
-                if (root == null) break
-                val candidatePath = root
-                    .findChild(".aptos")
-                    ?.takeIf { it.isDirectory }
-                    ?.findChild("config.yaml")
-                if (candidatePath != null) {
-                    return AptosConfigYaml.fromPath(candidatePath.pathAsPath)
-                }
-                root = root.parent
-            }
-            return null
-        }
     val suiConfigYaml: SuiConfigYaml?
         get() {
             return null

@@ -22,9 +22,9 @@ import com.intellij.psi.PsiFile
 import com.intellij.util.containers.ContainerUtil
 import org.sui.cli.MoveProject
 import org.sui.cli.moveProjectsService
-import org.sui.cli.runConfigurations.aptos.AptosCompileArgs
-import org.sui.cli.runConfigurations.aptos.workingDirectory
-import org.sui.cli.settings.getAptosCli
+import org.sui.cli.runConfigurations.sui.SuiCompileArgs
+import org.sui.cli.runConfigurations.sui.workingDirectory
+import org.sui.cli.settings.getSuiCli
 import org.sui.ide.annotator.RsExternalLinterResult
 import org.sui.ide.annotator.RsExternalLinterUtils
 import org.sui.ide.annotator.addHighlightsForFile
@@ -119,12 +119,12 @@ class MvExternalLinterInspection : GlobalSimpleInspectionTool() {
             disposable: Disposable
         ): Lazy<RsExternalLinterResult?>? = ApplicationManager.getApplication().runReadAction(Computable {
             val project = moveProject.project
-            val aptosCli = project.getAptosCli(disposable) ?: return@Computable null
+            val suiCli = project.getSuiCli(disposable) ?: return@Computable null
             RsExternalLinterUtils.checkLazily(
-                aptosCli,
+                suiCli,
                 project,
                 moveProject.workingDirectory,
-                AptosCompileArgs.forMoveProject(moveProject)
+                SuiCompileArgs.forMoveProject(moveProject)
             )
         })
 

@@ -31,13 +31,13 @@ fun MvPath.basePathType(): BasePathType? {
     if (qualifier.pathAddress != null) return BasePathType.Address
 
     val qualifierBase = qualifier.qualifier
-    // aptos_framework::m::foo
+    // named_address::m::foo
     if (qualifierBase != null) {
         return BasePathType.Address
     }
 
-    // todo: `aptos_framework::m`,
-    //  first resolve aptos_framework into the NamedAddress, then return the BasePathType.Address
+    // todo: `named_address::m`,
+    //  first resolve named_address into the NamedAddress, then return the BasePathType.Address
 
     // m::foo
     return qualifier.referenceName?.let { BasePathType.Module(it) }

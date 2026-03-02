@@ -14,7 +14,6 @@ import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
-import org.sui.cli.manifest.AptosConfigYaml
 import org.sui.cli.manifest.MoveToml
 import org.sui.cli.manifest.SuiConfigYaml
 import org.sui.cli.tests.NamedAddressService
@@ -144,10 +143,9 @@ data class MoveProject(
             .filterIsInstance<MvModule>()
     }
 
-    val aptosConfigYaml: AptosConfigYaml? get() = this.currentPackage.aptosConfigYaml
     val suiConfigYaml: SuiConfigYaml? get() = this.currentPackage.suiConfigYaml
 
-    val profiles: Set<String> = this.suiConfigYaml?.profiles.orEmpty() + this.aptosConfigYaml?.profiles.orEmpty()
+    val profiles: Set<String> = this.suiConfigYaml?.profiles.orEmpty()
 
     fun processMoveFiles(processFile: (MoveFile) -> Boolean) {
         val folders = allAccessibleMoveFolders()

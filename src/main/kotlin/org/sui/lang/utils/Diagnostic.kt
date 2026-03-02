@@ -193,7 +193,7 @@ sealed class Diagnostic(
         override fun prepare(): PreparedAnnotation {
             return PreparedAnnotation(
                 ERROR,
-                "Index operator is not supported in Aptos Move V1 outside specs",
+                "Index operator is not supported in Move 1 outside specs",
                 fixes = listOf(EnableCompilerV2FeatureFix(element, INDEXING))
             )
         }
@@ -204,7 +204,7 @@ sealed class Diagnostic(
         override fun prepare(): PreparedAnnotation {
             return PreparedAnnotation(
                 ERROR,
-                "public(package) is not supported in Aptos Move V1",
+                "public(package) is not supported in Move 1",
                 fixes = listOf(EnableCompilerV2FeatureFix(element, PUBLIC_PACKAGE))
             )
         }
@@ -260,7 +260,7 @@ sealed class Diagnostic(
         override fun prepare(): PreparedAnnotation {
             return PreparedAnnotation(
                 ERROR,
-                "receiver-style functions are not supported in Aptos Move V1",
+                "receiver-style functions are not supported in Move 1",
                 fixes = listOf(EnableCompilerV2FeatureFix(element, RECEIVER_STYLE_FUNCTIONS))
             )
         }

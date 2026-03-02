@@ -142,7 +142,7 @@ class FunctionCallConfigurationEditor<T : FunctionCallConfigurationBase>(
 
         val moveProject = project.moveProjectsService.findMoveProjectForPath(workingDirectory)
         if (moveProject == null) {
-            replacePanelWithErrorText("Deserialization error: no Aptos project at the $workingDirectory")
+            replacePanelWithErrorText("Deserialization error: no Sui project at the $workingDirectory")
             return
         }
 

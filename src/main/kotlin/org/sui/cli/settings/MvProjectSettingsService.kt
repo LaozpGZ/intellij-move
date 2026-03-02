@@ -14,10 +14,8 @@ import org.sui.bytecode.createDisposableOnFileChange
 import org.sui.cli.MoveLanguageFeatures
 import org.sui.cli.MoveProject
 import org.sui.cli.MoveProjectsService
-import org.sui.cli.runConfigurations.aptos.Aptos
 import org.sui.cli.runConfigurations.sui.Sui
 import org.sui.cli.settings.MvProjectSettingsService.MoveProjectSettings
-import org.sui.cli.settings.aptos.AptosExecType
 import org.sui.cli.settings.sui.SuiExecType
 import org.sui.openapiext.common.isUnitTestMode
 import org.sui.stdext.exists
@@ -34,10 +32,6 @@ class MvProjectSettingsService(
     project: Project
 ) :
     MvProjectSettingsServiceBase<MoveProjectSettings>(project, MoveProjectSettings()) {
-
-    val aptosExecType: AptosExecType get() = state.aptosExecType
-    val localAptosPath: String? get() = state.localAptosPath
-    val fetchAptosDeps: Boolean get() = state.fetchAptosDeps
 
     // sui
     val suiExecType: SuiExecType get() = state.suiExecType
@@ -72,12 +66,6 @@ class MvProjectSettingsService(
     // default values for settings
     class MoveProjectSettings : MvProjectSettingsBase<MoveProjectSettings>() {
         @AffectsMoveProjectsMetadata
-        var aptosExecType: AptosExecType by enum(defaultAptosExecType)
-
-        @AffectsMoveProjectsMetadata
-        var localAptosPath: String? by string()
-
-        @AffectsMoveProjectsMetadata
         var suiExecType: SuiExecType by enum(defaultSuiExecType)
 
         @AffectsMoveProjectsMetadata
@@ -108,9 +96,6 @@ class MvProjectSettingsService(
         var requireLetMut: Boolean by property(true)
 
         var featureOverridesActive: Boolean by property(false)
-
-        @AffectsMoveProjectsMetadata
-        var fetchAptosDeps: Boolean by property(false)
 
         @AffectsMoveProjectsMetadata
         var fetchSuiDeps: Boolean by property(false)
@@ -159,9 +144,6 @@ class MvProjectSettingsService(
     ) : SettingsChangedEventBase<MoveProjectSettings>(oldState, newState)
 
     companion object {
-        private val defaultAptosExecType
-            get() =
-                if (AptosExecType.isPreCompiledSupportedForThePlatform) AptosExecType.BUNDLED else AptosExecType.LOCAL
         private val defaultSuiExecType
             get() = SuiExecType.LOCAL
     }
@@ -223,16 +205,6 @@ val Project.moveSettings: MvProjectSettingsService get() = service()
 val Project.moveLanguageFeatures: MoveLanguageFeatures
     get() = this.moveSettings.effectiveLanguageFeatures()
 
-fun Project.getAptosCli(parentDisposable: Disposable? = null): Aptos? {
-    val aptosExecPath =
-        AptosExecType.aptosExecPath(
-            this.moveSettings.aptosExecType,
-            this.moveSettings.localAptosPath
-        )
-    val aptos = aptosExecPath?.let { Aptos(it, parentDisposable) }
-    return aptos
-}
-
 fun Project.getSuiCli(parentDisposable: Disposable? = null): Sui? {
     val suiExecPath =
         SuiExecType.suiExecPath(
@@ -243,21 +215,13 @@ fun Project.getSuiCli(parentDisposable: Disposable? = null): Sui? {
     return sui
 }
 
-val Project.isAptosConfigured: Boolean get() = this.getAptosCli() != null
-
 val Project.isSuiConfigured: Boolean get() = this.getSuiCli() != null
-
-fun Project.getAptosCliDisposedOnFileChange(file: VirtualFile): Aptos? {
-    val anyChangeDisposable = this.createDisposableOnFileChange(file)
-    return this.getAptosCli(anyChangeDisposable)
-}
 
 fun Project.getSuiCliDisposedOnFileChange(file: VirtualFile): Sui? {
     val anyChangeDisposable = this.createDisposableOnFileChange(file)
     return this.getSuiCli(anyChangeDisposable)
 }
 
-val Project.aptosExecPath: Path? get() = this.getAptosCli()?.cliLocation
 val Project.suiExecPath: Path? get() = this.getSuiCli()?.cliLocation
 
 fun Path?.isValidExecutable(): Boolean {
