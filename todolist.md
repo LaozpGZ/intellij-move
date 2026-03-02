@@ -1,8 +1,8 @@
-# TODO List (LSP Migration)
+# TODO List (LSP Migration + Sui-only Cleanup)
 
-Last Update: 2026-02-28
+Last Update: 2026-03-02
 Owner: Codex + User  
-Working Branch: `refactor/lsp-hardening`
+Working Branch: `refactor/remove-aptos-sui-only-2026-03-02`
 
 ## 当前阶段
 
@@ -58,6 +58,21 @@ Working Branch: `refactor/lsp-hardening`
 - [x] IDE 手工回归第三批完成：`LSP-MAN-11 ~ LSP-MAN-14`（多项目 workspace）
 - [ ] 评估是否将 `org.sui.ide.lsp.*` 全量套件中的偶发销毁期抖动继续收敛（非功能阻塞）
 - [ ] 评估是否将 Move 2024 语法错误类（annotator）迁移为 LSP 侧等价回归
+
+## Aptos 下线专项（2026-03-02）
+
+- [x] 删除 Aptos 运行配置/设置/SDK/ToolWindow 主链路代码与资源
+- [x] 清理 `plugin.xml` 中 Aptos 扩展注册
+- [x] 外部 linter 消息模型改名为 `SuiCompilerMessage`
+- [x] 测试样例从 Aptos 命名迁移为 Sui/中性命名
+- [x] `src/main + src/test + ui-tests + CLAUDE 索引` 中 Aptos 关键字清零
+- [x] 文档落盘：新增 `remove-aptos-sui-only-plan` 与 daily log
+- [ ] 全量 `./gradlew test` 彻底绿灯（当前仍受 2 个既有 LSP 抖动影响）
+
+### Aptos 下线专项下一步
+
+- [ ] 收敛 `MoveAnalyzerLspIntegrationTest` 销毁期竞态（`ContainerDisposedException`）
+- [ ] 评估是否将该 LSP 抖动用例改为更稳健的 teardown 同步策略
 
 ## Commit 策略（按仓库规范）
 

@@ -4,14 +4,13 @@
 
 ## 模块职责
 
-该模块负责实现 Sui 和 Aptos 命令的运行配置，允许用户在 IntelliJ 中直接配置和执行 Sui Move 相关的命令，包括构建、测试、部署等操作。
+该模块负责实现 Sui 命令的运行配置，允许用户在 IntelliJ 中直接配置和执行 Sui Move 相关的命令，包括构建、测试、部署等操作。
 
 ## 入口与启动
 
 ### 主要入口类
 
 - `SuiCommandConfigurationType.kt` - Sui 命令配置类型，定义 Sui 命令的配置入口
-- `AptosCommandConfigurationType.kt` - Aptos 命令配置类型，定义 Aptos 命令的配置入口
 - `CommandConfigurationBase.kt` - 命令配置基类，提供共同的配置属性
 
 ### 关键启动流程
@@ -33,12 +32,9 @@
 | 组件 | 类型 | 功能 |
 |------|------|------|
 | `SuiCommandConfigurationType` | `ConfigurationTypeBase` | Sui 命令配置类型 |
-| `AptosCommandConfigurationType` | `ConfigurationTypeBase` | Aptos 命令配置类型 |
 | `CommandConfigurationBase` | `RunConfigurationBase` | 命令配置基类 |
 | `SuiCommandConfiguration` | `CommandConfigurationBase` | Sui 命令配置类 |
-| `AptosCommandConfiguration` | `CommandConfigurationBase` | Aptos 命令配置类 |
 | `SuiCommandConfigurationFactory` | `ConfigurationFactory` | Sui 命令配置工厂 |
-| `AptosCommandConfigurationFactory` | `ConfigurationFactory` | Aptos 命令配置工厂 |
 | `RunSuiCommandActionBase` | `AnAction` | Sui 命令执行基类 |
 
 ### 主要功能接口
@@ -108,10 +104,6 @@ CommandConfigurationBase (基础配置类)
 │   ├── commandLine (命令行参数)
 │   ├── workingDirectory (工作目录)
 │   └── suiExecType (Sui CLI 执行类型)
-├── AptosCommandConfiguration (Aptos 命令配置)
-│   ├── commandLine (命令行参数)
-│   ├── workingDirectory (工作目录)
-│   └── aptosExecType (Aptos CLI 执行类型)
 └── TestCommandConfiguration (测试命令配置)
     ├── testFilters (测试过滤条件)
     └── testScope (测试范围)
@@ -149,7 +141,7 @@ CommandConfiguration → CommandLineBuilder → ProcessHandler → OutputParser 
 1. 点击顶部工具栏的 "Run" 菜单
 2. 选择 "Edit Configurations..."
 3. 点击左上角的 "+" 按钮
-4. 选择 "Sui Command" 或 "Aptos Command"
+4. 选择 "Sui Command"
 5. 配置命令参数和工作目录
 6. 点击 "OK" 保存配置
 
@@ -157,7 +149,7 @@ CommandConfiguration → CommandLineBuilder → ProcessHandler → OutputParser 
 
 - 检查命令参数是否正确
 - 验证工作目录是否设置为项目根目录
-- 确认 Sui 或 Aptos CLI 路径是否配置正确
+- 确认 Sui CLI 路径是否配置正确
 - 查看控制台输出获取详细错误信息
 
 ### 3. 测试命令无法运行怎么办？
@@ -173,9 +165,7 @@ CommandConfiguration → CommandLineBuilder → ProcessHandler → OutputParser 
 
 - `/src/main/kotlin/org/sui/cli/runConfigurations/CommandConfigurationBase.kt` - 命令配置基类
 - `/src/main/kotlin/org/sui/cli/runConfigurations/sui/SuiCommandConfigurationType.kt` - Sui 配置类型
-- `/src/main/kotlin/org/sui/cli/runConfigurations/aptos/AptosCommandConfigurationType.kt` - Aptos 配置类型
 - `/src/main/kotlin/org/sui/cli/runConfigurations/sui/SuiRunState.kt` - Sui 运行状态
-- `/src/main/kotlin/org/sui/cli/runConfigurations/aptos/AptosRunState.kt` - Aptos 运行状态
 - `/src/main/kotlin/org/sui/cli/runConfigurations/producers/` - 配置生成器实现
 - `/src/main/kotlin/org/sui/cli/runConfigurations/test/` - 测试运行支持
 - `/src/main/kotlin/org/sui/cli/runConfigurations/buildtool/` - 构建工具支持
@@ -199,7 +189,7 @@ CommandConfiguration → CommandLineBuilder → ProcessHandler → OutputParser 
 - 1.6.0：重写了类型系统，提升了准确性和性能
 - 1.5.0：添加了对 Move 字节码的反编译支持
 - 1.4.0：增强了代码格式化和导航功能
-- 1.3.0：添加了对 Aptos 网络的支持
+- 1.3.0：引入过多链支持实验（现已收敛为 Sui-only）
 - 1.2.0：优化了项目加载和依赖解析
 - 1.1.0：添加了代码检查和快速修复功能
 - 1.0.0：初始版本，包含基本语法高亮和导航功能

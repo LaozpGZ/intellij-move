@@ -60,7 +60,7 @@
       "path": "src/main/kotlin/org/sui/cli",
       "type": "CLI Integration",
       "entry_file": "MoveProjectsService.kt",
-      "description": "处理与 Sui 和 Aptos CLI 的集成，项目管理和外部 linter",
+      "description": "处理与 Sui CLI 的集成，项目管理和外部 linter",
       "documentation": "src/main/kotlin/org/sui/cli/CLAUDE.md",
       "key_files": [
         "MoveProjectsService.kt",
@@ -123,11 +123,11 @@
       "path": "src/main/kotlin/org/sui/cli/runConfigurations",
       "type": "Run Configurations",
       "entry_file": "CommandConfigurationBase.kt",
-      "description": "支持 Sui 和 Aptos 命令的运行配置",
+      "description": "支持 Sui 命令的运行配置",
       "documentation": "src/main/kotlin/org/sui/cli/runConfigurations/CLAUDE.md",
       "key_files": [
         "sui/SuiCommandConfigurationType.kt",
-        "aptos/AptosCommandConfigurationType.kt",
+        "sui/cmd/SuiCommandConfigurationFactory.kt",
         "CommandConfigurationBase.kt",
         "test/"
       ],
@@ -348,7 +348,7 @@
     "项目使用 IntelliJ Platform SDK 2024.3，需要 Java 17",
     "语法解析器和词法分析器通过 Gradle 任务自动生成",
     "测试需要在 IntelliJ 环境中运行，使用平台测试框架",
-    "插件支持 Sui 和 Aptos 两个 Move 语言变体",
+    "插件当前聚焦 Sui Move 语言变体",
     "项目包含大量自动生成的 PSI 代码（约 300 个 Java 文件）",
     "所有模块都已有对应的 CLAUDE.md 文档",
     "文档包含面包屑导航和模块间链接"

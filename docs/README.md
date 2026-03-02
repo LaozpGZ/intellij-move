@@ -7,11 +7,16 @@
 
 - LSP 迁移计划：[`docs/plans/lsp-migration-plan.md`](./plans/lsp-migration-plan.md)
 - LSP 硬化计划：[`docs/plans/lsp-hardening-plan.md`](./plans/lsp-hardening-plan.md)
+- Aptos 下线计划（Sui-only）：[`docs/plans/remove-aptos-sui-only-plan.md`](./plans/remove-aptos-sui-only-plan.md)
 - LSP 迁移日志：[`docs/logs/lsp/lsp-migration-logs.md`](./logs/lsp/lsp-migration-logs.md)
 - LSP 硬化日志：[`docs/logs/lsp/2026-02-28-lsp-hardening.md`](./logs/lsp/2026-02-28-lsp-hardening.md)
+- Aptos 下线执行日志：[`docs/logs/daily/2026-03-02-aptos-removal.md`](./logs/daily/2026-03-02-aptos-removal.md)
 - LSP 原始测试日志：[`docs/logs/lsp/lsp-migration-test.log`](./logs/lsp/lsp-migration-test.log)
 - LSP 自动化烟测日志：[`docs/logs/lsp/lsp-lsp-tests.log`](./logs/lsp/lsp-lsp-tests.log)
 - LSP 集成测试日志（diagnostics+definition+completion+hover+references+rename）：[`docs/logs/lsp/lsp-integration-tests.log`](./logs/lsp/lsp-integration-tests.log)
+- 对照总览报告（intellij-move vs intellij-sui）：[`docs/reports/intellij-sui-comparison-overview-2026-03-02.md`](./reports/intellij-sui-comparison-overview-2026-03-02.md)
+- 架构差异报告（LSP 方案对比）：[`docs/reports/intellij-sui-architecture-diff-2026-03-02.md`](./reports/intellij-sui-architecture-diff-2026-03-02.md)
+- 改进路线图报告（P0/P1/P2）：[`docs/reports/intellij-sui-improvement-roadmap-2026-03-02.md`](./reports/intellij-sui-improvement-roadmap-2026-03-02.md)
 - IDE 手工回归清单：[`docs/guides/lsp-ide-manual-regression-checklist.md`](./guides/lsp-ide-manual-regression-checklist.md)
 - IDE 手工回归日志模板：[`docs/logs/lsp/2026-02-28-ide-manual-regression-template.md`](./logs/lsp/2026-02-28-ide-manual-regression-template.md)
 - IDE 手工回归执行日志：[`docs/logs/lsp/2026-02-28-ide-manual-regression.md`](./logs/lsp/2026-02-28-ide-manual-regression.md)
@@ -35,6 +40,7 @@
 - LSP 主日志：[`docs/logs/lsp/lsp-migration-logs.md`](./logs/lsp/lsp-migration-logs.md)
 - LSP 硬化日志：[`docs/logs/lsp/2026-02-28-lsp-hardening.md`](./logs/lsp/2026-02-28-lsp-hardening.md)
 - LSP 集成测试日志：[`docs/logs/lsp/lsp-integration-tests.log`](./logs/lsp/lsp-integration-tests.log)
+- Aptos 下线执行日志：[`docs/logs/daily/2026-03-02-aptos-removal.md`](./logs/daily/2026-03-02-aptos-removal.md)
 - IDE 手工回归日志模板：[`docs/logs/lsp/2026-02-28-ide-manual-regression-template.md`](./logs/lsp/2026-02-28-ide-manual-regression-template.md)
 - IDE 手工回归执行日志：[`docs/logs/lsp/2026-02-28-ide-manual-regression.md`](./logs/lsp/2026-02-28-ide-manual-regression.md)
 
@@ -43,6 +49,7 @@
 - 计划总目录：[`docs/plans/`](./plans/)
 - LSP 迁移计划：[`lsp-migration-plan.md`](./plans/lsp-migration-plan.md)
 - LSP 硬化计划：[`lsp-hardening-plan.md`](./plans/lsp-hardening-plan.md)
+- Aptos 下线计划：[`remove-aptos-sui-only-plan.md`](./plans/remove-aptos-sui-only-plan.md)
 - Move 2024 计划：[`move-2024-implementation-plan.md`](./plans/move-2024-implementation-plan.md)
 - 历史总 TODO：[`2026-01-todo.md`](./plans/2026-01-todo.md)
 
@@ -52,6 +59,9 @@
 - 验证器治理：[`verifyplugin-hardening.md`](./reports/verifyplugin-hardening.md)
 - 质量报告：[`quality-report-2026-02-22.md`](./reports/quality-report-2026-02-22.md)
 - 对齐报告：[`quality-report-2026-02-22-sui-alignment.md`](./reports/quality-report-2026-02-22-sui-alignment.md)
+- 对照总览：[`intellij-sui-comparison-overview-2026-03-02.md`](./reports/intellij-sui-comparison-overview-2026-03-02.md)
+- 架构差异：[`intellij-sui-architecture-diff-2026-03-02.md`](./reports/intellij-sui-architecture-diff-2026-03-02.md)
+- 改进路线图：[`intellij-sui-improvement-roadmap-2026-03-02.md`](./reports/intellij-sui-improvement-roadmap-2026-03-02.md)
 
 ### `issues/`
 

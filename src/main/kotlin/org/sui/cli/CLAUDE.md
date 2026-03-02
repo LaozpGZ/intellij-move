@@ -4,7 +4,7 @@
 
 ## 模块职责
 
-该模块负责与 Sui 和 Aptos 命令行工具的集成，提供项目管理、构建、配置和外部 linter 功能。它是插件与外部工具交互的核心组件，为其他模块提供项目上下文和环境信息。
+该模块负责与 Sui 命令行工具的集成，提供项目管理、构建、配置和外部 linter 功能。它是插件与外部工具交互的核心组件，为其他模块提供项目上下文和环境信息。
 
 ## 入口与启动
 
@@ -48,11 +48,11 @@ val localSuiPath = projectSettings.localSuiPath
 ### 主要功能接口
 
 - **项目管理**：加载和刷新项目信息，管理项目包结构
-- **设置管理**：管理 Sui 和 Aptos CLI 路径、网络配置等
+- **设置管理**：管理 Sui CLI 路径、网络配置等
 - **依赖解析**：解析 `Move.toml` 文件中的依赖关系
-- **构建集成**：与 Sui 和 Aptos 构建系统交互
+- **构建集成**：与 Sui 构建系统交互
 - **外部 Linter**：使用外部编译器进行代码检查
-- **命令执行**：执行 Sui 和 Aptos 命令并处理输出
+- **命令执行**：执行 Sui 命令并处理输出
 
 ## 关键依赖与配置
 
@@ -65,8 +65,6 @@ val localSuiPath = projectSettings.localSuiPath
 
 ```kotlin
 class MoveProjectSettings : MvProjectSettingsBase<MoveProjectSettings>() {
-    var aptosExecType: AptosExecType by enum(defaultAptosExecType)
-    var localAptosPath: String? by string()
     var suiExecType: SuiExecType by enum(defaultSuiExecType)
     var localSuiPath: String? by string()
     var enableReceiverStyleFunctions: Boolean by property(true)
@@ -101,8 +99,6 @@ MvProjectSettingsService (插件设置)
 ├── MoveProjectSettings (项目级设置)
 │   ├── SuiExecType (Sui CLI 执行类型)
 │   ├── localSuiPath (Sui CLI 路径)
-│   ├── AptosExecType (Aptos CLI 执行类型)
-│   ├── localAptosPath (Aptos CLI 路径)
 │   └── 其他功能开关
 └── PerProjectSuiConfigurable (设置界面)
     └── MvProjectSettingsService (服务实例)
@@ -157,7 +153,7 @@ MoveProjectsService (项目服务)
 
 ### 3. 外部 Linter 不工作怎么办？
 
-- 确保已正确配置 Sui 或 Aptos CLI 路径
+- 确保已正确配置 Sui CLI 路径
 - 检查项目已正确构建（运行 `move package build`）
 - 验证网络连接（如果使用远程执行）
 
@@ -193,7 +189,7 @@ MoveProjectsService (项目服务)
 - 1.6.0：重写了类型系统，提升了准确性和性能
 - 1.5.0：添加了对 Move 字节码的反编译支持
 - 1.4.0：增强了代码格式化和导航功能
-- 1.3.0：添加了对 Aptos 网络的支持
+- 1.3.0：引入过多链支持实验（现已收敛为 Sui-only）
 - 1.2.0：优化了项目加载和依赖解析
 - 1.1.0：添加了代码检查和快速修复功能
 - 1.0.0：初始版本，包含基本语法高亮和导航功能
