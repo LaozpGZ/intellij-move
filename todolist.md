@@ -56,7 +56,7 @@ Working Branch: `refactor/remove-aptos-sui-only-2026-03-02`
 - [x] IDE 手工回归第一批完成：`LSP-MAN-01 ~ LSP-MAN-08`
 - [x] IDE 手工回归第二批完成：`LSP-MAN-09 ~ LSP-MAN-10`
 - [x] IDE 手工回归第三批完成：`LSP-MAN-11 ~ LSP-MAN-14`（多项目 workspace）
-- [ ] 评估是否将 `org.sui.ide.lsp.*` 全量套件中的偶发销毁期抖动继续收敛（非功能阻塞）
+- [x] 收敛 `org.sui.ide.lsp.*` 全量套件中的偶发销毁期抖动（2026-03-02，`MoveAnalyzerLspIntegrationTest` teardown 竞态）
 - [ ] 评估是否将 Move 2024 语法错误类（annotator）迁移为 LSP 侧等价回归
 
 ## Aptos 下线专项（2026-03-02）
@@ -67,12 +67,12 @@ Working Branch: `refactor/remove-aptos-sui-only-2026-03-02`
 - [x] 测试样例从 Aptos 命名迁移为 Sui/中性命名
 - [x] `src/main + src/test + ui-tests + CLAUDE 索引` 中 Aptos 关键字清零
 - [x] 文档落盘：新增 `remove-aptos-sui-only-plan` 与 daily log
-- [ ] 全量 `./gradlew test` 彻底绿灯（当前仍受 2 个既有 LSP 抖动影响）
+- [x] 全量 `./gradlew test` 彻底绿灯（2026-03-02，`./gradlew test --rerun-tasks` 通过）
 
 ### Aptos 下线专项下一步
 
-- [ ] 收敛 `MoveAnalyzerLspIntegrationTest` 销毁期竞态（`ContainerDisposedException`）
-- [ ] 评估是否将该 LSP 抖动用例改为更稳健的 teardown 同步策略
+- [x] 收敛 `MoveAnalyzerLspIntegrationTest` 销毁期竞态（`ContainerDisposedException`）
+- [x] 改造为更稳健的 teardown + request 取消策略（server ready gate、future cancel、事件队列冲刷）
 
 ## Commit 策略（按仓库规范）
 

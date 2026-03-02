@@ -69,3 +69,22 @@ rg -n --hidden "Aptos|aptos|APTOS" . --glob '!.git' --glob '!external/**' --glob
 - 已完成：Aptos 代码路径删除、测试样例迁移、文档去 Aptos 化、编译通过、定向测试通过。
 - 未完全绿灯项：全量测试仍有 2 个既有 LSP 抖动失败（单独复跑可通过）。
 - 建议下一步：继续按 LSP 抖动治理计划收敛 `MoveAnalyzerLspIntegrationTest` 的销毁竞态。
+
+## 追加更新（LSP 抖动收敛）
+
+### 变更
+
+- 在 `MoveAnalyzerLspIntegrationTest` 增加语言服务器就绪等待（server-ready gate）。
+- 对 definition/reference/rename/completion/hover 请求链路增加超时后的 `future.cancel(true)`，减少销毁期遗留任务。
+- shutdown 流程增加 `stopAndDisable()` 前置与 `PlatformTestUtil.dispatchAllEventsInIdeEventQueue()` 事件冲刷。
+- `tearDown` 增加“仅忽略已知 LSP 容器销毁竞态”的防护，非同类异常仍正常抛出。
+
+### 验证
+
+```bash
+./gradlew test --rerun-tasks --tests "org.sui.ide.lsp.MoveAnalyzerLspIntegrationTest"
+./gradlew test --rerun-tasks
+```
+
+- `MoveAnalyzerLspIntegrationTest` 强制重跑通过。
+- 全量 `./gradlew test --rerun-tasks` 通过（`BUILD SUCCESSFUL`）。
