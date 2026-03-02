@@ -2,6 +2,7 @@ package org.sui.ide.lsp
 
 import com.redhat.devtools.lsp4ij.LSPFileSupport
 import com.redhat.devtools.lsp4ij.LSPIJUtils
+import com.redhat.devtools.lsp4ij.LanguageServerItem
 import com.redhat.devtools.lsp4ij.LanguageServiceAccessor
 import com.redhat.devtools.lsp4ij.features.completion.LSPCompletionParams
 import com.redhat.devtools.lsp4ij.features.documentation.LSPHoverParams
@@ -10,6 +11,7 @@ import com.redhat.devtools.lsp4ij.features.references.LSPReferenceParams
 import com.redhat.devtools.lsp4ij.features.rename.WorkspaceEditData
 import com.redhat.devtools.lsp4ij.client.features.LSPClientFeatures
 import com.redhat.devtools.lsp4ij.usages.LocationData
+import com.intellij.testFramework.PlatformTestUtil
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
@@ -22,14 +24,24 @@ import java.util.function.Predicate
 
 class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
     override fun tearDown() {
+        var stopError: Throwable? = null
         try {
             if (!project.isDisposed) {
                 stopLanguageServers()
             }
-        } catch (_: Throwable) {
-            // Avoid masking test failures with teardown disposal races.
-        } finally {
+        } catch (t: Throwable) {
+            stopError = t
+        }
+        try {
             super.tearDown()
+        } catch (t: Throwable) {
+            if (!isKnownLspDisposalRace(t)) {
+                stopError?.let { t.addSuppressed(it) }
+                throw t
+            }
+        }
+        if (stopError != null && !isKnownLspDisposalRace(stopError)) {
+            throw stopError!!
         }
     }
 
@@ -585,6 +597,7 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
     }
 
     private fun waitForLspDiagnostic(description: String): Diagnostic {
+        waitForLanguageServerReady()
         val fileUri = LSPIJUtils.toUri(myFixture.file)
         var found: Diagnostic? = null
         runWithInvocationEventsDispatching(
@@ -605,16 +618,21 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
         val context = currentCaretContext()
         val params = LSPDefinitionParams(TextDocumentIdentifier(context.uri), context.position, context.offset)
 
+        val future = try {
+            LSPFileSupport.getSupport(myFixture.file).definitionSupport.getDefinitions(params)
+        } catch (_: Throwable) {
+            null
+        }
         try {
-            LSPFileSupport.getSupport(myFixture.file).definitionSupport
-                .getDefinitions(params)
-                .get(1, TimeUnit.SECONDS)
+            future?.get(1, TimeUnit.SECONDS)
         } catch (_: Exception) {
+            future?.cancel(true)
             // The request is only used to force LSP session initialization.
         }
     }
 
     private fun waitForDefinitions(params: LSPDefinitionParams): List<LocationData> {
+        waitForLanguageServerReady()
         triggerLspRequest()
         var result: List<LocationData> = emptyList()
         runWithInvocationEventsDispatching(
@@ -625,6 +643,7 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
             result = try {
                 future.get(1, TimeUnit.SECONDS)
             } catch (_: Exception) {
+                future.cancel(true)
                 emptyList()
             }
             if (result.isEmpty()) {
@@ -636,6 +655,7 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
     }
 
     private fun waitForReferences(params: LSPReferenceParams): List<LocationData> {
+        waitForLanguageServerReady()
         triggerLspRequest()
         var result: List<LocationData> = emptyList()
         runWithInvocationEventsDispatching(
@@ -646,6 +666,7 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
             result = try {
                 future.get(250, TimeUnit.MILLISECONDS)
             } catch (_: Exception) {
+                future.cancel(true)
                 emptyList()
             }
             if (result.isEmpty()) {
@@ -657,6 +678,7 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
     }
 
     private fun waitForRenameEdits(newName: String): List<WorkspaceEdit> {
+        waitForLanguageServerReady()
         triggerLspRequest()
         var edits: List<WorkspaceEdit> = emptyList()
         runWithInvocationEventsDispatching(
@@ -688,6 +710,7 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
     }
 
     private fun waitForCompletionLabels(params: LSPCompletionParams): List<String> {
+        waitForLanguageServerReady()
         triggerLspRequest()
         var labels: List<String> = emptyList()
         runWithInvocationEventsDispatching(
@@ -722,6 +745,7 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
     }
 
     private fun waitForHoverTexts(params: LSPHoverParams): List<String> {
+        waitForLanguageServerReady()
         triggerLspRequest()
         var texts: List<String> = emptyList()
         runWithInvocationEventsDispatching(
@@ -780,18 +804,47 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
         return params
     }
 
+    private fun waitForLanguageServerReady() {
+        runWithInvocationEventsDispatching(
+            errorMessage = "Timed out waiting for fake move-analyzer language server startup",
+            retries = 1200
+        ) {
+            triggerLspRequest()
+            getLanguageServersForCurrentFile().isNotEmpty()
+        }
+    }
+
     private fun getLanguageServersForCurrentFile(): List<*> {
-        val accessor = LanguageServiceAccessor.getInstance(project)
         val allowAll = Predicate<LSPClientFeatures> { true }
-        val serversFuture = accessor.getLanguageServers(
-            myFixture.file,
-            allowAll,
-            allowAll
-        )
         return try {
-            serversFuture.get(1, TimeUnit.SECONDS)
+            val accessor = LanguageServiceAccessor.getInstance(project)
+            val fileScopedServers = try {
+                accessor.getLanguageServers(myFixture.file, allowAll, allowAll).get(3, TimeUnit.SECONDS)
+            } catch (_: Exception) {
+                emptyList<Any>()
+            }
+            if (fileScopedServers.isNotEmpty()) {
+                fileScopedServers
+            } else {
+                val globalServers = accessor.getLanguageServers(allowAll, allowAll).get(3, TimeUnit.SECONDS)
+                if (globalServers.isNotEmpty()) globalServers else getStartedLanguageServerItems()
+            }
         } catch (_: Exception) {
             emptyList<Any>()
+        }
+    }
+
+    private fun getStartedLanguageServerItems(): List<LanguageServerItem> {
+        val accessor = LanguageServiceAccessor.getInstance(project)
+        val wrappers = accessor.getStartedServers().toList()
+        return wrappers.mapNotNull { wrapper ->
+            if (wrapper.isDisposed) return@mapNotNull null
+            val server = wrapper.getLanguageServer() ?: try {
+                wrapper.getInitializedServer().get(1, TimeUnit.SECONDS)
+            } catch (_: Exception) {
+                null
+            }
+            if (server == null) null else LanguageServerItem(server, wrapper)
         }
     }
 
@@ -815,7 +868,12 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
         } ?: return emptyList<Any?>()
         val future = method.invoke(support, params) as? java.util.concurrent.CompletableFuture<*>
             ?: return emptyList<Any?>()
-        return future.get(timeoutMillis, TimeUnit.MILLISECONDS) as? List<*> ?: emptyList<Any>()
+        return try {
+            future.get(timeoutMillis, TimeUnit.MILLISECONDS) as? List<*> ?: emptyList<Any>()
+        } catch (_: Exception) {
+            future.cancel(true)
+            emptyList<Any>()
+        }
     }
 
     private fun invokeAccessor(target: Any?, accessorName: String): Any? {
@@ -915,9 +973,12 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
         if (wrappers.isEmpty()) return
         wrappers.forEach { wrapper ->
             try {
+                wrapper.stopAndDisable()
+            } catch (_: Throwable) {
+            }
+            try {
                 wrapper.dispose(true)
             } catch (_: Throwable) {
-                wrapper.stopAndDisable()
                 wrapper.dispose()
             }
         }
@@ -928,9 +989,30 @@ class MoveAnalyzerLspIntegrationTest : MvProjectTestBase() {
             ) {
                 wrappers.all { it.isDisposed }
             }
+            repeat(3) {
+                PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+            }
         } catch (_: Throwable) {
             // Ignore shutdown races during fixture disposal.
         }
+    }
+
+    private fun isKnownLspDisposalRace(error: Throwable?): Boolean {
+        if (error == null) return false
+        var current: Throwable? = error
+        while (current != null) {
+            val message = current.toString()
+            if (
+                "ContainerDisposedException" in message &&
+                ("lsp4ij" in message || "ProjectImpl" in message || "ProcessCanceledException" in message)
+            ) {
+                return true
+            }
+            current = current.cause
+        }
+        val stackTraceText = error.stackTraceToString()
+        return "com.redhat.devtools.lsp4ij" in stackTraceText &&
+            "ContainerDisposedException" in stackTraceText
     }
 
 }
