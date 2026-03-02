@@ -38,8 +38,8 @@ module 0x1::M {
     #[allow(lint(self_transfer))]
     #[expected_failure(
         abort_code = liquidity_pool::ERR_ADMIN,
-        location = aptos_framework::ed25519,
-        location = aptos_framework::ed25519::myfunction,
+        location = framework_addr::ed25519,
+        location = framework_addr::ed25519::myfunction,
     )]
     fun abort_test_2() {}
 }

@@ -13,7 +13,7 @@ class ReceiverStyleFunctionsTest : AnnotatorTestCase(MvSyntaxErrorAnnotator::cla
             struct S { field: u8 }
             fun receiver(self: &S): u8 { self.field }
             fun call(s: S) {
-                s.<error descr="receiver-style functions are not supported in Aptos Move V1">receiver()</error>;
+                s.<error descr="receiver-style functions are not supported in Move 1">receiver()</error>;
             }
         }        
     """

@@ -280,16 +280,16 @@ class ResolveFunctionTest : ResolveTestCase() {
     """
     )
 
-    @NamedAddress("aptos_std", "0x1")
+    @NamedAddress("stdlib_addr", "0x1")
     fun `test resolve friend function with named address`() = checkByCode(
         """
-        module aptos_std::original {
-            friend aptos_std::m;
+        module stdlib_addr::original {
+            friend stdlib_addr::m;
             public(friend) fun call() {}
                              //X
         }
-        module aptos_std::m {
-            use aptos_std::original;
+        module stdlib_addr::m {
+            use stdlib_addr::original;
             fun main() {
                 original::call();
                          //^

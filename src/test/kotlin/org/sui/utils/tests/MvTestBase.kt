@@ -111,7 +111,7 @@ abstract class MvTestBase : MvLightTestBase(),
 //            it.isCompilerV2 = isCompilerV2
 //        }
 //
-//        val blockchain = this.findAnnotationInstance<WithBlockchain>()?.blockchain ?: Blockchain.APTOS
+//        val blockchain = this.findAnnotationInstance<WithBlockchain>()?.blockchain ?: Blockchain.SUI
 //        // triggers projects refresh
 //        project.moveSettings.modify {
 //            it.blockchain = blockchain

@@ -196,9 +196,6 @@ class OptimizeImportsTest : OptimizeImportsTestBase() {
             use BBB::M2::S2;
             use AAA::M1::S1;
             use AAA::M1::SS1;
-            use aptos_std::table;
-            use aptos_std::iter_table;
-            use aptos_framework::coin;
             #[test_only]
             use Std::Errors;
             use Std::Signer;
@@ -207,9 +204,6 @@ class OptimizeImportsTest : OptimizeImportsTestBase() {
             fun call(a: S1, b: S2, c: SS1) {
                 Signer::address_of();
                 signature::;
-                table::;
-                iter_table::;
-                coin::;
             }
         
             #[test]
@@ -228,9 +222,6 @@ class OptimizeImportsTest : OptimizeImportsTestBase() {
         module 0x1::Main {
             use Std::Signer;
             use std::signature;
-            use aptos_std::iter_table;
-            use aptos_std::table;
-            use aptos_framework::coin;
         
             use AAA::M1::S1;
             use AAA::M1::SS1;
@@ -242,9 +233,6 @@ class OptimizeImportsTest : OptimizeImportsTestBase() {
             fun call(a: S1, b: S2, c: SS1) {
                 Signer::address_of();
                 signature::;
-                table::;
-                iter_table::;
-                coin::;
             }
         
             #[test]

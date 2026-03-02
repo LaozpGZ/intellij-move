@@ -270,17 +270,17 @@ class ResolveItemsTreeProjectTest : ResolveProjectTestCase() {
 
     fun `test resolve module from git transitive dependency`() = checkByFileTree {
         dotMove {
-            git("https://github.com/aptos-labs/pont-stdlib.git", "main") {
+            git("https://github.com/MystenLabs/pont-stdlib.git", "main") {
                 moveToml(
                     """
         [package]
         name = "PontStdlib"        
         [dependencies]
-        MoveStdlib = { git = "https://github.com/aptos-labs/move-stdlib.git", rev = "main" }                        
+        MoveStdlib = { git = "https://github.com/MystenLabs/move-stdlib.git", rev = "main" }                        
                 """
                 )
             }
-            git("https://github.com/aptos-labs/move-stdlib.git", "main") {
+            git("https://github.com/MystenLabs/move-stdlib.git", "main") {
                 moveToml(
                     """
         [package]
@@ -305,7 +305,7 @@ class ResolveItemsTreeProjectTest : ResolveProjectTestCase() {
         [package]
         name = "MyModule"        
         [dependencies]
-        PontStdlib = { git = "https://github.com/aptos-labs/pont-stdlib.git", rev = "main" }    
+        PontStdlib = { git = "https://github.com/MystenLabs/pont-stdlib.git", rev = "main" }    
         """
         )
         sources {
@@ -356,14 +356,14 @@ class ResolveItemsTreeProjectTest : ResolveProjectTestCase() {
         name = "MyPackage"
         [addresses]
         std = "0x1"
-        aptos_std = "0x1"
+        stdlib_addr = "0x1"
         """
         )
         sources {
             main(
                 """
             module 0x1::M {
-                use aptos_std::debug;
+                use stdlib_addr::debug;
                 fun call() {
                     debug::print();
                    //^ 
@@ -504,17 +504,17 @@ class ResolveItemsTreeProjectTest : ResolveProjectTestCase() {
 //        name = "Root"
 //
 //        [addresses]
-//        aptos_framework = "0x1"
+//        framework_addr = "0x1"
 //        """)
 //        sources {
 //            move("account.move", """
-//                module aptos_framework::account {}
+//                module framework_addr::account {}
 //                                          //X
 //            """)
 //            move("account_tests.move", """
-//                module aptos_framework::account_tests {
+//                module framework_addr::account_tests {
 //                    #[test]
-//                    #[expected_failure(abort_code = 1, location = aptos_framework::account)]
+//                    #[expected_failure(abort_code = 1, location = framework_addr::account)]
 //                                                                                  //^
 //                    fun test_abort() {
 //

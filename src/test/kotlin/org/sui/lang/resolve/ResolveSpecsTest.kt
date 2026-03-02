@@ -945,7 +945,7 @@ module 0x1::main {
             fun call(account: &signer) {}
                         //X
             spec call {
-                use aptos_framework::account;
+                use framework_addr::account;
                 signer::address_of(account);
                                   //^
             }

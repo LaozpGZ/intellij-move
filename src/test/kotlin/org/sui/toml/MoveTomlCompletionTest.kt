@@ -42,19 +42,19 @@ name/*caret*/
     fun `test complete dependencies keys inline table`() = doSingleCompletion(
         """
 [dependencies]
-AptosFramework = { gi/*caret*/ }    
+SuiFramework = { gi/*caret*/ }    
     """, """
 [dependencies]
-AptosFramework = { git/*caret*/ }    
+SuiFramework = { git/*caret*/ }    
     """
     )
 
     fun `test complete dependencies keys table`() = doSingleCompletion(
         """
-[dependencies.AptosFramework]
+[dependencies.SuiFramework]
 gi/*caret*/
     """, """
-[dependencies.AptosFramework]
+[dependencies.SuiFramework]
 git/*caret*/
     """
     )

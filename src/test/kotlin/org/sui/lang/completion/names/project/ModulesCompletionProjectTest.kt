@@ -310,14 +310,14 @@ class ModulesCompletionProjectTest : CompletionProjectTestCase() {
         name = "MyPackage"
         [addresses]
         std = "0x1"
-        aptos_std = "0x1"
+        stdlib_addr = "0x1"
         """
         )
         sources {
             main(
                 """
             module 0x1::M {
-                use aptos_std::de/*caret*/;
+                use stdlib_addr::de/*caret*/;
             }    
             """
             )

@@ -348,13 +348,13 @@ class ResolveModulesTest : ResolveTestCase() {
     """
     )
 
-    @NamedAddress("aptos_std", "0x1")
+    @NamedAddress("stdlib_addr", "0x1")
     fun `test resolve friend module with named address`() = checkByCode(
         """
-    module aptos_std::myfriend {}
+    module stdlib_addr::myfriend {}
                       //X
     module 0x1::main {
-        friend aptos_std::myfriend;
+        friend stdlib_addr::myfriend;
                            //^ 
     }    
     """
@@ -421,7 +421,7 @@ module 0x1::string_tests {
     fun `test unresolved named address`() = checkByCode(
         """
         module 0x1::m {
-            use aptos_framework::account;
+            use framework_addr::account;
                 //^ unresolved
         }        
     """
@@ -436,22 +436,22 @@ module 0x1::string_tests {
     """
     )
 
-    @NamedAddress("aptos_framework", "0x1")
+    @NamedAddress("framework_addr", "0x1")
     fun `test resolve module from import with named address`() = checkByCode(
         """
-        module aptos_framework::m1 {}
+        module framework_addr::m1 {}
                               //X
         module 0x1::m {
-            use aptos_framework::m1;
+            use framework_addr::m1;
                                //^
         }        
     """
     )
 
-    @NamedAddress("aptos_framework", "0x1")
+    @NamedAddress("framework_addr", "0x1")
     fun `test resolve module from import with value address`() = checkByCode(
         """
-        module aptos_framework::m1 {}
+        module framework_addr::m1 {}
                               //X
         module 0x1::m {
             use 0x1::m1;
@@ -462,9 +462,9 @@ module 0x1::string_tests {
 
     fun `test cannot resolve module with unknown named address`() = checkByCode(
         """
-        module aptos_framework::m1 {}
+        module framework_addr::m1 {}
         module 0x1::m {
-            use aptos_framework::m1;
+            use framework_addr::m1;
                                //^ unresolved
         }        
     """
@@ -473,7 +473,7 @@ module 0x1::string_tests {
     fun `test cannot resolve named address in incomplete path use stmt`() = checkByCode(
         """
         module 0x1::m {
-            use aptos_framework
+            use framework_addr
                //^ unresolved
         }        
     """

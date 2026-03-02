@@ -2,11 +2,11 @@ package org.sui.utils.tests
 
 import com.intellij.execution.actions.ConfigurationContext
 import com.intellij.execution.actions.RunConfigurationProducer
+import com.intellij.execution.configurations.RunConfiguration
 import com.intellij.execution.impl.RunnerAndConfigurationSettingsImpl
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import org.jdom.Element
-import org.sui.cli.runConfigurations.aptos.cmd.AptosCommandConfiguration
 import org.sui.lang.core.psi.ext.ancestorOrSelf
 import org.sui.openapiext.toXmlString
 import org.sui.utils.tests.base.TestCase
@@ -140,15 +140,15 @@ abstract class RunConfigurationProducerTestBase(val testDir: String) : MvProject
         check(actual == expected) { "XML content does not match" }
     }
 
-    protected fun doTestRemembersContext(
-        producer: RunConfigurationProducer<AptosCommandConfiguration>,
+    protected fun <T : RunConfiguration> doTestRemembersContext(
+        producer: RunConfigurationProducer<T>,
         ctx1: PsiElement,
         ctx2: PsiElement
     ) {
         val contexts = listOf(ConfigurationContext(ctx1), ConfigurationContext(ctx2))
         val configsFromContext = contexts.map { it.configurationsFromContext!!.single() }
         configsFromContext.forEach { check(it.isProducedBy(producer.javaClass)) }
-        val configs = configsFromContext.map { it.configuration as AptosCommandConfiguration }
+        val configs = configsFromContext.map { it.configuration as T }
         for (i in 0..1) {
             check(producer.isConfigurationFromContext(configs[i], contexts[i])) {
                 "Configuration created from context does not believe it"

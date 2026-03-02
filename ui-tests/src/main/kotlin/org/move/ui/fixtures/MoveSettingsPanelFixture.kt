@@ -26,7 +26,6 @@ class MoveSettingsPanelFixture(
 ) :
     CommonContainerFixture(remoteRobot, remoteComponent) {
 
-    val aptosRadioButton get() = radioButton("Aptos")
     val suiRadioButton get() = radioButton("Sui")
 
     val bundledRadioButton get() = radioButton("Bundled")

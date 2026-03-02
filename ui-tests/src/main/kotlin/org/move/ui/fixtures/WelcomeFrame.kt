@@ -11,11 +11,9 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.steps.CommonSteps
 import com.intellij.remoterobot.steps.Step
 import com.intellij.remoterobot.steps.StepParameter
-import com.intellij.remoterobot.utils.Locators
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.repeatInTime
 import com.intellij.remoterobot.utils.waitFor
-import com.intellij.ui.dsl.builder.components.DslLabel
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
@@ -172,19 +170,6 @@ class WelcomeFrame(
 
     val createButton get() = button("Create")
     val cancelButton get() = button("Cancel")
-
-    @Suppress("UnstableApiUsage")
-    val bundledAptosUnsupportedComment: ComponentFixture?
-        get() {
-            val labelText = "is not available for this platform"
-            return findOrNull(
-                ComponentFixture::class.java,
-                Locators.byTypeAndPropertiesContains(
-                    DslLabel::class.java,
-                    Locators.XpathProperty.TEXT to labelText
-                )
-            )
-        }
 
     fun openProjectAt(path: Path) {
         openProjectButton.click()

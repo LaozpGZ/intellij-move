@@ -506,7 +506,7 @@ module 0x1::main {
         """
 #[test_only]        
 module 0x1::string_tests {
-    #[expected_failure(location = aptos_framework::coin)]
+    #[expected_failure(location = framework_addr::coin)]
     fun test_abort() {
     }
 }        
